@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regressão — Aprendizagem de Máquina</title>
+<script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+
+<nav class="sidebar" id="sidebar">
+<a class="sidebar-brand" href="index.html">Aprendizagem de Máquina<span>IBCCF · UFRJ</span></a>
+<div class="nav-group">
+<div class="nav-group-title">1. Fundamentos</div>
+<ul>
+<li><a href="fundamentos.html#01-fundamentos-01-introducao-ml-md"><span class="n">1.1</span>O que é aprendizagem de máquina?</a></li>
+<li><a href="fundamentos.html#01-fundamentos-02-tipos-aprendizagem-md"><span class="n">1.2</span>Tipos de aprendizagem</a></li>
+<li><a href="fundamentos.html#01-fundamentos-03-representacao-dados-md"><span class="n">1.3</span>Representação dos dados</a></li>
+<li><a href="fundamentos.html#01-fundamentos-04-generalizacao-md"><span class="n">1.4</span>Generalização: overfitting e underfitting</a></li>
+<li><a href="fundamentos.html#01-fundamentos-05-validacao-cruzada-md"><span class="n">1.5</span>Validação cruzada</a></li>
+<li><a href="fundamentos.html#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
+<li><a href="fundamentos.html#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
+<li><a href="fundamentos.html#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">2. Regressão</div>
+<ul>
+<li><a class="nav-link" data-target="02-regressao-01-regressao-linear-md" href="#02-regressao-01-regressao-linear-md"><span class="n">2.1</span>Regressão linear simples</a></li>
+<li><a class="nav-link" data-target="02-regressao-02-regressao-multipla-md" href="#02-regressao-02-regressao-multipla-md"><span class="n">2.2</span>Regressão linear múltipla</a></li>
+<li><a class="nav-link" data-target="02-regressao-03-regressao-polinomial-md" href="#02-regressao-03-regressao-polinomial-md"><span class="n">2.3</span>Regressão polinomial</a></li>
+<li><a class="nav-link" data-target="02-regressao-04-regularizacao-md" href="#02-regressao-04-regularizacao-md"><span class="n">2.4</span>Regularização Ridge e Lasso</a></li>
+<li><a class="nav-link" data-target="02-regressao-05-regressao-logistica-md" href="#02-regressao-05-regressao-logistica-md"><span class="n">2.5</span>Regressão logística</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">3. Classificação</div>
+<ul>
+<li><a href="classificacao.html#03-classificacao-01-knn-md"><span class="n">3.1</span>k-Vizinhos mais próximos (k-NN)</a></li>
+<li><a href="classificacao.html#03-classificacao-02-arvores-decisao-md"><span class="n">3.2</span>Árvores de decisão</a></li>
+<li><a href="classificacao.html#03-classificacao-03-naive-bayes-md"><span class="n">3.3</span>Naive Bayes</a></li>
+<li><a href="classificacao.html#03-classificacao-04-svm-md"><span class="n">3.4</span>Máquinas de vetores de suporte (SVM)</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">4. Ensembles e Boosting</div>
+<ul>
+<li><a href="ensembles.html#04-ensembles-01-random-forest-md"><span class="n">4.1</span>Bagging e Random Forests</a></li>
+<li><a href="ensembles.html#04-ensembles-02-gradient-boosting-md"><span class="n">4.2</span>Gradient Boosting</a></li>
+<li><a href="ensembles.html#04-ensembles-03-xgboost-md"><span class="n">4.3</span>XGBoost e LightGBM</a></li>
+<li><a href="ensembles.html#04-ensembles-04-stacking-md"><span class="n">4.4</span>Stacking e combinação de modelos</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
+<ul>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">6. Redes Neurais</div>
+<ul>
+<li><a href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><span class="n">6.1</span>Perceptron e redes neurais simples</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">7. Exercícios</div>
+<ul>
+<li><a href="exercicios.html#07-exercicios-01-regressao-md"><span class="n">7.1</span>Regressão e métricas</a></li>
+<li><a href="exercicios.html#07-exercicios-02-classificacao-md"><span class="n">7.2</span>Classificação</a></li>
+<li><a href="exercicios.html#07-exercicios-03-validacao-md"><span class="n">7.3</span>Validação e seleção de modelos</a></li>
+<li><a href="exercicios.html#07-exercicios-04-clustering-pca-md"><span class="n">7.4</span>Clustering e PCA</a></li>
+<li><a href="exercicios.html#07-exercicios-05-pipeline-md"><span class="n">7.5</span>Pipeline completo</a></li>
+</ul></div>
+</nav>
+<main class="content"><div class="content-inner">
+<div class="page-eyebrow">2. Regressão</div>
+<article id="02-regressao-01-regressao-linear-md" class="topic">
+<div class="topic-num">2.1</div>
+<h1 class="topic-title">Regressão linear simples</h1>
+<p>A regressão linear simples é o modelo mais elementar de aprendizagem supervisionada: supomos que a variável resposta $y$ depende de um único preditor $x$ por uma reta, $\hat{y} = \theta_0 + \theta_1 x$. Apesar da simplicidade, ela introduz todas as ideias centrais do restante do curso — função de custo, ajuste por mínimos quadrados e interpretação de coeficientes.</p>
+<p>Um exemplo clássico do domínio biomédico é prever a pressão arterial a partir da idade, ou o peso de um órgão a partir do peso corporal. Vamos estimar os parâmetros que minimizam a soma dos quadrados dos resíduos e discutir o que o coeficiente angular $\theta_1$ realmente significa.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ajuste manual vs. <code>LinearRegression</code></td>
+<td>comparar mínimos quadrados na mão e no scikit-learn</td>
+</tr>
+<tr>
+<td>Interpretação dos coeficientes</td>
+<td>unidades, intercepto e resíduos</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="02-regressao-02-regressao-multipla-md" class="topic">
+<div class="topic-num">2.2</div>
+<h1 class="topic-title">Regressão linear múltipla</h1>
+<p>Quando há vários preditores, a reta vira um hiperplano: $\hat{y} = \theta_0 + \theta_1 x_1 + \cdots + \theta_p x_p = \boldsymbol\theta^\top \mathbf{x}$. A regressão múltipla permite controlar variáveis de confusão e medir o efeito de cada preditor mantendo os demais fixos — a base da inferência em estudos observacionais.</p>
+<p>Discutiremos colinearidade (preditores correlacionados que inflam a variância das estimativas), a leitura de coeficientes parciais e como codificar variáveis categóricas com dummies. Usaremos um conjunto de dados clínicos com múltiplos fatores de risco.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Matriz de design $\mathbf{X}$</td>
+<td>montagem com dummies e intercepto</td>
+</tr>
+<tr>
+<td>Colinearidade e VIF</td>
+<td>diagnóstico de preditores redundantes</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="02-regressao-03-regressao-polinomial-md" class="topic">
+<div class="topic-num">2.3</div>
+<h1 class="topic-title">Regressão polinomial</h1>
+<p>Nem toda relação é uma reta. A regressão polinomial estende o modelo linear incluindo potências do preditor ($x^2, x^3, \dots$) como novas colunas, capturando curvaturas sem abandonar o arcabouço linear — o modelo continua linear nos parâmetros.</p>
+<p>É o exemplo didático perfeito para o compromisso viés–variância: grau baixo demais gera underfitting; grau alto demais, overfitting. Vamos visualizar como a escolha do grau muda o ajuste e por que precisamos de dados de validação para escolhê-lo.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Expansão polinomial</td>
+<td><code>PolynomialFeatures</code> do scikit-learn</td>
+</tr>
+<tr>
+<td>Grau × erro de validação</td>
+<td>curva de seleção do grau ótimo</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="02-regressao-04-regularizacao-md" class="topic">
+<div class="topic-num">2.4</div>
+<h1 class="topic-title">Regularização Ridge e Lasso</h1>
+<p>Regularização adiciona uma penalidade ao tamanho dos coeficientes para conter o overfitting. Ridge ($\ell_2$) encolhe os coeficientes suavemente; Lasso ($\ell_1$) pode zerá-los, funcionando como seleção automática de variáveis.</p>
+<p>Veremos como o hiperparâmetro $\alpha$ controla a força da penalidade e como escolhê-lo por validação cruzada. A regularização é indispensável em dados de alta dimensão, como expressão gênica, onde há mais variáveis do que amostras.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Caminho de regularização</td>
+<td>coeficientes em função de $\alpha$</td>
+</tr>
+<tr>
+<td>Ridge × Lasso × ElasticNet</td>
+<td>quando cada um brilha</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="02-regressao-05-regressao-logistica-md" class="topic">
+<div class="topic-num">2.5</div>
+<h1 class="topic-title">Regressão logística</h1>
+<p>Apesar do nome, a regressão logística é um modelo de <strong>classificação</strong>. Ela modela a probabilidade de uma classe aplicando a função sigmoide à combinação linear dos preditores: $p = \sigma(\boldsymbol\theta^\top \mathbf{x})$, garantindo saídas entre 0 e 1.</p>
+<p>É o modelo de referência em epidemiologia, onde os coeficientes viram razões de chance (odds ratios) interpretáveis. Vamos treinar um classificador para diagnóstico binário, interpretar os coeficientes e ligar o tema às métricas de classificação.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sigmoide e odds ratio</td>
+<td>interpretação clínica dos coeficientes</td>
+</tr>
+<tr>
+<td>Fronteira de decisão</td>
+<td>visualização em 2D</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+</div>
+<div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
+</main>
+
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

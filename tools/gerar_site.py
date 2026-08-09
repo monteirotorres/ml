@@ -1,0 +1,299 @@
+"""Gera o site (gitbook-style): sidebar à esquerda + uma página por seção.
+
+- Lê SUMMARY.md (nomes de seção limpos).
+- Converte markdown → HTML preservando LaTeX (KaTeX no cliente).
+- Sidebar lista todas as seções/tópicos; links cross-page navegam, same-page alternam.
+- Notebooks viram badges "Open in Colab".
+- Injeta widgets interativos definidos no dict WIDGETS abaixo.
+
+Uso:
+    python tools/gerar_site.py
+"""
+
+import re
+from pathlib import Path
+import markdown
+
+BASE = Path(__file__).parent.parent
+SUMMARY = BASE / "SUMMARY.md"
+
+GITHUB_REPO = "monteirotorres/ml"   # ← altere se o repo tiver outro nome
+GITHUB_BRANCH = "main"
+
+# cores usadas nos cards dos widgets (idênticas ao style.css)
+PAL_BLUE = "#3266ad"
+PAL_RED = "#c0392b"
+PAL_GREEN = "#1a7a4a"
+
+# Mapa: arquivo .md → (id base, função JS do widget)
+# Adicione entradas aqui à medida que criar widgets interativos.
+WIDGETS = {
+    "01_fundamentos/04_generalizacao.md": ("overfit", "wOverfit"),
+    "01_fundamentos/05_validacao_cruzada.md": ("kfold", "wKfold"),
+}
+
+# Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
+SECTION_FILES = {
+    "Fundamentos":                      "fundamentos.html",
+    "Regressão":                        "regressao.html",
+    "Classificação":                    "classificacao.html",
+    "Ensembles e Boosting":             "ensembles.html",
+    "Aprendizagem Não Supervisionada":  "nao_supervisionado.html",
+    "Redes Neurais":                    "redes_neurais.html",
+    "Exercícios":                       "exercicios.html",
+}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Widget HTML
+# ──────────────────────────────────────────────────────────────────────────────
+def widget_html(wid, fn):
+    raw = _widget_body(wid, fn)
+    return raw.replace('<div class="widget">',
+                       f'<div class="widget" data-widget="{fn}" data-id="{wid}">', 1)
+
+
+def _slider(wid, key, label, mn, mx, step, val):
+    return (f'<div class="ctrl-row"><span class="ctrl-label">{label}</span>'
+            f'<input type="range" min="{mn}" max="{mx}" step="{step}" value="{val}" id="{wid}-{key}">'
+            f'<span class="ctrl-val" id="{wid}-{key}-v">{val}</span></div>')
+
+
+def _card(wid, key, label, desc, color=""):
+    style = f' style="color:{color};"' if color else ""
+    return (f'<div class="stat-card"><div class="slabel">{label}</div>'
+            f'<div class="sval" id="{wid}-{key}"{style}>—</div>'
+            f'<div class="sdesc">{desc}</div></div>')
+
+
+def _widget_body(wid, fn):
+    # Widgets interativos por tópico. Cada um retorna HTML com ids
+    # prefixados por {wid} e é implementado em assets/widgets.js.
+    if fn == "wOverfit":
+        return f"""<div class="widget">
+  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "deg", "Grau do polinômio", 1, 12, 1, 3)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-redraw">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "etr", "Erro de treino", "MSE nos 12 pontos vistos", PAL_BLUE)}
+    {_card(wid, "ete", "Erro de teste", "MSE em dados novos", PAL_RED)}
+    {_card(wid, "diag", "Diagnóstico", "regime do modelo")}
+  </div>
+</div>"""
+    if fn == "wKfold":
+        return f"""<div class="widget">
+  <div class="widget-title">Demonstração — validação cruzada k-fold</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "k", "Número de folds (k)", 2, 10, 1, 5)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
+    {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    return ""
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Markdown → HTML
+# ──────────────────────────────────────────────────────────────────────────────
+def md_to_html(text):
+    blocks, inline = [], []
+    text = re.sub(r"\$\$([\s\S]+?)\$\$",
+                  lambda m: blocks.append(m.group(0)) or f"@@MB{len(blocks)-1}@@", text)
+    text = re.sub(r"(?<!\\)\$([^\n$]+?)(?<!\\)\$",
+                  lambda m: inline.append(m.group(0)) or f"@@MI{len(inline)-1}@@", text)
+    html = markdown.markdown(text, extensions=["tables", "fenced_code", "sane_lists", "md_in_html"])
+    html = re.sub(r'<pre><code class="language-mermaid">([\s\S]+?)</code></pre>',
+                  lambda m: f'<div class="mermaid-container"><pre class="mermaid">{m.group(1)}</pre></div>', html)
+    for i, b in enumerate(blocks):
+        html = html.replace(f"@@MB{i}@@", b)
+    for i, b in enumerate(inline):
+        html = html.replace(f"@@MI{i}@@", b)
+    html = re.sub(r"<p>\s*(\$\$[\s\S]+?\$\$)\s*</p>", r'<div class="math-display">\1</div>', html)
+    return html
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Parser do SUMMARY.md
+# ──────────────────────────────────────────────────────────────────────────────
+def parse_summary():
+    section, sections, items = None, [], []
+    for line in SUMMARY.read_text(encoding="utf-8").splitlines():
+        h2 = re.match(r"^##\s+(.+)$", line)
+        it = re.match(r"^\*\s+\[(.+?)\]\((.+?)\)$", line)
+        if h2:
+            if section is not None:
+                sections.append((section, items))
+            section, items = h2.group(1).strip(), []
+        elif it and it.group(2).startswith("0"):
+            items.append((it.group(1).strip(), it.group(2).strip()))
+    if section is not None:
+        sections.append((section, items))
+    return sections
+
+
+def slugify(path):
+    return re.sub(r"[^a-z0-9]+", "-", path.lower()).strip("-")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Shell HTML
+# ──────────────────────────────────────────────────────────────────────────────
+COURSE_NAME = "Aprendizagem de Máquina"
+COURSE_INST = "IBCCF · UFRJ"
+COURSE_AUTHORS = "Pedro Torres"
+
+
+def head(title):
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title} — {COURSE_NAME}</title>
+<script>(function(){{try{{var t=localStorage.getItem('tema');if(!t){{t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}}catch(e){{}}}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{{delimiters:[{{left:'$$',right:'$$',display:true}},{{left:'$',right:'$',display:false}}],throwOnError:false}});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+"""
+
+
+FOOT = """
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>
+"""
+
+
+def sidebar(sections, current_file):
+    out = ['<nav class="sidebar" id="sidebar">']
+    out.append(f'<a class="sidebar-brand" href="index.html">{COURSE_NAME}<span>{COURSE_INST}</span></a>')
+    for si, (sec, items) in enumerate(sections, 1):
+        page = SECTION_FILES.get(sec, "index.html")
+        out.append('<div class="nav-group">')
+        out.append(f'<div class="nav-group-title">{si}. {sec}</div>')
+        out.append('<ul>')
+        for ti, (title, path) in enumerate(items, 1):
+            slug = slugify(path)
+            if page == current_file:
+                out.append(f'<li><a class="nav-link" data-target="{slug}" href="#{slug}"><span class="n">{si}.{ti}</span>{title}</a></li>')
+            else:
+                out.append(f'<li><a href="{page}#{slug}"><span class="n">{si}.{ti}</span>{title}</a></li>')
+        out.append('</ul></div>')
+    out.append('</nav>')
+    return "\n".join(out)
+
+
+def footer():
+    return (f'<div class="footer">'
+            f'<div class="footer-text">{COURSE_INST} — Material didático de {COURSE_NAME}<br>{COURSE_AUTHORS}</div>'
+            f'</div>')
+
+
+def colab_link(ipynb):
+    url = f"https://colab.research.google.com/github/{GITHUB_REPO}/blob/{GITHUB_BRANCH}/{ipynb}"
+    return (f'<a class="colab-link" href="{url}" target="_blank" rel="noopener">'
+            f'<img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab">'
+            f'</a>')
+
+
+def write_section_page(idx, sections):
+    sec, items = sections[idx]
+    page = SECTION_FILES[sec]
+    out = [head(sec)]
+    out.append(sidebar(sections, page))
+    out.append('<main class="content"><div class="content-inner">')
+    out.append(f'<div class="page-eyebrow">{idx+1}. {sec}</div>')
+    for ti, (title, path) in enumerate(items, 1):
+        slug = slugify(path)
+        md_text = (BASE / path).read_text(encoding="utf-8")
+        md_text = re.sub(r"^#\s+.+\n+", "", md_text, count=1)
+        body = md_to_html(md_text)
+        ipynb = path.replace(".md", ".ipynb")
+        has_nb = (BASE / ipynb).exists()
+        nb = colab_link(ipynb) if has_nb else ""
+        widget = ""
+        if path in WIDGETS:
+            base_id, fn = WIDGETS[path]
+            widget = widget_html(f"{base_id}_{idx+1}_{ti}", fn)
+        out.append(f'<article id="{slug}" class="topic">')
+        out.append(f'<div class="topic-num">{idx+1}.{ti}</div>')
+        out.append(f'<h1 class="topic-title">{title}</h1>')
+        if nb:
+            out.append(f'<div class="nb-row">{nb}</div>')
+        out.append(body)
+        out.append(widget)
+        out.append('</article>')
+    out.append('</div>')
+    out.append(footer())
+    out.append('</main>')
+    out.append(FOOT)
+    (BASE / page).write_text("\n".join(out), encoding="utf-8")
+    return page
+
+
+# Descrições das seções para os cards da home
+SECTION_DESCS = {
+    "Fundamentos": "O que é ML, tipos de aprendizagem, overfitting, validação cruzada e métricas.",
+    "Regressão": "Regressão linear, polinomial, regularização Ridge/Lasso e regressão logística.",
+    "Classificação": "k-NN, árvores de decisão, SVM e Naive Bayes.",
+    "Ensembles e Boosting": "Random Forests, Gradient Boosting, XGBoost e stacking.",
+    "Aprendizagem Não Supervisionada": "k-means, clustering hierárquico, PCA, t-SNE e UMAP.",
+    "Redes Neurais": "Perceptron, backpropagation, funções de ativação e deep learning.",
+    "Exercícios": "Exercícios resolvidos por tema, com soluções em Python.",
+}
+
+
+def write_index(sections):
+    out = [head("Início")]
+    out.append(sidebar(sections, "index.html"))
+    out.append('<main class="content"><div class="content-inner">')
+    out.append('<div class="hero">')
+    out.append(f'<h1 class="hero-title">{COURSE_NAME}</h1>')
+    out.append(f'<p class="hero-sub">{COURSE_INST}</p>')
+    out.append('<p class="hero-desc">Curso introdutório com foco intuitivo, demonstrações interativas e notebooks em Python (scikit-learn, pandas, matplotlib). Navegue pelo menu à esquerda.</p>')
+    out.append(f'<p class="hero-authors">{COURSE_AUTHORS}</p>')
+    out.append('</div>')
+    out.append('<div class="cards">')
+    for si, (sec, items) in enumerate(sections, 1):
+        page = SECTION_FILES.get(sec, "index.html")
+        first = slugify(items[0][1]) if items else ""
+        desc = SECTION_DESCS.get(sec, "")
+        out.append(f'<a class="card" href="{page}#{first}">'
+                   f'<div class="cnum">{si}</div>'
+                   f'<div class="ctitle">{sec}</div>'
+                   f'<div class="cdesc">{desc}</div>'
+                   f'<div class="ccount">{len(items)} tópicos</div></a>')
+    out.append('</div>')
+    out.append(footer())
+    out.append('</main>')
+    out.append(FOOT)
+    (BASE / "index.html").write_text("\n".join(out), encoding="utf-8")
+
+
+def main():
+    sections = parse_summary()
+    write_index(sections)
+    for i in range(len(sections)):
+        page = write_section_page(i, sections)
+        print(f"  {page}  ({(BASE/page).stat().st_size/1024:.1f} KB)")
+    print(f"  index.html  ({(BASE/'index.html').stat().st_size/1024:.1f} KB)")
+
+
+if __name__ == "__main__":
+    main()

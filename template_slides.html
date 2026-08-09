@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TÍTULO DO TÓPICO · ML / IBCCF</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<style>
+/* ── Paleta ───────────────────────────────────────────────────────────────── */
+:root {
+  --bg:       #F3ECDF;   /* fundo do viewport       */
+  --paper:    #FFFDF8;   /* fundo dos slides        */
+  --ink:      #1A1A1A;   /* texto principal         */
+  --blue:     #3266AD;   /* cor primária            */
+  --red:      #C0392B;   /* destaque vermelho       */
+  --green:    #1A7A4A;   /* destaque verde          */
+  --muted:    #6B6457;   /* texto secundário        */
+  --line:     #C9BFA9;   /* bordas                  */
+  --tint:     #ECF1F8;   /* fundo de caixas de dica */
+  --blue-f:   #DCE7F4;   /* fill azul claro         */
+  --red-f:    #F6DEDB;   /* fill vermelho claro     */
+  --green-f:  #DCEFE4;   /* fill verde claro        */
+  --grey-f:   #ECE4D3;   /* fill cinza claro        */
+  --orange-f: #FDEAD0;
+  --purple-f: #E8DAEF;
+  --yellow-f: #FCF3CF;
+}
+
+/* ── Base reveal ──────────────────────────────────────────────────────────── */
+.reveal-viewport { background: var(--bg); }
+.reveal .slides  { font-family: 'Georgia', Georgia, serif; }
+
+/* Seção base: coluna flexível — NÃO altere isto */
+.reveal .slides section {
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  padding: 0;
+  top: 0 !important;
+  height: 720px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Zerando defaults do reveal que conflitam */
+.reveal h1, .reveal h2, .reveal h3,
+.reveal p,  .reveal ul, .reveal ol, .reveal li {
+  margin: 0; padding: 0;
+  text-shadow: none; text-transform: none;
+  font-family: 'Georgia', Georgia, serif;
+  color: var(--ink);
+}
+
+/* ── Cabeçalho do slide ───────────────────────────────────────────────────── */
+.sh { padding: 26px 58px 0; }   /* header fixo; NÃO dê flex:1 aqui */
+
+.eyebrow {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 5px;
+  display: block;
+}
+.sh h2 {
+  font-size: 33px;
+  font-weight: bold;
+  line-height: 1.18;
+  margin-bottom: 9px;
+  color: var(--ink);
+}
+.sep { width: 72px; height: 4px; background: var(--blue); margin-bottom: 15px; }
+
+/* ── Corpo (bullets / conteúdo) ───────────────────────────────────────────── */
+.sb {
+  padding: 0 58px 14px;
+  flex: 1;          /* expande para preencher o espaço restante */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Bullets ──────────────────────────────────────────────────────────────── */
+.reveal .slides section ul { list-style: none; font-size: 20px; line-height: 1.45; margin-left: 0; }
+.reveal .slides section ul li { position: relative; padding-left: 1.1em; margin-bottom: 8px; }
+.reveal .slides section ul li::before { content: "•"; position: absolute; left: 0; color: var(--blue); }
+.reveal .slides section ul li.sub { font-size: 18px; color: var(--muted); margin-bottom: 5px; }
+.reveal .slides section ul li.sub::before { content: "–"; color: var(--muted); }
+
+/* ── Caixa de exemplo ─────────────────────────────────────────────────────── */
+.ex {
+  background: var(--tint);
+  border-radius: 7px;
+  padding: 11px 20px 13px;
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.ex-lbl {
+  display: block;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+/* ── Caixa de atenção ─────────────────────────────────────────────────────── */
+.warn {
+  background: var(--red-f);
+  border-left: 4px solid var(--red);
+  border-radius: 0 7px 7px 0;
+  padding: 11px 20px 13px;
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* ── Card de fórmula ──────────────────────────────────────────────────────── */
+.fcard {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 24px;
+  text-align: center;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  margin: 12px 0;
+}
+
+/* ── Área de imagem (flex:1 = preenche todo espaço disponível) ────────────── */
+.ia {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 40px 0;
+  flex: 1;
+  min-height: 0;
+}
+.ia img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* ── Legenda de imagem ────────────────────────────────────────────────────── */
+.icap { text-align: center; font-size: 13px; color: var(--muted); font-style: italic; padding: 4px 58px 0; line-height: 1.3; }
+
+/* ── Dois colunas (bullets + imagem) ─────────────────────────────────────── */
+.tcol {
+  display: flex;
+  gap: 28px;
+  padding: 0 50px;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+}
+.tcol-b { flex: 0 0 46%; }
+.tcol-i { flex: 1; display: flex; align-items: center; justify-content: center; }
+.tcol-i img { max-width: 100%; max-height: 460px; object-fit: contain; }
+
+/* ── Slide de seção (divisor de parte) ───────────────────────────────────── */
+.reveal .slides section.sec {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 80px !important;
+}
+.pnum { font-family: 'Consolas', monospace; font-size: 19px; color: var(--blue); margin-bottom: 8px; display: block; }
+.sec h1 { font-size: 50px; font-weight: bold; line-height: 1.15; margin-bottom: 10px; }
+.sec .sub { font-size: 19px; color: var(--muted); font-style: italic; }
+
+/* ── Slide de título ──────────────────────────────────────────────────────── */
+.reveal .slides section.ttl {
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; text-align: center; padding: 0 80px !important;
+}
+.ttl h1 { font-size: 56px; font-weight: bold; line-height: 1.1; margin-bottom: 14px; }
+.ttl .inst { font-family: 'Consolas', monospace; font-size: 15px; color: var(--muted); margin-bottom: 8px; display: block; }
+.ttl .auth { font-size: 19px; }
+
+/* ── Tabela ───────────────────────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 16.5px; }
+.tbl th { background: var(--ink); color: var(--paper); padding: 8px 13px; font-weight: bold; text-align: left; font-family: 'Georgia', serif; }
+.tbl td { padding: 7px 13px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.35; }
+.tbl tr:nth-child(odd)  td { background: #ECE4D3; }
+.tbl tr:nth-child(even) td { background: var(--paper); }
+.ok  { color: var(--green); font-weight: bold; }
+.no  { color: var(--red);   font-weight: bold; }
+
+/* ── Botão Colab ──────────────────────────────────────────────────────────── */
+.colab-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: #F9AB00; color: #1A1A1A;
+  padding: 10px 20px; border-radius: 6px;
+  font-size: 16px; font-weight: bold; text-decoration: none; margin-top: 12px;
+  font-family: 'Georgia', serif;
+}
+.colab-note { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 6px; display: block; }
+
+/* ── Número do slide ──────────────────────────────────────────────────────── */
+.reveal .slide-number { font-family: 'Consolas', monospace; font-size: 11px; background: transparent; color: var(--muted); }
+.reveal .progress { color: var(--blue); }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE 1 — TÍTULO
+     Use class="ttl" para centrar vertical e horizontalmente.
+══════════════════════════════════════════════════════════ -->
+<section class="ttl">
+  <h1>TÍTULO DO TÓPICO</h1>
+  <span class="inst">Aprendizagem de Máquina · IBCCF / UFRJ</span>
+  <p class="auth">Pedro Torres</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE SEÇÃO (divisor de parte)
+     Use class="sec" + <span class="pnum"> + <h1> + <p class="sub">
+══════════════════════════════════════════════════════════ -->
+<section class="sec">
+  <span class="pnum">Parte 1</span>
+  <div class="sep"></div>
+  <h1>Título da parte</h1>
+  <p class="sub">Subtítulo opcional, em itálico</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE CONTEÚDO — bullets + exemplo
+     Estrutura: .sh (header) + .sb (body com flex:1)
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Eyebrow (seção/parte)</span>
+    <h2>Título do slide</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Ponto principal <strong>em negrito</strong> quando necessário</li>
+      <li>Segundo ponto principal</li>
+      <li class="sub">Sub-bullet em cinza, menor</li>
+      <li class="sub">Outro sub-bullet</li>
+      <li>Terceiro ponto</li>
+    </ul>
+    <div class="ex">
+      <span class="ex-lbl">Exemplo</span>
+      Texto do exemplo concreto aqui. Mantenha curto — uma ou duas frases.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE CONTEÚDO — bullets + fórmula
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Eyebrow</span>
+    <h2>Slide com fórmula KaTeX</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Bullet que menciona $\hat{y} = \theta_0 + \theta_1 x$ inline</li>
+      <li>Outro bullet</li>
+    </ul>
+    <div class="fcard">
+      $$\hat{y} = \theta_0 + \theta_1 x_1 + \cdots + \theta_n x_n = \boldsymbol\theta^\top \mathbf{x}$$
+    </div>
+    <ul>
+      <li>Bullet após a fórmula</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE IMAGEM (fullslide)
+     .ia com flex:1 preenche tudo entre o header e a legenda.
+     NÃO adicione height/max-height inline.
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Eyebrow</span>
+    <h2>Título do slide de imagem</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/TOPICO/nome_figura.png" alt="Descrição da figura">
+  </div>
+  <p class="icap">Legenda curta explicando o que a figura mostra.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE DOIS COLUNAS (bullets + imagem lado a lado)
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Eyebrow</span>
+    <h2>Dois colunas: texto + figura</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="tcol">
+    <div class="tcol-b">
+      <ul style="font-size:19px">
+        <li>Bullet da coluna esquerda</li>
+        <li>Segundo bullet</li>
+        <li class="sub">Sub-bullet</li>
+      </ul>
+    </div>
+    <div class="tcol-i">
+      <img src="assets/slides/TOPICO/nome_figura.png" alt="Figura">
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE DE TABELA
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Eyebrow</span>
+    <h2>Título do slide de tabela</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb" style="padding-top:0">
+    <table class="tbl">
+      <thead><tr>
+        <th style="width:25%">Coluna 1</th>
+        <th style="width:37%">Coluna 2</th>
+        <th>Coluna 3</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Linha A</td><td>Valor</td><td><span class="ok">Positivo</span></td></tr>
+        <tr><td>Linha B</td><td>Valor</td><td><span class="no">Negativo</span></td></tr>
+        <tr><td>Linha C</td><td>Valor</td><td>Neutro</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SLIDE FINAL — Colab
+══════════════════════════════════════════════════════════ -->
+<section>
+  <div class="sh">
+    <h2>Referências e notebook</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb" style="padding-top:6px">
+    <p style="font-size:17px; margin-bottom:8px">Site do curso:</p>
+    <p style="font-family:monospace; font-size:17px; color:var(--blue); margin-bottom:18px">
+      monteirotorres.github.io/ml
+    </p>
+    <p style="font-size:17px; margin-bottom:4px"><strong>Pratique no notebook interativo:</strong></p>
+    <a class="colab-btn"
+       href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/XX_secao/YY_topico.ipynb"
+       target="_blank">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" fill="#fff"/>
+        <path d="M7 8.5l5 3.5-5 3.5V8.5z" fill="#F9AB00"/>
+        <path d="M12 8.5l5 3.5-5 3.5V8.5z" fill="#F9AB00" opacity=".6"/>
+      </svg>
+      Abrir no Google Colab
+    </a>
+    <span class="colab-note">Substitua o link pelo path correto do notebook</span>
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/math/math.js"></script>
+<script>
+Reveal.initialize({
+  width:  1280,
+  height: 720,
+  margin: 0,
+  hash:   true,
+  slideNumber: 'c/t',
+  progress: true,
+  transition: 'none',
+  backgroundTransition: 'none',
+  plugins: [ RevealMath.KaTeX ],
+  katex: {
+    version: 'latest',
+    delimiters: [
+      { left: '$$', right: '$$', display: true  },
+      { left: '$',  right: '$',  display: false }
+    ]
+  }
+});
+</script>
+</body>
+</html>

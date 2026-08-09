@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exercícios — Aprendizagem de Máquina</title>
+<script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+
+<nav class="sidebar" id="sidebar">
+<a class="sidebar-brand" href="index.html">Aprendizagem de Máquina<span>IBCCF · UFRJ</span></a>
+<div class="nav-group">
+<div class="nav-group-title">1. Fundamentos</div>
+<ul>
+<li><a href="fundamentos.html#01-fundamentos-01-introducao-ml-md"><span class="n">1.1</span>O que é aprendizagem de máquina?</a></li>
+<li><a href="fundamentos.html#01-fundamentos-02-tipos-aprendizagem-md"><span class="n">1.2</span>Tipos de aprendizagem</a></li>
+<li><a href="fundamentos.html#01-fundamentos-03-representacao-dados-md"><span class="n">1.3</span>Representação dos dados</a></li>
+<li><a href="fundamentos.html#01-fundamentos-04-generalizacao-md"><span class="n">1.4</span>Generalização: overfitting e underfitting</a></li>
+<li><a href="fundamentos.html#01-fundamentos-05-validacao-cruzada-md"><span class="n">1.5</span>Validação cruzada</a></li>
+<li><a href="fundamentos.html#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
+<li><a href="fundamentos.html#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
+<li><a href="fundamentos.html#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">2. Regressão</div>
+<ul>
+<li><a href="regressao.html#02-regressao-01-regressao-linear-md"><span class="n">2.1</span>Regressão linear simples</a></li>
+<li><a href="regressao.html#02-regressao-02-regressao-multipla-md"><span class="n">2.2</span>Regressão linear múltipla</a></li>
+<li><a href="regressao.html#02-regressao-03-regressao-polinomial-md"><span class="n">2.3</span>Regressão polinomial</a></li>
+<li><a href="regressao.html#02-regressao-04-regularizacao-md"><span class="n">2.4</span>Regularização Ridge e Lasso</a></li>
+<li><a href="regressao.html#02-regressao-05-regressao-logistica-md"><span class="n">2.5</span>Regressão logística</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">3. Classificação</div>
+<ul>
+<li><a href="classificacao.html#03-classificacao-01-knn-md"><span class="n">3.1</span>k-Vizinhos mais próximos (k-NN)</a></li>
+<li><a href="classificacao.html#03-classificacao-02-arvores-decisao-md"><span class="n">3.2</span>Árvores de decisão</a></li>
+<li><a href="classificacao.html#03-classificacao-03-naive-bayes-md"><span class="n">3.3</span>Naive Bayes</a></li>
+<li><a href="classificacao.html#03-classificacao-04-svm-md"><span class="n">3.4</span>Máquinas de vetores de suporte (SVM)</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">4. Ensembles e Boosting</div>
+<ul>
+<li><a href="ensembles.html#04-ensembles-01-random-forest-md"><span class="n">4.1</span>Bagging e Random Forests</a></li>
+<li><a href="ensembles.html#04-ensembles-02-gradient-boosting-md"><span class="n">4.2</span>Gradient Boosting</a></li>
+<li><a href="ensembles.html#04-ensembles-03-xgboost-md"><span class="n">4.3</span>XGBoost e LightGBM</a></li>
+<li><a href="ensembles.html#04-ensembles-04-stacking-md"><span class="n">4.4</span>Stacking e combinação de modelos</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
+<ul>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">6. Redes Neurais</div>
+<ul>
+<li><a href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><span class="n">6.1</span>Perceptron e redes neurais simples</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">7. Exercícios</div>
+<ul>
+<li><a class="nav-link" data-target="07-exercicios-01-regressao-md" href="#07-exercicios-01-regressao-md"><span class="n">7.1</span>Regressão e métricas</a></li>
+<li><a class="nav-link" data-target="07-exercicios-02-classificacao-md" href="#07-exercicios-02-classificacao-md"><span class="n">7.2</span>Classificação</a></li>
+<li><a class="nav-link" data-target="07-exercicios-03-validacao-md" href="#07-exercicios-03-validacao-md"><span class="n">7.3</span>Validação e seleção de modelos</a></li>
+<li><a class="nav-link" data-target="07-exercicios-04-clustering-pca-md" href="#07-exercicios-04-clustering-pca-md"><span class="n">7.4</span>Clustering e PCA</a></li>
+<li><a class="nav-link" data-target="07-exercicios-05-pipeline-md" href="#07-exercicios-05-pipeline-md"><span class="n">7.5</span>Pipeline completo</a></li>
+</ul></div>
+</nav>
+<main class="content"><div class="content-inner">
+<div class="page-eyebrow">7. Exercícios</div>
+<article id="07-exercicios-01-regressao-md" class="topic">
+<div class="topic-num">7.1</div>
+<h1 class="topic-title">Regressão e métricas</h1>
+<p>Esta lista consolida os conceitos de regressão: ajuste de modelos lineares e polinomiais, interpretação de coeficientes e cálculo de métricas como RMSE e $R^2$. Cada questão vem com solução em Python usando scikit-learn.</p>
+<p>Recomenda-se resolver primeiro no papel/notebook e só então conferir a solução. Os exercícios usam conjuntos de dados clássicos e simulações reprodutíveis.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+
+</article>
+<article id="07-exercicios-02-classificacao-md" class="topic">
+<div class="topic-num">7.2</div>
+<h1 class="topic-title">Classificação</h1>
+<p>Problemas envolvendo k-NN, árvores, Naive Bayes, SVM e regressão logística. O foco é treinar a escolha do modelo, a leitura de fronteiras de decisão e a avaliação com matriz de confusão, precisão, recall e AUC.</p>
+<p>As soluções mostram o pipeline completo — do pré-processamento à avaliação — em scikit-learn, reforçando as boas práticas vistas no capítulo de fundamentos.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+
+</article>
+<article id="07-exercicios-03-validacao-md" class="topic">
+<div class="topic-num">7.3</div>
+<h1 class="topic-title">Validação e seleção de modelos</h1>
+<p>Exercícios sobre validação cruzada, ajuste de hiperparâmetros (grid/random search), curvas de aprendizado e o compromisso viés–variância. O objetivo é estimar desempenho de forma honesta e evitar vazamento de dados.</p>
+<p>Cada solução destaca um erro comum de metodologia e como corrigi-lo — a parte mais importante e menos glamourosa da prática de ML.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+
+</article>
+<article id="07-exercicios-04-clustering-pca-md" class="topic">
+<div class="topic-num">7.4</div>
+<h1 class="topic-title">Clustering e PCA</h1>
+<p>Lista de aprendizagem não supervisionada: aplicar k-means e clustering hierárquico, escolher o número de grupos, reduzir dimensionalidade com PCA e visualizar com t-SNE.</p>
+<p>As soluções enfatizam a interpretação dos resultados — clusters não vêm com rótulos, e cabe ao analista dar-lhes sentido no contexto do problema.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+
+</article>
+<article id="07-exercicios-05-pipeline-md" class="topic">
+<div class="topic-num">7.5</div>
+<h1 class="topic-title">Pipeline completo</h1>
+<p>Um projeto integrador de ponta a ponta: carregar dados reais, tratar valores faltantes, pré-processar, treinar e comparar vários modelos, validar corretamente e reportar o resultado final de forma reprodutível.</p>
+<p>Este exercício amarra todo o curso, usando <code>Pipeline</code> e <code>ColumnTransformer</code> do scikit-learn para garantir que nenhuma etapa vaze informação do conjunto de teste.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+
+</article>
+</div>
+<div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
+</main>
+
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

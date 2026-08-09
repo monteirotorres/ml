@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentos — Aprendizagem de Máquina</title>
+<script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+
+<nav class="sidebar" id="sidebar">
+<a class="sidebar-brand" href="index.html">Aprendizagem de Máquina<span>IBCCF · UFRJ</span></a>
+<div class="nav-group">
+<div class="nav-group-title">1. Fundamentos</div>
+<ul>
+<li><a class="nav-link" data-target="01-fundamentos-01-introducao-ml-md" href="#01-fundamentos-01-introducao-ml-md"><span class="n">1.1</span>O que é aprendizagem de máquina?</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-02-tipos-aprendizagem-md" href="#01-fundamentos-02-tipos-aprendizagem-md"><span class="n">1.2</span>Tipos de aprendizagem</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-03-representacao-dados-md" href="#01-fundamentos-03-representacao-dados-md"><span class="n">1.3</span>Representação dos dados</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-04-generalizacao-md" href="#01-fundamentos-04-generalizacao-md"><span class="n">1.4</span>Generalização: overfitting e underfitting</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-05-validacao-cruzada-md" href="#01-fundamentos-05-validacao-cruzada-md"><span class="n">1.5</span>Validação cruzada</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-06-metricas-regressao-md" href="#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-07-metricas-classificacao-md" href="#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-08-preprocessamento-md" href="#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">2. Regressão</div>
+<ul>
+<li><a href="regressao.html#02-regressao-01-regressao-linear-md"><span class="n">2.1</span>Regressão linear simples</a></li>
+<li><a href="regressao.html#02-regressao-02-regressao-multipla-md"><span class="n">2.2</span>Regressão linear múltipla</a></li>
+<li><a href="regressao.html#02-regressao-03-regressao-polinomial-md"><span class="n">2.3</span>Regressão polinomial</a></li>
+<li><a href="regressao.html#02-regressao-04-regularizacao-md"><span class="n">2.4</span>Regularização Ridge e Lasso</a></li>
+<li><a href="regressao.html#02-regressao-05-regressao-logistica-md"><span class="n">2.5</span>Regressão logística</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">3. Classificação</div>
+<ul>
+<li><a href="classificacao.html#03-classificacao-01-knn-md"><span class="n">3.1</span>k-Vizinhos mais próximos (k-NN)</a></li>
+<li><a href="classificacao.html#03-classificacao-02-arvores-decisao-md"><span class="n">3.2</span>Árvores de decisão</a></li>
+<li><a href="classificacao.html#03-classificacao-03-naive-bayes-md"><span class="n">3.3</span>Naive Bayes</a></li>
+<li><a href="classificacao.html#03-classificacao-04-svm-md"><span class="n">3.4</span>Máquinas de vetores de suporte (SVM)</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">4. Ensembles e Boosting</div>
+<ul>
+<li><a href="ensembles.html#04-ensembles-01-random-forest-md"><span class="n">4.1</span>Bagging e Random Forests</a></li>
+<li><a href="ensembles.html#04-ensembles-02-gradient-boosting-md"><span class="n">4.2</span>Gradient Boosting</a></li>
+<li><a href="ensembles.html#04-ensembles-03-xgboost-md"><span class="n">4.3</span>XGBoost e LightGBM</a></li>
+<li><a href="ensembles.html#04-ensembles-04-stacking-md"><span class="n">4.4</span>Stacking e combinação de modelos</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
+<ul>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">6. Redes Neurais</div>
+<ul>
+<li><a href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><span class="n">6.1</span>Perceptron e redes neurais simples</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">7. Exercícios</div>
+<ul>
+<li><a href="exercicios.html#07-exercicios-01-regressao-md"><span class="n">7.1</span>Regressão e métricas</a></li>
+<li><a href="exercicios.html#07-exercicios-02-classificacao-md"><span class="n">7.2</span>Classificação</a></li>
+<li><a href="exercicios.html#07-exercicios-03-validacao-md"><span class="n">7.3</span>Validação e seleção de modelos</a></li>
+<li><a href="exercicios.html#07-exercicios-04-clustering-pca-md"><span class="n">7.4</span>Clustering e PCA</a></li>
+<li><a href="exercicios.html#07-exercicios-05-pipeline-md"><span class="n">7.5</span>Pipeline completo</a></li>
+</ul></div>
+</nav>
+<main class="content"><div class="content-inner">
+<div class="page-eyebrow">1. Fundamentos</div>
+<article id="01-fundamentos-01-introducao-ml-md" class="topic">
+<div class="topic-num">1.1</div>
+<h1 class="topic-title">O que é aprendizagem de máquina?</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/01_introducao_ml.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Aprendizagem de máquina é a arte de escrever programas que <strong>melhoram com a
+experiência</strong> em vez de seguir regras que alguém escreveu à mão. Neste primeiro
+tópico definimos o que isso significa, por que a abordagem é tão poderosa e onde
+ela se encaixa dentro da estatística e da inteligência artificial.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Imagine que você precisa escrever um programa para distinguir uma célula tumoral
+de uma célula saudável a partir de uma imagem de microscopia. A abordagem
+tradicional seria sentar com um patologista e transcrever regras: "se o núcleo
+for maior que tal limiar <strong>e</strong> a razão núcleo/citoplasma passar de tanto,
+então...". O problema é que essas regras são frágeis, incompletas e impossíveis
+de manter quando o número de características cresce.</p>
+<p>A aprendizagem de máquina inverte a lógica. Em vez de programar as regras,
+mostramos ao computador <strong>muitos exemplos rotulados</strong> — imagens já classificadas
+por especialistas — e deixamos que ele <strong>descubra sozinho</strong> o padrão que separa
+as duas classes. O programador fornece os dados e a estrutura do modelo; os
+detalhes emergem do ajuste aos dados.</p>
+<blockquote>
+<p>"A aprendizagem de máquina é o campo de estudo que dá aos computadores a
+capacidade de aprender sem serem explicitamente programados." — atribuída a
+Arthur Samuel, 1959.</p>
+</blockquote>
+<h2>Uma definição operacional</h2>
+<p>A definição mais citada é a de Tom Mitchell (1997), e é útil porque é concreta:</p>
+<blockquote>
+<p>Diz-se que um programa <strong>aprende</strong> com a experiência $E$, em relação a uma
+tarefa $T$ e uma medida de desempenho $P$, se seu desempenho em $T$, medido por
+$P$, melhora com a experiência $E$.</p>
+</blockquote>
+<p>No exemplo da patologia:</p>
+<ul>
+<li><strong>Tarefa $T$</strong>: classificar uma célula como tumoral ou saudável.</li>
+<li><strong>Experiência $E$</strong>: um conjunto de imagens já rotuladas.</li>
+<li><strong>Desempenho $P$</strong>: a proporção de células classificadas corretamente.</li>
+</ul>
+<p>Se ao ver mais imagens rotuladas o programa acerta mais, então ele está
+aprendendo no sentido técnico. Essa tríade $(T, E, P)$ é um bom checklist para
+qualquer projeto: se você não consegue nomear as três, ainda não formulou o
+problema.</p>
+<h2>Aprender = ajustar uma função</h2>
+<p>Em termos matemáticos, quase todo problema de aprendizagem supervisionada busca
+uma função $f$ que mapeia entradas em saídas:</p>
+<div class="math-display">$$
+\hat{y} = f(\mathbf{x}; \boldsymbol\theta)
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\mathbf{x}$ é o vetor de <strong>características</strong> (features) de um exemplo — por
+  exemplo, medidas extraídas de uma célula;</li>
+<li>$\hat{y}$ é a <strong>predição</strong> do modelo;</li>
+<li>$\boldsymbol\theta$ são os <strong>parâmetros</strong> que o algoritmo ajusta a partir dos
+  dados.</li>
+</ul>
+<p>"Aprender" é encontrar os valores de $\boldsymbol\theta$ que fazem $\hat{y}$ ficar
+o mais próximo possível dos valores verdadeiros $y$ nos exemplos observados —
+<strong>e</strong>, crucialmente, em exemplos que o modelo ainda não viu. Essa segunda parte,
+a <strong>generalização</strong>, é o que separa a aprendizagem de máquina de uma mera tabela
+de consulta, e é o tema central do curso.</p>
+<h2>Onde a ML se encaixa</h2>
+<p>Vale situar os termos que costumam ser confundidos:</p>
+<table>
+<thead>
+<tr>
+<th>Termo</th>
+<th>O que é</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inteligência Artificial (IA)</td>
+<td>Campo amplo de fazer máquinas resolverem tarefas "inteligentes".</td>
+</tr>
+<tr>
+<td>Aprendizagem de Máquina (ML)</td>
+<td>Subárea da IA que aprende padrões a partir de dados.</td>
+</tr>
+<tr>
+<td>Deep Learning</td>
+<td>Subárea da ML baseada em redes neurais profundas.</td>
+</tr>
+<tr>
+<td>Estatística</td>
+<td>Base teórica de boa parte da ML; foca em inferência e incerteza.</td>
+</tr>
+</tbody>
+</table>
+<p>A ML e a estatística clássica compartilham quase toda a matemática. A diferença
+é de ênfase: a estatística tradicional prioriza <strong>explicar</strong> e testar hipóteses
+sobre um mecanismo; a ML prioriza <strong>prever</strong> bem em dados novos, mesmo que o
+modelo seja difícil de interpretar. Nenhuma das duas é superior — elas respondem
+a perguntas diferentes.</p>
+<h2>Quando (não) usar ML</h2>
+<p>Aprendizagem de máquina não é a resposta para tudo. Ela brilha quando:</p>
+<ul>
+<li>existe um padrão a ser aprendido;</li>
+<li>esse padrão é difícil de expressar em regras explícitas;</li>
+<li>há <strong>dados</strong> suficientes e representativos.</li>
+</ul>
+<p>Se o problema pode ser resolvido com uma regra simples e exata (converter
+Celsius em Fahrenheit, por exemplo), um modelo de ML é só complicação
+desnecessária. E se não há dados de qualidade, nenhum algoritmo faz milagre — o
+lema <strong>"garbage in, garbage out"</strong> é impiedoso.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_introducao_ml.ipynb</code> demonstra na prática o ciclo mínimo de um
+projeto de ML:</p>
+<ul>
+<li>carregar o conjunto de dados Iris;</li>
+<li>treinar um classificador simples em poucas linhas de scikit-learn;</li>
+<li>medir o desempenho em dados que o modelo não viu.</li>
+</ul>
+<p>Abra-o no Colab para ver o "olá, mundo" da aprendizagem supervisionada.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Para o problema "prever se um paciente será readmitido no hospital em 30
+dias", identifique a tarefa $T$, a experiência $E$ e a medida de desempenho $P$.</p>
+<details><summary>Ver solução</summary>
+
+- **$T$**: classificar cada paciente que recebe alta como "será readmitido em 30
+  dias" ou "não será".
+- **$E$**: registros históricos de altas hospitalares, cada um com as
+  características do paciente e o desfecho real (readmitido ou não).
+- **$P$**: uma métrica de classificação adequada ao problema — como a AUC ou o
+  recall na classe "readmitido", já que deixar de identificar uma readmissão
+  costuma ser mais custoso do que um alarme falso.
+
+</details>
+
+<p><strong>2.</strong> Explique por que uma "tabela de consulta" que memoriza todos os exemplos
+de treino não é considerada aprendizagem de máquina útil.</p>
+<details><summary>Ver solução</summary>
+
+Uma tabela de consulta acerta 100% nos exemplos que memorizou, mas não tem
+nenhuma capacidade de responder a uma entrada **nova** que não esteja na tabela.
+O objetivo da ML é **generalizar** — capturar o padrão subjacente para prever bem
+em dados nunca vistos. Um modelo que só memoriza está, na verdade, no extremo do
+overfitting (tópico 4).
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Mitchell, T. (1997). <em>Machine Learning</em>. McGraw-Hill.</li>
+<li>Géron, A. (2019). <em>Hands-On Machine Learning with Scikit-Learn, Keras &amp; TensorFlow</em>, cap. 1.</li>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 1–2.</li>
+</ul>
+
+</article>
+<article id="01-fundamentos-02-tipos-aprendizagem-md" class="topic">
+<div class="topic-num">1.2</div>
+<h1 class="topic-title">Tipos de aprendizagem</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/02_tipos_aprendizagem.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Nem todo problema de aprendizagem tem a mesma forma. Antes de escolher um
+algoritmo, precisamos reconhecer que <strong>tipo</strong> de problema temos em mãos — isso
+determina quais métodos fazem sentido e como avaliar o resultado.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Escolher um algoritmo antes de entender o tipo de problema é como escolher o
+remédio antes do diagnóstico. Um mesmo conjunto de dados — digamos, medidas de
+pacientes — pode alimentar problemas completamente diferentes: prever um valor
+numérico, atribuir um rótulo, descobrir subgrupos ocultos. Cada um pertence a uma
+família distinta, com métricas e algoritmos próprios.</p>
+<p>A grande divisão é pela presença ou ausência de <strong>rótulos</strong> ($y$) nos dados de
+treino.</p>
+<h2>Aprendizagem supervisionada</h2>
+<p>Há um "professor": cada exemplo de treino vem acompanhado da resposta correta
+$y$. O modelo aprende a mapear $\mathbf{x} \mapsto y$. Divide-se em dois casos
+conforme a natureza de $y$:</p>
+<ul>
+<li><strong>Regressão</strong> — $y$ é <strong>numérico contínuo</strong>. Ex.: prever a carga viral, a
+  pressão arterial ou o preço de um imóvel.</li>
+<li><strong>Classificação</strong> — $y$ é <strong>categórico</strong>. Ex.: benigno vs. maligno (binária),
+  ou o tipo de célula entre várias (multiclasse).</li>
+</ul>
+<div class="math-display">$$
+\text{supervisionada:} \quad \mathcal{D} = \{(\mathbf{x}_1, y_1), \dots, (\mathbf{x}_n, y_n)\}
+$$</div>
+<p>É de longe a família mais usada na prática, e cobre boa parte deste curso
+(capítulos 2 a 4).</p>
+<h2>Aprendizagem não supervisionada</h2>
+<p>Não há rótulos: temos apenas os $\mathbf{x}$ e queremos <strong>descobrir estrutura</strong>.
+As duas tarefas principais são:</p>
+<ul>
+<li><strong>Clustering</strong> — agrupar exemplos parecidos. Ex.: encontrar subtipos de um
+  tumor a partir de perfis de expressão gênica, sem saber de antemão quantos
+  subtipos existem.</li>
+<li><strong>Redução de dimensionalidade</strong> — comprimir muitas variáveis em poucas,
+  preservando o essencial. Ex.: resumir 20.000 genes em 2 eixos para visualizar.</li>
+</ul>
+<div class="math-display">$$
+\text{não supervisionada:} \quad \mathcal{D} = \{\mathbf{x}_1, \dots, \mathbf{x}_n\}
+$$</div>
+<p>Como não há resposta certa, a avaliação é mais sutil — não dá para simplesmente
+"contar acertos". É o tema do capítulo 5.</p>
+<h2>Aprendizagem por reforço</h2>
+<p>Um <strong>agente</strong> aprende por tentativa e erro interagindo com um ambiente, guiado
+por <strong>recompensas</strong>. Não há um conjunto fixo de exemplos rotulados; o agente
+gera sua própria experiência e busca a sequência de ações que maximiza a
+recompensa acumulada. É o paradigma por trás de agentes que jogam xadrez ou
+controlam robôs. Foge do escopo deste curso introdutório, mas é bom saber que
+existe.</p>
+<h2>Um mapa das famílias</h2>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Tem rótulo $y$?</th>
+<th>Tarefa típica</th>
+<th>Exemplo biomédico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regressão</td>
+<td>Sim (numérico)</td>
+<td>prever valor</td>
+<td>estimar idade a partir de metilação do DNA</td>
+</tr>
+<tr>
+<td>Classificação</td>
+<td>Sim (categoria)</td>
+<td>prever rótulo</td>
+<td>diagnóstico benigno/maligno</td>
+</tr>
+<tr>
+<td>Clustering</td>
+<td>Não</td>
+<td>agrupar</td>
+<td>descobrir subtipos de doença</td>
+</tr>
+<tr>
+<td>Redução de dim.</td>
+<td>Não</td>
+<td>comprimir/visualizar</td>
+<td>mapa 2D de single-cell RNA-seq</td>
+</tr>
+<tr>
+<td>Reforço</td>
+<td>Recompensa</td>
+<td>decidir ações</td>
+<td>protocolo de dosagem adaptativa</td>
+</tr>
+</tbody>
+</table>
+<h2>Variações úteis na prática</h2>
+<p>O mundo real raramente é tão limpo. Alguns cenários intermediários aparecem o
+tempo todo:</p>
+<ul>
+<li><strong>Semi-supervisionada</strong> — poucos exemplos rotulados e muitos não rotulados.
+  Comum em medicina, onde rotular exige um especialista caro.</li>
+<li><strong>Auto-supervisionada</strong> — o rótulo é criado a partir dos próprios dados (ex.:
+  prever a parte oculta de uma sequência). É a base dos grandes modelos de
+  linguagem.</li>
+</ul>
+<p>Essas ideias são extensões das três famílias principais, não categorias
+separadas.</p>
+<h2>Como decidir</h2>
+<p>Um roteiro rápido para classificar seu problema:</p>
+<ol>
+<li>Você tem uma variável-alvo $y$ que quer prever? Se <strong>não</strong>, é não
+   supervisionado (clustering ou redução de dimensionalidade).</li>
+<li>Se <strong>sim</strong>, $y$ é um número contínuo? → <strong>regressão</strong>. É uma categoria? →
+   <strong>classificação</strong>.</li>
+<li>O objetivo é tomar decisões sequenciais que afetam o ambiente? → reforço.</li>
+</ol>
+<h2>No notebook</h2>
+<p>O notebook <code>02_tipos_aprendizagem.ipynb</code> mostra, com o mesmo conjunto de dados,
+como formular um problema de regressão, um de classificação e um de clustering —
+deixando claro que o <strong>tipo</strong> vem da pergunta, não dos dados em si.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Classifique cada problema como regressão, classificação ou clustering:
+(a) prever o número de dias de internação; (b) identificar se um e-mail é spam;
+(c) segmentar clientes de um plano de saúde em perfis de uso.</p>
+<details><summary>Ver solução</summary>
+
+(a) **Regressão** — o alvo (número de dias) é contínuo.
+(b) **Classificação** — o alvo é categórico (spam / não spam).
+(c) **Clustering** — não há rótulo; queremos descobrir grupos.
+
+</details>
+
+<p><strong>2.</strong> Um pesquisador tem 10.000 imagens de pele, mas só 200 foram avaliadas por
+um dermatologista. Que paradigma pode aproveitar as 9.800 imagens não rotuladas?</p>
+<details><summary>Ver solução</summary>
+
+**Aprendizagem semi-supervisionada** (ou auto-supervisionada). Ela combina os
+poucos exemplos rotulados com a grande massa de dados não rotulados — por
+exemplo, aprendendo uma boa representação das imagens sem rótulo e depois
+ajustando um classificador com os 200 exemplos rotulados.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 2.</li>
+<li>Géron, A. (2019). <em>Hands-On Machine Learning</em>, cap. 1.</li>
+<li>Sutton, R. &amp; Barto, A. (2018). <em>Reinforcement Learning: An Introduction</em>.</li>
+</ul>
+
+</article>
+<article id="01-fundamentos-03-representacao-dados-md" class="topic">
+<div class="topic-num">1.3</div>
+<h1 class="topic-title">Representação dos dados</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/03_representacao_dados.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Antes de qualquer algoritmo, os dados precisam ganhar uma forma que o modelo
+entenda. A maneira como representamos os exemplos e suas características determina
+metade do sucesso de um projeto — e é onde mora boa parte do trabalho real.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Modelos de aprendizagem de máquina não "veem" pacientes, imagens ou textos: eles
+veem <strong>números organizados em uma matriz</strong>. Um algoritmo brilhante alimentado com
+uma representação ruim produz resultados ruins. Por isso, entender a estrutura
+canônica dos dados — e o vocabulário que usamos para descrevê-la — é o primeiro
+passo prático.</p>
+<h2>A matriz de dados</h2>
+<p>A representação padrão em ML é uma tabela: <strong>linhas são exemplos, colunas são
+características</strong>.</p>
+<div class="math-display">$$
+\mathbf{X} \in \mathbb{R}^{n \times p}, \qquad \mathbf{y} \in \mathbb{R}^{n}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$n$ é o número de <strong>exemplos</strong> (amostras, observações, pacientes);</li>
+<li>$p$ é o número de <strong>características</strong> (features, variáveis, atributos);</li>
+<li>$\mathbf{X}$ é a <strong>matriz de características</strong> (uma linha $\mathbf{x}_i$ por
+  exemplo);</li>
+<li>$\mathbf{y}$ é o vetor de <strong>alvos</strong>, presente apenas na aprendizagem
+  supervisionada.</li>
+</ul>
+<p>O conjunto Iris, por exemplo, tem $n = 150$ flores e $p = 4$ características
+(comprimento e largura de sépala e pétala). Sua matriz é $150 \times 4$.</p>
+<h2>Tipos de características</h2>
+<p>Cada coluna tem uma natureza que dita como deve ser tratada:</p>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Descrição</th>
+<th>Exemplo</th>
+<th>Tratamento comum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Numérica contínua</td>
+<td>valores reais</td>
+<td>idade, glicose</td>
+<td>padronização</td>
+</tr>
+<tr>
+<td>Numérica discreta</td>
+<td>contagens</td>
+<td>nº de gestações</td>
+<td>usar como número</td>
+</tr>
+<tr>
+<td>Categórica nominal</td>
+<td>rótulos sem ordem</td>
+<td>tipo sanguíneo</td>
+<td>one-hot encoding</td>
+</tr>
+<tr>
+<td>Categórica ordinal</td>
+<td>rótulos com ordem</td>
+<td>estágio I/II/III</td>
+<td>codificação ordinal</td>
+</tr>
+<tr>
+<td>Binária</td>
+<td>dois valores</td>
+<td>sexo, fumante</td>
+<td>0/1</td>
+</tr>
+</tbody>
+</table>
+<p>Confundir esses tipos é um erro clássico: tratar "tipo sanguíneo" (A, B, AB, O)
+como o número 1, 2, 3, 4 faz o modelo acreditar que O é "maior" que A — uma
+ordem que não existe.</p>
+<h2>Codificando categorias</h2>
+<p>Como modelos exigem números, variáveis categóricas nominais precisam ser
+convertidas. A técnica padrão é o <strong>one-hot encoding</strong>: criar uma coluna binária
+para cada categoria.</p>
+<pre><code class="language-python">import pandas as pd
+
+df = pd.DataFrame({&quot;tipo_sanguineo&quot;: [&quot;A&quot;, &quot;O&quot;, &quot;AB&quot;, &quot;A&quot;]})
+pd.get_dummies(df, columns=[&quot;tipo_sanguineo&quot;])
+#    tipo_sanguineo_A  tipo_sanguineo_AB  tipo_sanguineo_O
+# 0                 1                  0                 0
+# 1                 0                  0                 1
+# 2                 0                  1                 0
+# 3                 1                  0                 0
+</code></pre>
+<p>Para variáveis <strong>ordinais</strong>, em que a ordem importa, usa-se uma codificação
+inteira que respeita a hierarquia (I → 1, II → 2, III → 3).</p>
+<h2>Exemplo, característica, alvo — o vocabulário</h2>
+<p>Vale fixar os sinônimos, porque livros e bibliotecas usam palavras diferentes
+para a mesma coisa:</p>
+<ul>
+<li><strong>Exemplo</strong> = amostra = observação = instância = uma linha de $\mathbf{X}$.</li>
+<li><strong>Característica</strong> = feature = variável = atributo = uma coluna de $\mathbf{X}$.</li>
+<li><strong>Alvo</strong> = target = rótulo = variável resposta = uma entrada de $\mathbf{y}$.</li>
+</ul>
+<h2>O caso $p > n$</h2>
+<p>Em muitos problemas biológicos temos <strong>mais características do que exemplos</strong> — um
+microarray pode medir 20.000 genes ($p$) em apenas 50 pacientes ($n$). Esse
+regime "gordo e curto" quebra a intuição clássica: há tantos graus de liberdade
+que o modelo consegue ajustar qualquer coisa, inclusive o ruído. É a <strong>maldição
+da dimensionalidade</strong>, e a razão pela qual regularização (capítulo 2) e redução
+de dimensionalidade (capítulo 5) se tornam essenciais.</p>
+<h2>Engenharia de características</h2>
+<p>Nem sempre as colunas mais úteis vêm prontas. <strong>Feature engineering</strong> é o ofício
+de criar características novas e mais informativas a partir das existentes: a
+razão entre dois exames, o índice de massa corporal a partir de peso e altura, o
+tempo desde o último evento. Uma boa característica muitas vezes vale mais do que
+um algoritmo sofisticado.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_representacao_dados.ipynb</code> monta uma matriz de dados a partir de
+um <code>DataFrame</code> do pandas, identifica os tipos de cada coluna, aplica one-hot
+encoding e discute o formato $\mathbf{X}, \mathbf{y}$ esperado pelo scikit-learn.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Você tem uma coluna "escolaridade" com os valores <em>fundamental</em>, <em>médio</em>,
+<em>superior</em>. Como codificá-la e por quê?</p>
+<details><summary>Ver solução</summary>
+
+É uma variável **ordinal**: existe uma ordem natural (fundamental < médio <
+superior). O ideal é uma **codificação ordinal** que preserve essa ordem, por
+exemplo fundamental → 0, médio → 1, superior → 2. Usar one-hot também funciona,
+mas descarta a informação de ordem, que pode ser útil.
+
+</details>
+
+<p><strong>2.</strong> Um conjunto de dados tem $n = 40$ pacientes e $p = 5000$ genes. Que
+problema esse formato antecipa e que estratégias o mitigam?</p>
+<details><summary>Ver solução</summary>
+
+Com $p \gg n$, o modelo tem graus de liberdade demais e tende a **overfittar**,
+ajustando ruído. Estratégias: **regularização** (Ridge/Lasso), **seleção de
+características** (manter apenas genes informativos) e **redução de
+dimensionalidade** (PCA) antes de treinar.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>VanderPlas, J. (2016). <em>Python Data Science Handbook</em>, cap. 5.</li>
+<li>Kuhn, M. &amp; Johnson, K. (2013). <em>Applied Predictive Modeling</em>, cap. 3.</li>
+<li>Documentação do scikit-learn: <em>Dataset transformations</em>.</li>
+</ul>
+
+</article>
+<article id="01-fundamentos-04-generalizacao-md" class="topic">
+<div class="topic-num">1.4</div>
+<h1 class="topic-title">Generalização: overfitting e underfitting</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/04_generalizacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O objetivo da aprendizagem de máquina não é acertar nos dados que já vimos, mas
+prever bem nos que ainda <strong>não</strong> vimos. Essa capacidade se chama generalização, e
+compreendê-la é o conceito mais importante de todo o curso.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Um estudante que decora as respostas da prova antiga vai mal na prova nova; um
+que entende a matéria vai bem em ambas. Modelos de ML enfrentam exatamente o
+mesmo dilema. Um modelo pode ter erro <strong>zero</strong> nos dados de treino e ainda assim
+ser inútil — porque memorizou o ruído em vez de aprender o sinal.</p>
+<blockquote>
+<p>O erro que importa não é o erro de treino, é o erro de <strong>generalização</strong>: o
+desempenho esperado em dados novos.</p>
+</blockquote>
+<h2>Erro de treino vs. erro de teste</h2>
+<p>Para medir generalização, separamos os dados: treinamos em uma parte e avaliamos
+em outra, <strong>nunca vista</strong> durante o treino.</p>
+<ul>
+<li><strong>Erro de treino</strong> — quão bem o modelo ajusta os dados que viu.</li>
+<li><strong>Erro de teste (ou de generalização)</strong> — quão bem ele se sai em dados novos.</li>
+</ul>
+<p>A distância entre os dois conta a história. Erro de treino baixo e erro de teste
+alto é o sintoma clássico de que algo deu errado.</p>
+<h2>Underfitting e overfitting</h2>
+<p>Existem dois modos de falhar, em direções opostas:</p>
+<ul>
+<li><strong>Underfitting</strong> (subajuste) — o modelo é <strong>simples demais</strong> para capturar o
+  padrão. Erra muito no treino <strong>e</strong> no teste. Ex.: ajustar uma reta a uma
+  relação claramente curva.</li>
+<li><strong>Overfitting</strong> (sobreajuste) — o modelo é <strong>complexo demais</strong> e se cola aos
+  detalhes e ao ruído do treino. Erra pouco no treino, mas muito no teste.</li>
+</ul>
+<p>Entre os dois extremos há um ponto ideal de complexidade — o "sweet spot".</p>
+<h2>O compromisso viés–variância</h2>
+<p>Essa tensão é formalizada pela decomposição do erro esperado em três parcelas:</p>
+<div class="math-display">$$
+\mathbb{E}\big[(y - \hat{f}(\mathbf{x}))^2\big] = \underbrace{\text{Viés}^2}_{\text{simplista}} + \underbrace{\text{Variância}}_{\text{instável}} + \underbrace{\sigma^2}_{\text{ruído irredutível}}
+$$</div>
+<ul>
+<li><strong>Viés</strong> — erro por suposições simplistas. Modelos rígidos (reta) têm viés
+  alto → underfitting.</li>
+<li><strong>Variância</strong> — sensibilidade do modelo a pequenas mudanças nos dados de
+  treino. Modelos flexíveis têm variância alta → overfitting.</li>
+<li><strong>Ruído $\sigma^2$</strong> — parte irredutível; nenhum modelo elimina.</li>
+</ul>
+<p>Reduzir o viés (mais complexidade) tende a <strong>aumentar</strong> a variância, e vice-versa.
+Aprender bem é equilibrar os dois.</p>
+<h2>Visualizando o efeito</h2>
+<p>O widget abaixo ajusta um polinômio de grau ajustável a alguns pontos ruidosos
+gerados a partir de uma função verdadeira (uma onda senoidal). Aumente o grau e
+observe: com grau 1 o modelo é rígido demais (<strong>underfitting</strong>); com grau alto
+ele passa por todos os pontos de treino, mas se contorce de forma absurda entre
+eles (<strong>overfitting</strong>), e o erro de teste dispara. O botão "nova amostra" sorteia
+outro conjunto de pontos — repare como o modelo de grau alto muda drasticamente,
+sinal de <strong>variância</strong> elevada.</p>
+<h2>Como controlar a complexidade</h2>
+<p>Diante do overfitting, temos várias alavancas:</p>
+<ol>
+<li><strong>Mais dados</strong> — a defesa mais eficaz; ruído se dilui, o sinal permanece.</li>
+<li><strong>Modelo mais simples</strong> — menos parâmetros, menor grau, menor profundidade.</li>
+<li><strong>Regularização</strong> — penalizar a complexidade durante o treino (capítulo 2).</li>
+<li><strong>Validação cruzada</strong> — para escolher a complexidade de forma honesta
+   (próximo tópico).</li>
+</ol>
+<p>Diante do underfitting, o remédio é o oposto: aumentar a capacidade do modelo,
+adicionar características ou reduzir a regularização.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_generalizacao.ipynb</code> reproduz a experiência do widget em Python:
+gera dados, ajusta polinômios de vários graus e plota as curvas de erro de treino
+e de teste em função do grau, tornando o "sweet spot" visível.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um modelo tem 99% de acurácia no treino e 62% no teste. Qual é o
+diagnóstico e o que fazer?</p>
+<details><summary>Ver solução</summary>
+
+O grande fosso entre treino (99%) e teste (62%) indica **overfitting**: o modelo
+memorizou o treino e não generaliza. Remédios: simplificar o modelo, adicionar
+regularização, obter mais dados ou reduzir o número de características.
+
+</details>
+
+<p><strong>2.</strong> Outro modelo tem 68% de acurácia no treino e 66% no teste. É um caso de
+overfitting?</p>
+<details><summary>Ver solução</summary>
+
+Não. Treino e teste estão próximos, então **não** há overfitting. Mas o
+desempenho é baixo nos dois — sintoma de **underfitting**. O modelo é simples
+demais; convém aumentar sua capacidade (mais características, modelo mais
+flexível, menos regularização).
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 2.</li>
+<li>Hastie, T. et al. (2009). <em>The Elements of Statistical Learning</em>, cap. 7.</li>
+<li>Géron, A. (2019). <em>Hands-On Machine Learning</em>, cap. 4.</li>
+</ul>
+<div class="widget" data-widget="wOverfit" data-id="overfit_1_4">
+  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
+  <canvas id="overfit_1_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="overfit_1_4-deg"><span class="ctrl-val" id="overfit_1_4-deg-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="overfit_1_4-redraw">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="overfit_1_4-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
+    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="overfit_1_4-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
+    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="overfit_1_4-diag">—</div><div class="sdesc">regime do modelo</div></div>
+  </div>
+</div>
+</article>
+<article id="01-fundamentos-05-validacao-cruzada-md" class="topic">
+<div class="topic-num">1.5</div>
+<h1 class="topic-title">Validação cruzada</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/05_validacao_cruzada.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Se o erro de teste é o que importa, como estimá-lo de forma confiável antes de
+colocar o modelo em produção? A validação cruzada é a resposta padrão — e uma das
+ferramentas mais úteis e mal compreendidas da prática de ML.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Separar os dados em treino e teste uma única vez tem um problema: a estimativa do
+erro depende de <strong>quais</strong> exemplos calharam de cair no teste. Com pouca sorte na
+divisão, você pode superestimar ou subestimar o desempenho e tomar decisões
+erradas — escolher o modelo pior achando que é o melhor.</p>
+<p>A validação cruzada resolve isso <strong>rodando a avaliação várias vezes</strong> com
+divisões diferentes e tirando a média, produzindo uma estimativa mais estável e
+usando cada exemplo tanto para treinar quanto para testar (em rodadas
+distintas).</p>
+<h2>A divisão em três</h2>
+<p>Antes da mecânica, o princípio inegociável: os dados usados para <strong>avaliar</strong> o
+modelo final não podem ter influenciado nenhuma decisão. Na prática, dividimos em
+três papéis:</p>
+<ul>
+<li><strong>Treino</strong> — ajusta os parâmetros $\boldsymbol\theta$.</li>
+<li><strong>Validação</strong> — escolhe hiperparâmetros e compara modelos.</li>
+<li><strong>Teste</strong> — usado <strong>uma única vez</strong>, no fim, para reportar o desempenho.</li>
+</ul>
+<p>Vazar informação do teste para as etapas anteriores (data leakage) é o pecado
+capital da metodologia, e superestima o desempenho de forma silenciosa.</p>
+<h2>k-fold cross-validation</h2>
+<p>A validação cruzada em $k$ dobras (k-fold) faz melhor uso dos dados de treino
+para a etapa de validação. O procedimento:</p>
+<ol>
+<li>Divida os dados em $k$ partes (folds) de tamanho parecido.</li>
+<li>Para cada rodada $i = 1, \dots, k$: treine nas outras $k-1$ partes e avalie na
+   parte $i$.</li>
+<li>A estimativa final é a <strong>média</strong> das $k$ avaliações.</li>
+</ol>
+<div class="math-display">$$
+\text{CV}_k = \frac{1}{k} \sum_{i=1}^{k} \mathcal{L}\big(\text{modelo treinado sem o fold } i,\ \text{fold } i\big)
+$$</div>
+<p>Cada exemplo é usado exatamente uma vez para validação e $k-1$ vezes para treino.
+Valores típicos são $k = 5$ ou $k = 10$.</p>
+<h2>Explore o esquema</h2>
+<p>O widget abaixo desenha a partição para o $k$ escolhido. Mova o slider e observe:
+com $k$ maior, cada fold de teste fica <strong>menor</strong> (mais dados para treinar em cada
+rodada), mas o número de modelos a treinar cresce — mais custo computacional. É o
+compromisso central na escolha de $k$.</p>
+<h2>Variantes importantes</h2>
+<p>O k-fold simples nem sempre basta. Conheça as adaptações:</p>
+<table>
+<thead>
+<tr>
+<th>Variante</th>
+<th>Quando usar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stratified k-fold</strong></td>
+<td>classificação — preserva a proporção das classes em cada fold</td>
+</tr>
+<tr>
+<td><strong>Leave-One-Out (LOO)</strong></td>
+<td>$k = n$; conjuntos muito pequenos</td>
+</tr>
+<tr>
+<td><strong>Group k-fold</strong></td>
+<td>quando exemplos vêm em grupos (ex.: várias amostras do mesmo paciente)</td>
+</tr>
+<tr>
+<td><strong>TimeSeriesSplit</strong></td>
+<td>dados temporais — nunca treinar com o futuro</td>
+</tr>
+</tbody>
+</table>
+<p>A stratified k-fold é o padrão em classificação: sem ela, um fold pode ficar sem
+nenhum exemplo de uma classe rara.</p>
+<h2>Cuidado com o vazamento</h2>
+<p>Toda etapa de pré-processamento que "aprende" algo dos dados — padronizar,
+selecionar características, imputar faltantes — deve ser ajustada <strong>apenas no
+treino de cada fold</strong>, nunca no conjunto todo antes de dividir. Caso contrário, a
+informação do fold de teste vaza para o treino e a estimativa fica otimista
+demais. A ferramenta certa para garantir isso é o <code>Pipeline</code> do scikit-learn.</p>
+<pre><code class="language-python">from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+modelo = make_pipeline(StandardScaler(), LogisticRegression())
+scores = cross_val_score(modelo, X, y, cv=5, scoring=&quot;accuracy&quot;)
+print(f&quot;Acurácia: {scores.mean():.3f} ± {scores.std():.3f}&quot;)
+</code></pre>
+<p>Como o <code>StandardScaler</code> está <strong>dentro</strong> do pipeline, ele é reajustado dentro de
+cada fold — sem vazamento.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>05_validacao_cruzada.ipynb</code> compara uma única divisão treino/teste
+com a validação cruzada em $k$ dobras no conjunto Iris, mostrando como a
+estimativa de erro varia entre divisões e por que a média do CV é mais confiável.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que a acurácia de uma única divisão 70/30 pode enganar, e como o
+k-fold ajuda?</p>
+<details><summary>Ver solução</summary>
+
+Uma única divisão dá **uma** estimativa, que depende de quais exemplos caíram no
+teste — pode ser sortuda ou azarada, especialmente com poucos dados. O k-fold
+avalia em $k$ divisões diferentes e tira a média, reduzindo a variância da
+estimativa e usando todos os dados para validação em algum momento.
+
+</details>
+
+<p><strong>2.</strong> Você padronizou todo o conjunto de dados <strong>antes</strong> de fazer a validação
+cruzada. Qual é o problema?</p>
+<details><summary>Ver solução</summary>
+
+Há **vazamento de dados**: a média e o desvio usados na padronização foram
+calculados incluindo os folds que servirão de teste. O modelo, portanto, "viu"
+estatísticas do teste. O correto é padronizar dentro de cada fold — na prática,
+colocando o `StandardScaler` dentro de um `Pipeline`.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 5.</li>
+<li>Hastie, T. et al. (2009). <em>The Elements of Statistical Learning</em>, cap. 7.</li>
+<li>Documentação do scikit-learn: <em>Cross-validation</em>.</li>
+</ul>
+<div class="widget" data-widget="wKfold" data-id="kfold_1_5">
+  <div class="widget-title">Demonstração — validação cruzada k-fold</div>
+  <canvas id="kfold_1_5-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de folds (k)</span><input type="range" min="2" max="10" step="1" value="5" id="kfold_1_5-k"><span class="ctrl-val" id="kfold_1_5-k-v">5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Modelos treinados</div><div class="sval" id="kfold_1_5-nmod" style="color:#3266ad;">—</div><div class="sdesc">um por rodada</div></div>
+    <div class="stat-card"><div class="slabel">Fração de teste</div><div class="sval" id="kfold_1_5-frac" style="color:#c0392b;">—</div><div class="sdesc">por rodada</div></div>
+  </div>
+</div>
+</article>
+<article id="01-fundamentos-06-metricas-regressao-md" class="topic">
+<div class="topic-num">1.6</div>
+<h1 class="topic-title">Métricas de avaliação — regressão</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/06_metricas_regressao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Treinar um modelo é só metade do trabalho; a outra metade é medir se ele é bom.
+Em problemas de regressão, isso significa quantificar o quão longe as previsões
+$\hat{y}$ ficam dos valores reais $y$ — e há mais de uma forma de fazer isso.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>"O modelo está bom?" é uma pergunta vazia sem uma métrica. Pior: métricas
+diferentes recompensam comportamentos diferentes. Uma métrica pode dizer que o
+modelo A é melhor e outra apontar o modelo B. Escolher a métrica certa é uma
+decisão de projeto, não um detalhe técnico — ela deve refletir o que <strong>custa</strong> um
+erro no seu problema.</p>
+<h2>Os resíduos</h2>
+<p>Tudo parte do <strong>resíduo</strong> de cada exemplo — a diferença entre o real e o
+previsto:</p>
+<div class="math-display">$$
+e_i = y_i - \hat{y}_i
+$$</div>
+<p>As métricas são apenas maneiras diferentes de resumir esses resíduos em um único
+número. A questão é como penalizar erros grandes versus pequenos.</p>
+<h2>MAE — erro absoluto médio</h2>
+<div class="math-display">$$
+\text{MAE} = \frac{1}{n} \sum_{i=1}^{n} |y_i - \hat{y}_i|
+$$</div>
+<p>A média do tamanho dos erros, na <strong>mesma unidade</strong> de $y$. Se você prevê pressão
+em mmHg, o MAE está em mmHg — fácil de comunicar. Trata todos os erros de forma
+proporcional e é <strong>robusta a outliers</strong>.</p>
+<h2>MSE e RMSE — erro quadrático</h2>
+<div class="math-display">$$
+\text{MSE} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2, \qquad
+\text{RMSE} = \sqrt{\text{MSE}}
+$$</div>
+<p>Ao elevar ao quadrado, o MSE <strong>pune erros grandes desproporcionalmente</strong>: um erro
+de 10 pesa 100 vezes mais que um erro de 1. Isso é desejável quando erros grandes
+são especialmente ruins. O RMSE tira a raiz para voltar à unidade original de
+$y$, o que o torna mais interpretável que o MSE.</p>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Unidade</th>
+<th>Sensível a outliers?</th>
+<th>Interpretação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MAE</td>
+<td>de $y$</td>
+<td>pouco</td>
+<td>erro típico</td>
+</tr>
+<tr>
+<td>RMSE</td>
+<td>de $y$</td>
+<td>muito</td>
+<td>penaliza erros grandes</td>
+</tr>
+<tr>
+<td>MSE</td>
+<td>de $y^2$</td>
+<td>muito</td>
+<td>usada na otimização</td>
+</tr>
+<tr>
+<td>$R^2$</td>
+<td>adimensional</td>
+<td>sim</td>
+<td>fração da variância explicada</td>
+</tr>
+</tbody>
+</table>
+<h2>$R^2$ — coeficiente de determinação</h2>
+<p>O $R^2$ compara o modelo a uma linha de base ingênua: prever sempre a média
+$\bar{y}$.</p>
+<div class="math-display">$$
+R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}
+$$</div>
+<ul>
+<li>$R^2 = 1$ → previsões perfeitas.</li>
+<li>$R^2 = 0$ → o modelo não é melhor que chutar a média.</li>
+<li>$R^2 < 0$ → o modelo é <strong>pior</strong> que chutar a média (sim, é possível!).</li>
+</ul>
+<p>Por ser adimensional, o $R^2$ permite comparar problemas em escalas diferentes,
+mas esconde a magnitude real dos erros — por isso costuma-se reportá-lo <strong>junto</strong>
+com o RMSE ou MAE.</p>
+<h2>Qual métrica escolher?</h2>
+<p>A pergunta guia é: <em>quanto custa cada tipo de erro no meu problema?</em></p>
+<ul>
+<li>Se todos os erros custam proporcionalmente ao seu tamanho → <strong>MAE</strong>.</li>
+<li>Se erros grandes são catastróficos (dosagem de medicamento) → <strong>RMSE/MSE</strong>.</li>
+<li>Se há <strong>outliers</strong> que você não quer que dominem a avaliação → <strong>MAE</strong>.</li>
+<li>Para comunicar "quanto da variação o modelo explica" → <strong>$R^2$</strong>.</li>
+</ul>
+<p>Nunca confie em uma métrica só. Reportar RMSE <strong>e</strong> $R^2$ dá uma visão mais
+honesta.</p>
+<h2>Em Python</h2>
+<pre><code class="language-python">from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
+
+y_true = np.array([3.0, 5.0, 2.5, 7.0])
+y_pred = np.array([2.8, 5.5, 2.0, 8.0])
+
+print(&quot;MAE :&quot;, mean_absolute_error(y_true, y_pred))
+print(&quot;RMSE:&quot;, np.sqrt(mean_squared_error(y_true, y_pred)))
+print(&quot;R²  :&quot;, r2_score(y_true, y_pred))
+</code></pre>
+<h2>No notebook</h2>
+<p>O notebook <code>06_metricas_regressao.ipynb</code> ajusta um modelo de regressão, calcula
+todas as métricas e mostra o efeito de um único outlier sobre RMSE versus MAE —
+deixando claro por que a escolha da métrica muda a conclusão.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um modelo de previsão de custo hospitalar tem MAE de R\$ 800 e RMSE de
+R\$ 3.500. O que a diferença entre os dois sugere?</p>
+<details><summary>Ver solução</summary>
+
+O RMSE muito maior que o MAE indica a presença de **alguns erros grandes**
+(outliers): como o RMSE eleva os erros ao quadrado, poucos erros enormes o
+inflam bastante, enquanto o MAE, que só toma o valor absoluto, permanece baixo.
+Vale investigar esses casos extremos.
+
+</details>
+
+<p><strong>2.</strong> É possível um modelo ter $R^2$ negativo? O que isso significa?</p>
+<details><summary>Ver solução</summary>
+
+Sim. $R^2 < 0$ significa que o modelo prevê **pior** do que simplesmente chutar a
+média $\bar{y}$ para todos os exemplos. Costuma indicar um modelo mal ajustado ou
+avaliado em dados muito diferentes dos de treino.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 3.</li>
+<li>Documentação do scikit-learn: <em>Metrics and scoring</em>.</li>
+<li>Willmott, C. &amp; Matsuura, K. (2005). <em>Advantages of the MAE over the RMSE</em>.</li>
+</ul>
+
+</article>
+<article id="01-fundamentos-07-metricas-classificacao-md" class="topic">
+<div class="topic-num">1.7</div>
+<h1 class="topic-title">Métricas de avaliação — classificação</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/07_metricas_classificacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Em classificação, "acurácia" é a primeira métrica que vem à mente — e uma das
+mais enganosas. Este tópico apresenta o conjunto de métricas que realmente
+descreve o desempenho de um classificador, sobretudo quando as classes são
+desbalanceadas.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>Suponha um teste para uma doença rara que atinge 1% da população. Um "modelo"
+que responde <strong>sempre "saudável"</strong> acerta 99% das vezes. A acurácia é altíssima —
+e o modelo é completamente inútil, pois nunca detecta um doente. Esse paradoxo,
+comum em medicina, mostra por que precisamos de métricas mais finas.</p>
+<h2>A matriz de confusão</h2>
+<p>Todo o vocabulário de classificação binária nasce de uma tabela $2 \times 2$ que
+cruza a previsão com a realidade:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Previu Positivo</th>
+<th>Previu Negativo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Real Positivo</strong></td>
+<td>VP (verdadeiro positivo)</td>
+<td>FN (falso negativo)</td>
+</tr>
+<tr>
+<td><strong>Real Negativo</strong></td>
+<td>FP (falso positivo)</td>
+<td>VN (verdadeiro negativo)</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>VP</strong> — doente identificado como doente. ✔</li>
+<li><strong>FN</strong> — doente classificado como saudável. ✘ (o mais perigoso em triagem)</li>
+<li><strong>FP</strong> — saudável classificado como doente. ✘ (alarme falso)</li>
+<li><strong>VN</strong> — saudável identificado como saudável. ✔</li>
+</ul>
+<p>Quase todas as métricas são razões entre essas quatro contagens.</p>
+<h2>As métricas fundamentais</h2>
+<div class="math-display">$$
+\text{Acurácia} = \frac{VP + VN}{VP + VN + FP + FN}
+$$</div>
+<p>Fração de acertos totais. Boa quando as classes são equilibradas; traiçoeira
+quando não são.</p>
+<div class="math-display">$$
+\text{Precisão} = \frac{VP}{VP + FP}
+$$</div>
+<p>Dos que o modelo <strong>disse</strong> serem positivos, quantos realmente eram. Alta precisão
+= poucos alarmes falsos.</p>
+<div class="math-display">$$
+\text{Recall (sensibilidade)} = \frac{VP}{VP + FN}
+$$</div>
+<p>Dos que <strong>eram</strong> positivos, quantos o modelo pegou. Alto recall = poucos casos
+perdidos.</p>
+<div class="math-display">$$
+\text{Especificidade} = \frac{VN}{VN + FP}
+$$</div>
+<p>Dos que eram negativos, quantos foram corretamente descartados.</p>
+<h2>O compromisso precisão–recall</h2>
+<p>Precisão e recall puxam em direções opostas. Um modelo que classifica tudo como
+positivo tem recall perfeito (não perde ninguém) mas precisão péssima (alarme
+falso constante). O oposto também vale. O ponto de equilíbrio depende do
+<strong>custo</strong> de cada erro:</p>
+<ul>
+<li>Triagem de câncer → priorize <strong>recall</strong> (não deixar passar um doente).</li>
+<li>Filtro de spam → priorize <strong>precisão</strong> (não jogar e-mail bom no lixo).</li>
+</ul>
+<p>O <strong>F1-score</strong> condensa os dois em um número, pela média harmônica:</p>
+<div class="math-display">$$
+F_1 = 2 \cdot \frac{\text{precisão} \cdot \text{recall}}{\text{precisão} + \text{recall}}
+$$</div>
+<p>A média harmônica só é alta quando <strong>ambos</strong> são altos — pune o desequilíbrio.</p>
+<h2>Limiar e a curva ROC</h2>
+<p>A maioria dos classificadores produz uma <strong>probabilidade</strong>, não um rótulo direto.
+Um <strong>limiar</strong> (padrão 0,5) converte a probabilidade em decisão. Baixar o limiar
+aumenta o recall e derruba a precisão; subi-lo faz o contrário.</p>
+<p>A <strong>curva ROC</strong> traça o recall (taxa de verdadeiros positivos) contra a taxa de
+falsos positivos ($1 -$ especificidade) para todos os limiares possíveis. A área
+sob a curva, a <strong>AUC</strong>, resume o poder discriminativo do modelo num único valor:</p>
+<ul>
+<li><strong>AUC = 1,0</strong> → separação perfeita.</li>
+<li><strong>AUC = 0,5</strong> → não melhor que o acaso.</li>
+</ul>
+<p>A AUC tem a vantagem de ser <strong>independente do limiar</strong> e do desbalanceamento,
+sendo a métrica preferida para comparar modelos em muitos contextos clínicos.</p>
+<h2>Em Python</h2>
+<pre><code class="language-python">from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
+
+print(confusion_matrix(y_true, y_pred))
+print(classification_report(y_true, y_pred))          # precisão, recall, F1
+print(&quot;AUC:&quot;, roc_auc_score(y_true, y_scores))        # y_scores = probabilidades
+</code></pre>
+<h2>No notebook</h2>
+<p>O notebook <code>07_metricas_classificacao.ipynb</code> treina um classificador num conjunto
+<strong>desbalanceado</strong>, mostra como a acurácia engana, calcula a matriz de confusão e
+o <code>classification_report</code>, e desenha a curva ROC variando o limiar.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um teste tem sensibilidade (recall) de 95% e especificidade de 80%. Numa
+população onde a doença é rara, o que esperar da precisão?</p>
+<details><summary>Ver solução</summary>
+
+A precisão será **baixa**. Com a doença rara, há muitos negativos reais; mesmo
+uma especificidade de 80% gera um grande número absoluto de **falsos positivos**,
+que dominam sobre os poucos verdadeiros positivos. Isso reduz a precisão
+$VP/(VP+FP)$. É o mesmo fenômeno do valor preditivo positivo baixo em rastreio de
+doenças raras.
+
+</details>
+
+<p><strong>2.</strong> Para um filtro de spam, você prioriza precisão ou recall? E para detectar
+fraude em transações?</p>
+<details><summary>Ver solução</summary>
+
+**Spam:** priorize **precisão** — um falso positivo (e-mail legítimo marcado como
+spam) é mais custoso do que deixar passar um spam ocasional.
+
+**Fraude:** em geral priorize **recall** — deixar passar uma fraude (falso
+negativo) costuma custar mais do que investigar um alarme falso. O equilíbrio
+exato depende dos custos reais de cada erro.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 4.</li>
+<li>Fawcett, T. (2006). <em>An introduction to ROC analysis</em>.</li>
+<li>Documentação do scikit-learn: <em>Metrics and scoring</em>.</li>
+</ul>
+
+</article>
+<article id="01-fundamentos-08-preprocessamento-md" class="topic">
+<div class="topic-num">1.8</div>
+<h1 class="topic-title">Pré-processamento de dados</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/08_preprocessamento.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Dados reais chegam sujos: em escalas incompatíveis, com valores faltando, com
+categorias em texto. O pré-processamento é a etapa — muitas vezes a mais
+demorada — que transforma esses dados brutos em algo que um modelo consegue
+aprender bem.</p>
+<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
+<h2>Por que isso importa</h2>
+<p>A frase mais repetida em ciência de dados é <em>"garbage in, garbage out"</em>. Nenhum
+algoritmo compensa dados mal preparados. Além disso, vários métodos têm
+<strong>suposições</strong> sobre a forma dos dados — k-NN e SVM assumem que todas as
+características estão na mesma escala; muitos modelos não aceitam valores
+faltantes. Ignorar isso não gera um erro claro: gera um modelo silenciosamente
+ruim.</p>
+<h2>Escalonamento de características</h2>
+<p>Considere prever risco cardíaco a partir de idade (20–80 anos) e colesterol
+(100–400 mg/dL). Métodos baseados em <strong>distância</strong> somam as diferenças ao
+quadrado; a variável de maior amplitude domina o cálculo, e a idade se torna
+irrelevante só por estar numa escala menor. A solução é colocar tudo na mesma
+escala.</p>
+<p><strong>Padronização (z-score)</strong> — centra na média 0 e desvio 1:</p>
+<div class="math-display">$$
+x' = \frac{x - \mu}{\sigma}
+$$</div>
+<p><strong>Normalização (min-max)</strong> — comprime para o intervalo $[0, 1]$:</p>
+<div class="math-display">$$
+x' = \frac{x - x_{\min}}{x_{\max} - x_{\min}}
+$$</div>
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Resultado</th>
+<th>Quando usar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>StandardScaler</code></td>
+<td>média 0, desvio 1</td>
+<td>padrão; bom com outliers moderados</td>
+</tr>
+<tr>
+<td><code>MinMaxScaler</code></td>
+<td>intervalo [0, 1]</td>
+<td>quando limites são conhecidos</td>
+</tr>
+<tr>
+<td><code>RobustScaler</code></td>
+<td>usa mediana/IQR</td>
+<td>quando há outliers fortes</td>
+</tr>
+</tbody>
+</table>
+<p>Modelos baseados em árvore (árvores, Random Forest, boosting) são <strong>imunes</strong> à
+escala e dispensam esse passo — mas escalonar não os prejudica.</p>
+<h2>Valores faltantes</h2>
+<p>Faltas são a regra em dados clínicos. As estratégias vão da mais simples à mais
+sofisticada:</p>
+<ul>
+<li><strong>Remover</strong> linhas ou colunas — só quando as faltas são poucas e aleatórias;
+  descartar dados desperdiça informação.</li>
+<li><strong>Imputação simples</strong> — preencher com a média, a mediana (numéricas) ou a moda
+  (categóricas).</li>
+<li><strong>Imputação por modelo</strong> — usar k-NN ou regressão para prever o valor ausente
+  a partir das outras variáveis.</li>
+</ul>
+<p>Um detalhe frequentemente esquecido: <em>o fato de um valor faltar pode ser
+informativo</em>. Às vezes vale criar uma coluna indicadora "estava ausente".</p>
+<h2>Codificação de categorias</h2>
+<p>Como visto no tópico 3, variáveis categóricas precisam virar números:
+<strong>one-hot</strong> para nominais, <strong>ordinal</strong> para as que têm ordem. O
+<code>OneHotEncoder</code> do scikit-learn faz isso de forma integrada aos pipelines.</p>
+<h2>A regra de ouro: ajustar só no treino</h2>
+<p>Todo transformador que <strong>aprende</strong> parâmetros dos dados — a média e o desvio do
+scaler, a mediana do imputador, as categorias do encoder — deve chamar <code>fit</code>
+<strong>apenas nos dados de treino</strong> e depois <code>transform</code> no treino e no teste. Ajustar
+no conjunto inteiro vaza informação do teste e infla o desempenho estimado
+(o mesmo vazamento discutido na validação cruzada).</p>
+<pre><code class="language-python">scaler.fit(X_train)          # aprende μ e σ SÓ do treino
+X_train_s = scaler.transform(X_train)
+X_test_s  = scaler.transform(X_test)   # aplica os mesmos μ, σ
+</code></pre>
+<h2>Pipelines: fazendo tudo certo automaticamente</h2>
+<p>A forma robusta de encadear pré-processamento e modelo é o <code>Pipeline</code>, que
+garante que cada passo seja ajustado apenas no treino de cada fold. Com o
+<code>ColumnTransformer</code>, aplicamos transformações diferentes a colunas numéricas e
+categóricas:</p>
+<pre><code class="language-python">from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+
+num = Pipeline([(&quot;imp&quot;, SimpleImputer(strategy=&quot;median&quot;)),
+                (&quot;sc&quot;,  StandardScaler())])
+cat = Pipeline([(&quot;imp&quot;, SimpleImputer(strategy=&quot;most_frequent&quot;)),
+                (&quot;oh&quot;,  OneHotEncoder(handle_unknown=&quot;ignore&quot;))])
+
+pre = ColumnTransformer([(&quot;num&quot;, num, colunas_num),
+                         (&quot;cat&quot;, cat, colunas_cat)])
+
+modelo = Pipeline([(&quot;pre&quot;, pre), (&quot;clf&quot;, LogisticRegression())])
+modelo.fit(X_train, y_train)     # todo o pré-processamento acontece sem vazamento
+</code></pre>
+<p>Esse padrão é a espinha dorsal de qualquer projeto sério de ML, e reaparece no
+exercício de pipeline completo (capítulo 7).</p>
+<h2>No notebook</h2>
+<p>O notebook <code>08_preprocessamento.ipynb</code> parte de um conjunto de dados sujo (com
+escalas diferentes, faltantes e categorias em texto), monta um <code>ColumnTransformer</code>
+completo e mostra o impacto da padronização no desempenho de um modelo baseado em
+distância.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Você vai treinar um k-NN em dados com idade (anos) e renda (milhares de
+reais). Por que padronizar é obrigatório aqui?</p>
+<details><summary>Ver solução</summary>
+
+O k-NN decide pela **distância** entre pontos. Sem padronizar, a renda (valores
+na casa dos milhares) domina completamente a distância, e a idade (dezenas)
+torna-se irrelevante — não porque seja menos importante, mas por estar numa
+escala menor. A padronização coloca as duas na mesma escala, dando a cada uma
+peso comparável.
+
+</details>
+
+<p><strong>2.</strong> Qual o erro em calcular a média para imputação usando todo o conjunto de
+dados antes de dividir em treino e teste?</p>
+<details><summary>Ver solução</summary>
+
+É **vazamento de dados**: a média usada para preencher os faltantes do treino
+incorpora informação dos exemplos de teste. O desempenho estimado fica
+otimista. O correto é ajustar o imputador (`fit`) apenas no treino — de
+preferência dentro de um `Pipeline`, que faz isso automaticamente em cada fold da
+validação cruzada.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Géron, A. (2019). <em>Hands-On Machine Learning</em>, cap. 2.</li>
+<li>Kuhn, M. &amp; Johnson, K. (2013). <em>Applied Predictive Modeling</em>, cap. 3.</li>
+<li>Documentação do scikit-learn: <em>Preprocessing data</em> e <em>Pipelines</em>.</li>
+</ul>
+
+</article>
+</div>
+<div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
+</main>
+
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

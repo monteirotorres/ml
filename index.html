@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Início — Aprendizagem de Máquina</title>
+<script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+
+<nav class="sidebar" id="sidebar">
+<a class="sidebar-brand" href="index.html">Aprendizagem de Máquina<span>IBCCF · UFRJ</span></a>
+<div class="nav-group">
+<div class="nav-group-title">1. Fundamentos</div>
+<ul>
+<li><a href="fundamentos.html#01-fundamentos-01-introducao-ml-md"><span class="n">1.1</span>O que é aprendizagem de máquina?</a></li>
+<li><a href="fundamentos.html#01-fundamentos-02-tipos-aprendizagem-md"><span class="n">1.2</span>Tipos de aprendizagem</a></li>
+<li><a href="fundamentos.html#01-fundamentos-03-representacao-dados-md"><span class="n">1.3</span>Representação dos dados</a></li>
+<li><a href="fundamentos.html#01-fundamentos-04-generalizacao-md"><span class="n">1.4</span>Generalização: overfitting e underfitting</a></li>
+<li><a href="fundamentos.html#01-fundamentos-05-validacao-cruzada-md"><span class="n">1.5</span>Validação cruzada</a></li>
+<li><a href="fundamentos.html#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
+<li><a href="fundamentos.html#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
+<li><a href="fundamentos.html#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">2. Regressão</div>
+<ul>
+<li><a href="regressao.html#02-regressao-01-regressao-linear-md"><span class="n">2.1</span>Regressão linear simples</a></li>
+<li><a href="regressao.html#02-regressao-02-regressao-multipla-md"><span class="n">2.2</span>Regressão linear múltipla</a></li>
+<li><a href="regressao.html#02-regressao-03-regressao-polinomial-md"><span class="n">2.3</span>Regressão polinomial</a></li>
+<li><a href="regressao.html#02-regressao-04-regularizacao-md"><span class="n">2.4</span>Regularização Ridge e Lasso</a></li>
+<li><a href="regressao.html#02-regressao-05-regressao-logistica-md"><span class="n">2.5</span>Regressão logística</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">3. Classificação</div>
+<ul>
+<li><a href="classificacao.html#03-classificacao-01-knn-md"><span class="n">3.1</span>k-Vizinhos mais próximos (k-NN)</a></li>
+<li><a href="classificacao.html#03-classificacao-02-arvores-decisao-md"><span class="n">3.2</span>Árvores de decisão</a></li>
+<li><a href="classificacao.html#03-classificacao-03-naive-bayes-md"><span class="n">3.3</span>Naive Bayes</a></li>
+<li><a href="classificacao.html#03-classificacao-04-svm-md"><span class="n">3.4</span>Máquinas de vetores de suporte (SVM)</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">4. Ensembles e Boosting</div>
+<ul>
+<li><a href="ensembles.html#04-ensembles-01-random-forest-md"><span class="n">4.1</span>Bagging e Random Forests</a></li>
+<li><a href="ensembles.html#04-ensembles-02-gradient-boosting-md"><span class="n">4.2</span>Gradient Boosting</a></li>
+<li><a href="ensembles.html#04-ensembles-03-xgboost-md"><span class="n">4.3</span>XGBoost e LightGBM</a></li>
+<li><a href="ensembles.html#04-ensembles-04-stacking-md"><span class="n">4.4</span>Stacking e combinação de modelos</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
+<ul>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">6. Redes Neurais</div>
+<ul>
+<li><a href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><span class="n">6.1</span>Perceptron e redes neurais simples</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">7. Exercícios</div>
+<ul>
+<li><a href="exercicios.html#07-exercicios-01-regressao-md"><span class="n">7.1</span>Regressão e métricas</a></li>
+<li><a href="exercicios.html#07-exercicios-02-classificacao-md"><span class="n">7.2</span>Classificação</a></li>
+<li><a href="exercicios.html#07-exercicios-03-validacao-md"><span class="n">7.3</span>Validação e seleção de modelos</a></li>
+<li><a href="exercicios.html#07-exercicios-04-clustering-pca-md"><span class="n">7.4</span>Clustering e PCA</a></li>
+<li><a href="exercicios.html#07-exercicios-05-pipeline-md"><span class="n">7.5</span>Pipeline completo</a></li>
+</ul></div>
+</nav>
+<main class="content"><div class="content-inner">
+<div class="hero">
+<h1 class="hero-title">Aprendizagem de Máquina</h1>
+<p class="hero-sub">IBCCF · UFRJ</p>
+<p class="hero-desc">Curso introdutório com foco intuitivo, demonstrações interativas e notebooks em Python (scikit-learn, pandas, matplotlib). Navegue pelo menu à esquerda.</p>
+<p class="hero-authors">Pedro Torres</p>
+</div>
+<div class="cards">
+<a class="card" href="fundamentos.html#01-fundamentos-01-introducao-ml-md"><div class="cnum">1</div><div class="ctitle">Fundamentos</div><div class="cdesc">O que é ML, tipos de aprendizagem, overfitting, validação cruzada e métricas.</div><div class="ccount">8 tópicos</div></a>
+<a class="card" href="regressao.html#02-regressao-01-regressao-linear-md"><div class="cnum">2</div><div class="ctitle">Regressão</div><div class="cdesc">Regressão linear, polinomial, regularização Ridge/Lasso e regressão logística.</div><div class="ccount">5 tópicos</div></a>
+<a class="card" href="classificacao.html#03-classificacao-01-knn-md"><div class="cnum">3</div><div class="ctitle">Classificação</div><div class="cdesc">k-NN, árvores de decisão, SVM e Naive Bayes.</div><div class="ccount">4 tópicos</div></a>
+<a class="card" href="ensembles.html#04-ensembles-01-random-forest-md"><div class="cnum">4</div><div class="ctitle">Ensembles e Boosting</div><div class="cdesc">Random Forests, Gradient Boosting, XGBoost e stacking.</div><div class="ccount">4 tópicos</div></a>
+<a class="card" href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><div class="cnum">5</div><div class="ctitle">Aprendizagem Não Supervisionada</div><div class="cdesc">k-means, clustering hierárquico, PCA, t-SNE e UMAP.</div><div class="ccount">4 tópicos</div></a>
+<a class="card" href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><div class="cnum">6</div><div class="ctitle">Redes Neurais</div><div class="cdesc">Perceptron, backpropagation, funções de ativação e deep learning.</div><div class="ccount">4 tópicos</div></a>
+<a class="card" href="exercicios.html#07-exercicios-01-regressao-md"><div class="cnum">7</div><div class="ctitle">Exercícios</div><div class="cdesc">Exercícios resolvidos por tema, com soluções em Python.</div><div class="ccount">5 tópicos</div></a>
+</div>
+<div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
+</main>
+
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ensembles e Boosting — Aprendizagem de Máquina</title>
+<script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+<button class="theme-toggle" id="themeToggle" aria-label="Alternar tema" title="Alternar tema claro/escuro"><span class="theme-icon"></span></button>
+
+<nav class="sidebar" id="sidebar">
+<a class="sidebar-brand" href="index.html">Aprendizagem de Máquina<span>IBCCF · UFRJ</span></a>
+<div class="nav-group">
+<div class="nav-group-title">1. Fundamentos</div>
+<ul>
+<li><a href="fundamentos.html#01-fundamentos-01-introducao-ml-md"><span class="n">1.1</span>O que é aprendizagem de máquina?</a></li>
+<li><a href="fundamentos.html#01-fundamentos-02-tipos-aprendizagem-md"><span class="n">1.2</span>Tipos de aprendizagem</a></li>
+<li><a href="fundamentos.html#01-fundamentos-03-representacao-dados-md"><span class="n">1.3</span>Representação dos dados</a></li>
+<li><a href="fundamentos.html#01-fundamentos-04-generalizacao-md"><span class="n">1.4</span>Generalização: overfitting e underfitting</a></li>
+<li><a href="fundamentos.html#01-fundamentos-05-validacao-cruzada-md"><span class="n">1.5</span>Validação cruzada</a></li>
+<li><a href="fundamentos.html#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
+<li><a href="fundamentos.html#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
+<li><a href="fundamentos.html#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">2. Regressão</div>
+<ul>
+<li><a href="regressao.html#02-regressao-01-regressao-linear-md"><span class="n">2.1</span>Regressão linear simples</a></li>
+<li><a href="regressao.html#02-regressao-02-regressao-multipla-md"><span class="n">2.2</span>Regressão linear múltipla</a></li>
+<li><a href="regressao.html#02-regressao-03-regressao-polinomial-md"><span class="n">2.3</span>Regressão polinomial</a></li>
+<li><a href="regressao.html#02-regressao-04-regularizacao-md"><span class="n">2.4</span>Regularização Ridge e Lasso</a></li>
+<li><a href="regressao.html#02-regressao-05-regressao-logistica-md"><span class="n">2.5</span>Regressão logística</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">3. Classificação</div>
+<ul>
+<li><a href="classificacao.html#03-classificacao-01-knn-md"><span class="n">3.1</span>k-Vizinhos mais próximos (k-NN)</a></li>
+<li><a href="classificacao.html#03-classificacao-02-arvores-decisao-md"><span class="n">3.2</span>Árvores de decisão</a></li>
+<li><a href="classificacao.html#03-classificacao-03-naive-bayes-md"><span class="n">3.3</span>Naive Bayes</a></li>
+<li><a href="classificacao.html#03-classificacao-04-svm-md"><span class="n">3.4</span>Máquinas de vetores de suporte (SVM)</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">4. Ensembles e Boosting</div>
+<ul>
+<li><a class="nav-link" data-target="04-ensembles-01-random-forest-md" href="#04-ensembles-01-random-forest-md"><span class="n">4.1</span>Bagging e Random Forests</a></li>
+<li><a class="nav-link" data-target="04-ensembles-02-gradient-boosting-md" href="#04-ensembles-02-gradient-boosting-md"><span class="n">4.2</span>Gradient Boosting</a></li>
+<li><a class="nav-link" data-target="04-ensembles-03-xgboost-md" href="#04-ensembles-03-xgboost-md"><span class="n">4.3</span>XGBoost e LightGBM</a></li>
+<li><a class="nav-link" data-target="04-ensembles-04-stacking-md" href="#04-ensembles-04-stacking-md"><span class="n">4.4</span>Stacking e combinação de modelos</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
+<ul>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">6. Redes Neurais</div>
+<ul>
+<li><a href="redes_neurais.html#06-redes-neurais-01-perceptron-md"><span class="n">6.1</span>Perceptron e redes neurais simples</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+</ul></div>
+<div class="nav-group">
+<div class="nav-group-title">7. Exercícios</div>
+<ul>
+<li><a href="exercicios.html#07-exercicios-01-regressao-md"><span class="n">7.1</span>Regressão e métricas</a></li>
+<li><a href="exercicios.html#07-exercicios-02-classificacao-md"><span class="n">7.2</span>Classificação</a></li>
+<li><a href="exercicios.html#07-exercicios-03-validacao-md"><span class="n">7.3</span>Validação e seleção de modelos</a></li>
+<li><a href="exercicios.html#07-exercicios-04-clustering-pca-md"><span class="n">7.4</span>Clustering e PCA</a></li>
+<li><a href="exercicios.html#07-exercicios-05-pipeline-md"><span class="n">7.5</span>Pipeline completo</a></li>
+</ul></div>
+</nav>
+<main class="content"><div class="content-inner">
+<div class="page-eyebrow">4. Ensembles e Boosting</div>
+<article id="04-ensembles-01-random-forest-md" class="topic">
+<div class="topic-num">4.1</div>
+<h1 class="topic-title">Bagging e Random Forests</h1>
+<p>Bagging (bootstrap aggregating) treina muitos modelos em reamostras dos dados e combina suas previsões, reduzindo a variância. A Random Forest aplica bagging a árvores de decisão, acrescentando aleatoriedade na escolha das variáveis de cada divisão.</p>
+<p>O resultado é um dos algoritmos mais robustos e usados na prática: pouca necessidade de ajuste, resistência a overfitting e uma medida natural de importância das variáveis. Aplicaremos a um problema de diagnóstico com muitos preditores.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bootstrap e agregação</td>
+<td>por que a média reduz a variância</td>
+</tr>
+<tr>
+<td>Importância de variáveis</td>
+<td>ranqueamento de preditores</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="04-ensembles-02-gradient-boosting-md" class="topic">
+<div class="topic-num">4.2</div>
+<h1 class="topic-title">Gradient Boosting</h1>
+<p>Boosting constrói modelos em sequência, cada um corrigindo os erros do anterior. No Gradient Boosting, cada nova árvore é ajustada aos resíduos (gradientes) do modelo acumulado, reduzindo o viés progressivamente.</p>
+<p>É a família por trás de muitos resultados campeões em competições com dados tabulares. Veremos a intuição do ajuste sequencial, o papel da taxa de aprendizado e o risco de overfitting quando há árvores demais.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ajuste aos resíduos</td>
+<td>boosting passo a passo</td>
+</tr>
+<tr>
+<td>Taxa de aprendizado</td>
+<td>compromisso entre velocidade e overfitting</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="04-ensembles-03-xgboost-md" class="topic">
+<div class="topic-num">4.3</div>
+<h1 class="topic-title">XGBoost e LightGBM</h1>
+<p>XGBoost e LightGBM são implementações otimizadas de gradient boosting que dominam aplicações com dados tabulares. Elas adicionam regularização, tratamento nativo de valores faltantes e paralelização, ganhando velocidade e desempenho.</p>
+<p>Compararemos as duas bibliotecas, entenderemos os principais hiperparâmetros (profundidade, número de árvores, <code>learning_rate</code>, subamostragem) e discutiremos estratégias práticas de ajuste sem cair em overfitting.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>XGBoost × LightGBM</td>
+<td>diferenças de crescimento das árvores</td>
+</tr>
+<tr>
+<td>Ajuste de hiperparâmetros</td>
+<td>grid e early stopping</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+<article id="04-ensembles-04-stacking-md" class="topic">
+<div class="topic-num">4.4</div>
+<h1 class="topic-title">Stacking e combinação de modelos</h1>
+<p>Stacking combina modelos heterogêneos treinando um meta-modelo sobre as previsões dos modelos de base. Em vez de escolher o melhor algoritmo, aprendemos a melhor forma de misturá-los.</p>
+<p>Veremos a diferença entre voting (média/maioria) e stacking, como evitar vazamento de dados usando previsões out-of-fold e quando o esforço adicional compensa o ganho de desempenho.</p>
+<blockquote>
+<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
+slides em breve. Abaixo, o que o material cobrirá.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>O notebook cobrirá</th>
+<th>Detalhe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Voting × stacking</td>
+<td>combinação simples vs. aprendida</td>
+</tr>
+<tr>
+<td>Previsões out-of-fold</td>
+<td>evitando vazamento no meta-modelo</td>
+</tr>
+</tbody>
+</table>
+
+</article>
+</div>
+<div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
+</main>
+
+<script src="assets/widgets.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:document.documentElement.dataset.theme==='dark'?'dark':'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fundamentos · ML / IBCCF</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<style>
+/* ── Paleta ───────────────────────────────────────────────────────────────── */
+:root {
+  --bg:       #F3ECDF;   /* fundo do viewport       */
+  --paper:    #FFFDF8;   /* fundo dos slides        */
+  --ink:      #1A1A1A;   /* texto principal         */
+  --blue:     #3266AD;   /* cor primária            */
+  --red:      #C0392B;   /* destaque vermelho       */
+  --green:    #1A7A4A;   /* destaque verde          */
+  --muted:    #6B6457;   /* texto secundário        */
+  --line:     #C9BFA9;   /* bordas                  */
+  --tint:     #ECF1F8;   /* fundo de caixas de dica */
+  --blue-f:   #DCE7F4;   /* fill azul claro         */
+  --red-f:    #F6DEDB;   /* fill vermelho claro     */
+  --green-f:  #DCEFE4;   /* fill verde claro        */
+  --grey-f:   #ECE4D3;   /* fill cinza claro        */
+  --orange-f: #FDEAD0;
+  --purple-f: #E8DAEF;
+  --yellow-f: #FCF3CF;
+}
+
+/* ── Base reveal ──────────────────────────────────────────────────────────── */
+.reveal-viewport { background: var(--bg); }
+.reveal .slides  { font-family: 'Georgia', Georgia, serif; }
+
+.reveal .slides section {
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+  padding: 0;
+  top: 0 !important;
+  height: 720px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.reveal h1, .reveal h2, .reveal h3,
+.reveal p,  .reveal ul, .reveal ol, .reveal li {
+  margin: 0; padding: 0;
+  text-shadow: none; text-transform: none;
+  font-family: 'Georgia', Georgia, serif;
+  color: var(--ink);
+}
+
+/* ── Cabeçalho do slide ───────────────────────────────────────────────────── */
+.sh { padding: 26px 58px 0; }
+
+.eyebrow {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 5px;
+  display: block;
+}
+.sh h2 {
+  font-size: 33px;
+  font-weight: bold;
+  line-height: 1.18;
+  margin-bottom: 9px;
+  color: var(--ink);
+}
+.sep { width: 72px; height: 4px; background: var(--blue); margin-bottom: 15px; }
+
+/* ── Corpo ─────────────────────────────────────────────────────────────────── */
+.sb {
+  padding: 0 58px 14px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Bullets ──────────────────────────────────────────────────────────────── */
+.reveal .slides section ul { list-style: none; font-size: 20px; line-height: 1.45; margin-left: 0; }
+.reveal .slides section ul li { position: relative; padding-left: 1.1em; margin-bottom: 8px; }
+.reveal .slides section ul li::before { content: "•"; position: absolute; left: 0; color: var(--blue); }
+.reveal .slides section ul li.sub { font-size: 18px; color: var(--muted); margin-bottom: 5px; }
+.reveal .slides section ul li.sub::before { content: "–"; color: var(--muted); }
+
+/* ── Caixa de exemplo ─────────────────────────────────────────────────────── */
+.ex {
+  background: var(--tint);
+  border-radius: 7px;
+  padding: 11px 20px 13px;
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.ex-lbl {
+  display: block;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+/* ── Caixa de atenção ─────────────────────────────────────────────────────── */
+.warn {
+  background: var(--red-f);
+  border-left: 4px solid var(--red);
+  border-radius: 0 7px 7px 0;
+  padding: 11px 20px 13px;
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* ── Card de fórmula ──────────────────────────────────────────────────────── */
+.fcard {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 24px;
+  text-align: center;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  margin: 12px 0;
+}
+
+/* ── Área de imagem ───────────────────────────────────────────────────────── */
+.ia {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 40px 0;
+  flex: 1;
+  min-height: 0;
+}
+.ia img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.icap { text-align: center; font-size: 13px; color: var(--muted); font-style: italic; padding: 4px 58px 0; line-height: 1.3; }
+
+/* ── Dois colunas ─────────────────────────────────────────────────────────── */
+.tcol {
+  display: flex;
+  gap: 28px;
+  padding: 0 50px;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+}
+.tcol-b { flex: 0 0 46%; }
+.tcol-i { flex: 1; display: flex; align-items: center; justify-content: center; }
+.tcol-i img { max-width: 100%; max-height: 460px; object-fit: contain; }
+
+/* ── Slide de seção ───────────────────────────────────────────────────────── */
+.reveal .slides section.sec {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 80px !important;
+}
+.pnum { font-family: 'Consolas', monospace; font-size: 19px; color: var(--blue); margin-bottom: 8px; display: block; }
+.sec h1 { font-size: 50px; font-weight: bold; line-height: 1.15; margin-bottom: 10px; }
+.sec .sub { font-size: 19px; color: var(--muted); font-style: italic; }
+
+/* ── Slide de título ──────────────────────────────────────────────────────── */
+.reveal .slides section.ttl {
+  display: flex; flex-direction: column; justify-content: center;
+  align-items: center; text-align: center; padding: 0 80px !important;
+}
+.ttl h1 { font-size: 56px; font-weight: bold; line-height: 1.1; margin-bottom: 14px; }
+.ttl .inst { font-family: 'Consolas', monospace; font-size: 15px; color: var(--muted); margin-bottom: 8px; display: block; }
+.ttl .auth { font-size: 19px; }
+
+/* ── Tabela ───────────────────────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 16.5px; }
+.tbl th { background: var(--ink); color: var(--paper); padding: 8px 13px; font-weight: bold; text-align: left; font-family: 'Georgia', serif; }
+.tbl td { padding: 7px 13px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.35; }
+.tbl tr:nth-child(odd)  td { background: #ECE4D3; }
+.tbl tr:nth-child(even) td { background: var(--paper); }
+.ok  { color: var(--green); font-weight: bold; }
+.no  { color: var(--red);   font-weight: bold; }
+
+/* ── Botão Colab ──────────────────────────────────────────────────────────── */
+.colab-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  background: #F9AB00; color: #1A1A1A;
+  padding: 10px 20px; border-radius: 6px;
+  font-size: 16px; font-weight: bold; text-decoration: none; margin-top: 12px;
+  font-family: 'Georgia', serif;
+}
+.colab-note { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 6px; display: block; }
+
+/* ── Número do slide ──────────────────────────────────────────────────────── */
+.reveal .slide-number { font-family: 'Consolas', monospace; font-size: 11px; background: transparent; color: var(--muted); }
+.reveal .progress { color: var(--blue); }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ════════ TÍTULO ════════ -->
+<section class="ttl">
+  <h1>Fundamentos de<br>Aprendizagem de Máquina</h1>
+  <span class="inst">Aprendizagem de Máquina · IBCCF / UFRJ</span>
+  <p class="auth">Pedro Torres</p>
+</section>
+
+<!-- ════════ ROTEIRO ════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Capítulo 1</span>
+    <h2>O que vamos ver</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li><strong>O que é ML</strong> — aprender padrões a partir de dados, não de regras</li>
+      <li><strong>Tipos de aprendizagem</strong> — supervisionada, não supervisionada, reforço</li>
+      <li><strong>Generalização</strong> — overfitting, underfitting e o compromisso viés–variância</li>
+      <li><strong>Validação cruzada</strong> — estimar o desempenho de forma honesta</li>
+      <li><strong>Métricas</strong> — de regressão e de classificação</li>
+      <li><strong>Pré-processamento</strong> — escala, faltantes e pipelines sem vazamento</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ════════ PARTE 1 ════════ -->
+<section class="sec">
+  <span class="pnum">Parte 1</span>
+  <div class="sep"></div>
+  <h1>O que é aprendizagem de máquina?</h1>
+  <p class="sub">Programar com dados, não com regras</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 1 · O que é ML</span>
+    <h2>Uma inversão de lógica</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/ml_vs_prog.png" alt="Programação clássica versus aprendizagem de máquina">
+  </div>
+  <p class="icap">Na programação clássica escrevemos as regras; em ML, o modelo as descobre a partir de dados e respostas.</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 1 · O que é ML</span>
+    <h2>Definição operacional (Mitchell, 1997)</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Um programa <strong>aprende</strong> com a experiência $E$, em uma tarefa $T$, medido por $P$, se seu desempenho em $T$ melhora com $E$.</li>
+    </ul>
+    <div class="ex">
+      <span class="ex-lbl">Exemplo — diagnóstico por imagem</span>
+      <strong>T</strong>: classificar célula (tumoral/saudável) &nbsp;·&nbsp;
+      <strong>E</strong>: imagens já rotuladas &nbsp;·&nbsp;
+      <strong>P</strong>: proporção de acertos em imagens novas.
+    </div>
+    <ul>
+      <li class="sub">Se não consegue nomear $T$, $E$ e $P$, o problema ainda não está formulado.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 1 · O que é ML</span>
+    <h2>Aprender = ajustar uma função</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Buscamos uma função que mapeia características em predições:</li>
+    </ul>
+    <div class="fcard">
+      $$\hat{y} = f(\mathbf{x}; \boldsymbol\theta)$$
+    </div>
+    <ul>
+      <li class="sub">$\mathbf{x}$ = vetor de características &nbsp;·&nbsp; $\hat{y}$ = predição &nbsp;·&nbsp; $\boldsymbol\theta$ = parâmetros ajustados</li>
+      <li>Aprender é achar $\boldsymbol\theta$ que aproxima $\hat{y}$ de $y$ — <strong>e generaliza</strong> para dados novos.</li>
+    </ul>
+    <div class="warn">
+      Memorizar os dados de treino não é aprender. O que importa é o desempenho em dados <strong>nunca vistos</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PARTE 2 ════════ -->
+<section class="sec">
+  <span class="pnum">Parte 2</span>
+  <div class="sep"></div>
+  <h1>Tipos de aprendizagem</h1>
+  <p class="sub">A pergunta define a família do problema</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 2 · Tipos</span>
+    <h2>Um mapa das famílias</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/tipos_aprendizagem.png" alt="Mapa dos tipos de aprendizagem">
+  </div>
+  <p class="icap">A grande divisão é pela presença (supervisionada) ou ausência (não supervisionada) de rótulos.</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 2 · Tipos</span>
+    <h2>Como identificar seu problema</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb" style="padding-top:0">
+    <table class="tbl">
+      <thead><tr>
+        <th style="width:26%">Tipo</th>
+        <th style="width:34%">Tarefa</th>
+        <th>Exemplo biomédico</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Regressão</td><td>prever valor contínuo</td><td>idade por metilação do DNA</td></tr>
+        <tr><td>Classificação</td><td>prever categoria</td><td>diagnóstico benigno / maligno</td></tr>
+        <tr><td>Clustering</td><td>agrupar sem rótulo</td><td>descobrir subtipos de doença</td></tr>
+        <tr><td>Redução de dim.</td><td>comprimir / visualizar</td><td>mapa 2D de single-cell RNA-seq</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ════════ PARTE 3 ════════ -->
+<section class="sec">
+  <span class="pnum">Parte 3</span>
+  <div class="sep"></div>
+  <h1>Generalização</h1>
+  <p class="sub">O conceito mais importante do curso</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 3 · Generalização</span>
+    <h2>Underfitting × overfitting</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/overfit_panels.png" alt="Três regimes de ajuste polinomial">
+  </div>
+  <p class="icap">Mesmos pontos, três graus: simples demais (esquerda), equilibrado (centro), complexo demais (direita).</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 3 · Generalização</span>
+    <h2>O compromisso viés–variância</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="tcol">
+    <div class="tcol-b">
+      <ul style="font-size:19px">
+        <li><strong>Viés</strong> alto → modelo simplista → underfitting</li>
+        <li><strong>Variância</strong> alta → modelo instável → overfitting</li>
+        <li class="sub">$\mathbb{E}[(y-\hat f)^2] = \text{Viés}^2 + \text{Var} + \sigma^2$</li>
+        <li>Reduzir um tende a aumentar o outro</li>
+      </ul>
+    </div>
+    <div class="tcol-i">
+      <img src="assets/slides/fundamentos/bias_variance.png" alt="Curvas de viés-variância">
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 3 · Validação</span>
+    <h2>Validação cruzada k-fold</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/validacao_cruzada.png" alt="Diagrama de k-fold com k=5">
+  </div>
+  <p class="icap">Cada exemplo é usado uma vez para teste e $k-1$ vezes para treino; a estimativa final é a média das rodadas.</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 3 · Validação</span>
+    <h2>A regra inegociável</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Dados de <strong>teste</strong> não podem influenciar nenhuma decisão do modelo</li>
+      <li>Pré-processamento (escala, imputação) é ajustado <strong>só no treino</strong> de cada fold</li>
+    </ul>
+    <div class="warn">
+      <strong>Vazamento de dados</strong> (data leakage) é o pecado capital: infla o desempenho silenciosamente. Use <code>Pipeline</code> para evitá-lo.
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PARTE 4 ════════ -->
+<section class="sec">
+  <span class="pnum">Parte 4</span>
+  <div class="sep"></div>
+  <h1>Métricas de avaliação</h1>
+  <p class="sub">"O modelo está bom?" depende da métrica</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 4 · Métricas · Regressão</span>
+    <h2>Resumindo os resíduos</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <div class="fcard">
+      $$\text{MAE} = \tfrac{1}{n}\sum_i |y_i-\hat{y}_i| \qquad \text{RMSE} = \sqrt{\tfrac{1}{n}\sum_i (y_i-\hat{y}_i)^2}$$
+    </div>
+    <ul>
+      <li><strong>MAE</strong> — erro típico, robusto a outliers</li>
+      <li><strong>RMSE</strong> — pune erros grandes desproporcionalmente</li>
+      <li><strong>$R^2$</strong> — fração da variância explicada; $R^2<0$ é pior que chutar a média</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 4 · Métricas · Regressão</span>
+    <h2>MAE ou RMSE? Pergunte ao outlier</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/outlier_metricas.png" alt="Efeito de um outlier sobre MAE e RMSE">
+  </div>
+  <p class="icap">Um único erro grande dispara o RMSE, mas mal move o MAE — a escolha muda a conclusão.</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 4 · Métricas · Classificação</span>
+    <h2>A matriz de confusão</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="tcol">
+    <div class="tcol-b">
+      <ul style="font-size:19px">
+        <li><strong>VP / VN</strong> — acertos</li>
+        <li><strong>FN</strong> — doente dado como saudável <span class="no">(o mais perigoso)</span></li>
+        <li><strong>FP</strong> — alarme falso</li>
+        <li class="sub">Quase toda métrica é uma razão entre essas quatro contagens.</li>
+      </ul>
+    </div>
+    <div class="tcol-i">
+      <img src="assets/slides/fundamentos/matriz_confusao.png" alt="Matriz de confusão">
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 4 · Métricas · Classificação</span>
+    <h2>Precisão × recall</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <div class="fcard">
+      $$\text{Precisão} = \frac{VP}{VP+FP} \qquad \text{Recall} = \frac{VP}{VP+FN}$$
+    </div>
+    <ul>
+      <li>Triagem de câncer → priorize <strong>recall</strong> (não perder doentes)</li>
+      <li>Filtro de spam → priorize <strong>precisão</strong> (não descartar e-mail bom)</li>
+      <li class="sub">$F_1$ = média harmônica dos dois — só é alta quando ambos são altos</li>
+    </ul>
+    <div class="warn">
+      Acurácia engana em classes desbalanceadas: prever "sempre saudável" numa doença rara acerta 99% — e é inútil.
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 4 · Métricas · Classificação</span>
+    <h2>Curva ROC e AUC</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="tcol">
+    <div class="tcol-b">
+      <ul style="font-size:19px">
+        <li>Varia o <strong>limiar</strong> e traça recall × falsos positivos</li>
+        <li><strong>AUC</strong> resume o poder discriminativo</li>
+        <li class="sub">1,0 = perfeito · 0,5 = acaso</li>
+        <li>Independente do limiar e do desbalanceamento</li>
+      </ul>
+    </div>
+    <div class="tcol-i">
+      <img src="assets/slides/fundamentos/roc.png" alt="Curva ROC">
+    </div>
+  </div>
+</section>
+
+<!-- ════════ PARTE 5 ════════ -->
+<section class="sec">
+  <span class="pnum">Parte 5</span>
+  <div class="sep"></div>
+  <h1>Pré-processamento</h1>
+  <p class="sub">Garbage in, garbage out</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 5 · Pré-processamento</span>
+    <h2>Escala importa (para métodos de distância)</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="ia">
+    <img src="assets/slides/fundamentos/escala.png" alt="Efeito da padronização">
+  </div>
+  <p class="icap">Sem padronizar, a variável de maior amplitude domina a distância. O z-score coloca todas na mesma escala.</p>
+</section>
+
+<section>
+  <div class="sh">
+    <span class="eyebrow">Parte 5 · Pré-processamento</span>
+    <h2>O padrão à prova de vazamento</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>Imputar faltantes, escalar e codificar categorias — tudo <strong>dentro</strong> de um <code>Pipeline</code></li>
+      <li><code>ColumnTransformer</code> aplica transformações diferentes a colunas numéricas e categóricas</li>
+    </ul>
+    <div class="ex">
+      <span class="ex-lbl">scikit-learn</span>
+      <code>Pipeline([("pre", ColumnTransformer(...)), ("clf", LogisticRegression())])</code><br>
+      Cada passo é reajustado apenas no treino de cada fold — sem vazamento.
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FECHAMENTO ════════ -->
+<section>
+  <div class="sh">
+    <span class="eyebrow">Recapitulando</span>
+    <h2>As ideias que ficam</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb">
+    <ul>
+      <li>ML aprende <strong>padrões a partir de dados</strong> — o alvo é generalizar</li>
+      <li>O tipo do problema vem da <strong>pergunta</strong>, não dos dados</li>
+      <li><strong>Overfitting</strong> é o inimigo nº 1; validação cruzada é a defesa</li>
+      <li>Escolha a <strong>métrica</strong> conforme o custo de cada erro</li>
+      <li>Pré-processe dentro de um <strong>pipeline</strong> para não vazar dados</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sh">
+    <h2>Pratique nos notebooks</h2>
+    <div class="sep"></div>
+  </div>
+  <div class="sb" style="padding-top:6px">
+    <p style="font-size:17px; margin-bottom:8px">Site do curso:</p>
+    <p style="font-family:monospace; font-size:17px; color:var(--blue); margin-bottom:18px">
+      monteirotorres.github.io/ml
+    </p>
+    <p style="font-size:17px; margin-bottom:4px"><strong>Cada tópico tem um notebook interativo no Colab:</strong></p>
+    <a class="colab-btn"
+       href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/04_generalizacao.ipynb"
+       target="_blank">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" fill="#fff"/>
+        <path d="M7 8.5l5 3.5-5 3.5V8.5z" fill="#F9AB00"/>
+        <path d="M12 8.5l5 3.5-5 3.5V8.5z" fill="#F9AB00" opacity=".6"/>
+      </svg>
+      Abrir o notebook de Generalização
+    </a>
+    <span class="colab-note">Os oito notebooks do capítulo estão no site, um por tópico.</span>
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/math/math.js"></script>
+<script>
+Reveal.initialize({
+  width:  1280,
+  height: 720,
+  margin: 0,
+  hash:   true,
+  slideNumber: 'c/t',
+  progress: true,
+  transition: 'none',
+  backgroundTransition: 'none',
+  plugins: [ RevealMath.KaTeX ],
+  katex: {
+    version: 'latest',
+    delimiters: [
+      { left: '$$', right: '$$', display: true  },
+      { left: '$',  right: '$',  display: false }
+    ]
+  }
+});
+</script>
+</body>
+</html>
