@@ -5,41 +5,41 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f3ecdf;
-  --paper: #fffdf8;
-  --ink: #1a1a1a;
-  --muted: #6b6457;
-  --line: #ddd3c0;
-  --line-soft: #e7dfce;
-  --accent: #1a1a1a;
-  --sidebar-bg: #efe6d4;
-  --sidebar-hover: #e6dac3;
-  --sidebar-active: #e0d3b8;
-  --nav-text: #463f33;
-  --prose-soft: #4a4338;
-  --code-bg: #e8dec9;
-  --th-bg: #ece2cd;
-  --range-track: #c9bfa9;
+  --bg: #eef1e0;
+  --paper: #fcfdf6;
+  --ink: #1a1a17;
+  --muted: #64684f;
+  --line: #d2d8bd;
+  --line-soft: #e0e5cd;
+  --accent: #1a1a17;
+  --sidebar-bg: #e9edd8;
+  --sidebar-hover: #e0e6c9;
+  --sidebar-active: #d8e0bb;
+  --nav-text: #42472f;
+  --prose-soft: #454a34;
+  --code-bg: #e3e8cf;
+  --th-bg: #e6ebd4;
+  --range-track: #bdc79f;
   --link: #1f5fa6;
   --sidebar-w: 300px;
 }
 
 [data-theme="dark"] {
-  --bg: #16140f;
-  --paper: #211e17;
-  --ink: #ece6d8;
-  --muted: #a59a85;
-  --line: #3a352b;
-  --line-soft: #2c281f;
-  --accent: #ece6d8;
-  --sidebar-bg: #1c1a13;
-  --sidebar-hover: #2a2619;
-  --sidebar-active: #332d1d;
-  --nav-text: #c9c0ad;
-  --prose-soft: #c4baa6;
-  --code-bg: #322d22;
-  --th-bg: #2a2619;
-  --range-track: #4a4435;
+  --bg: #14160f;
+  --paper: #1e211a;
+  --ink: #eaecdd;
+  --muted: #a2a888;
+  --line: #363b2c;
+  --line-soft: #292d20;
+  --accent: #eaecdd;
+  --sidebar-bg: #191c12;
+  --sidebar-hover: #262b18;
+  --sidebar-active: #2f351d;
+  --nav-text: #c6ccb2;
+  --prose-soft: #c1c7ad;
+  --code-bg: #2d3322;
+  --th-bg: #262b19;
+  --range-track: #464f38;
   --link: #6fa8dc;
 }
 
@@ -116,7 +116,7 @@ a { color: var(--ink); }
 .nav-group li a .n {
   font-family: 'Courier New', monospace;
   font-size: 0.72rem;
-  color: #9b917e;
+  color: #929878;
   margin-right: 0.5rem;
 }
 
@@ -180,7 +180,7 @@ a { color: var(--ink); }
 }
 .topic blockquote p:last-child { margin: 0; }
 .topic code { font-family: 'Courier New', monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 0.88em; }
-.topic pre { background: #2f2a22; color: #f3ecdf; border-radius: 6px; padding: 14px 16px; margin: 1rem 0; overflow-x: auto; font-size: 0.85rem; }
+.topic pre { background: #292c20; color: #eef1e0; border-radius: 6px; padding: 14px 16px; margin: 1rem 0; overflow-x: auto; font-size: 0.85rem; }
 .topic pre code { background: transparent; padding: 0; color: inherit; }
 .topic table { border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; width: 100%; }
 .topic img { max-width: 100%; height: auto; display: block; margin: 1.25rem auto; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); }
@@ -259,7 +259,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 .stat-card { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px; }
 .stat-card .slabel { font-size: 0.66rem; color: var(--muted); font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
 .stat-card .sval { font-size: 1.35rem; font-weight: bold; font-family: 'Courier New', monospace; }
-.stat-card .sdesc { font-size: 0.62rem; color: #a89f8b; margin-top: 2px; line-height: 1.3; }
+.stat-card .sdesc { font-size: 0.62rem; color: #9ba081; margin-top: 2px; line-height: 1.3; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0 14px; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); font-family: 'Courier New', monospace; }
@@ -277,7 +277,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 .card .cnum { font-family: 'Courier New', monospace; font-size: 0.72rem; color: var(--muted); }
 .card .ctitle { font-size: 1.15rem; font-weight: bold; margin: 0.4rem 0 0.5rem; }
 .card .cdesc { font-size: 0.85rem; color: var(--prose-soft); line-height: 1.5; }
-.card .ccount { font-family: 'Courier New', monospace; font-size: 0.72rem; color: #a89f8b; margin-top: 0.75rem; }
+.card .ccount { font-family: 'Courier New', monospace; font-size: 0.72rem; color: #9ba081; margin-top: 0.75rem; }
 
 /* ---------- Footer ---------- */
 .footer { border-top: 1px solid var(--line); margin: 3rem 2.5rem 0; padding: 1.5rem 0 2.5rem; display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
@@ -321,11 +321,11 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 [data-theme="dark"] .theme-icon::before { content: "☀\FE0E"; }
 
 [data-theme="dark"] .topic details > summary:hover { color: #aecbed; }
-[data-theme="dark"] .topic pre { background: #100e0a; }
+[data-theme="dark"] .topic pre { background: #0f110b; }
 
 /* logo do IBCCF (texto escuro) precisa de um fundo claro no tema escuro */
 [data-theme="dark"] .footer-logo {
-  background: #f3ecdf;
+  background: #eef1e0;
   padding: 6px 10px;
   border-radius: 6px;
 }

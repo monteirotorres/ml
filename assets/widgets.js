@@ -23,8 +23,8 @@ function rngNormal(rng) {
 
 // ---------- paleta (idêntica ao style.css) ----------
 const PAL = {
-  ink: '#1a1a1a', blue: '#3266ad', red: '#c0392b', green: '#1a7a4a',
-  muted: '#6b6457', line: '#c9bfa9', paper: '#fffdf8',
+  ink: '#1a1a17', blue: '#3266ad', red: '#c0392b', green: '#1a7a4a',
+  muted: '#64684f', line: '#cfd7bb', paper: '#fcfdf6',
   blueF: '#dce7f4', redF: '#f6dedb', greenF: '#dcefe4'
 };
 // no tema escuro, texto/eixos precisam clarear
@@ -32,10 +32,10 @@ function pal() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   return {
     ...PAL,
-    ink: dark ? '#ece6d8' : PAL.ink,
-    muted: dark ? '#a59a85' : PAL.muted,
-    line: dark ? '#4a4435' : PAL.line,
-    paper: dark ? '#211e17' : PAL.paper,
+    ink: dark ? '#eaecdd' : PAL.ink,
+    muted: dark ? '#a2a888' : PAL.muted,
+    line: dark ? '#464f38' : PAL.line,
+    paper: dark ? '#1e211a' : PAL.paper,
   };
 }
 
