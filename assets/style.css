@@ -21,6 +21,8 @@
   --th-bg: #e1e7b8;
   --range-track: #b4bf80;
   --link: #1f5fa6;
+  --brand: #e1f50a;        /* acento de marca (chartreuse) */
+  --brand-ink: #2b3300;    /* texto legível sobre o brand */
   --sidebar-w: 300px;
 }
 
@@ -41,6 +43,8 @@
   --th-bg: #262b16;
   --range-track: #474f30;
   --link: #6fa8dc;
+  --brand: #e1f50a;
+  --brand-ink: #2b3300;
 }
 
 body {
@@ -105,12 +109,12 @@ a { color: var(--ink); }
   font-size: 0.9rem;
   text-decoration: none;
   color: var(--nav-text);
-  border-left: 2px solid transparent;
+  border-left: 3px solid transparent;
 }
 .nav-group li a:hover { background: var(--sidebar-hover); }
 .nav-group li a.active {
   background: var(--sidebar-active);
-  border-left-color: var(--ink);
+  border-left-color: var(--brand);
   font-weight: bold;
 }
 .nav-group li a .n {
@@ -155,6 +159,9 @@ a { color: var(--ink); }
   letter-spacing: -0.01em;
   line-height: 1.2;
   margin: 0.2rem 0 1rem;
+  display: inline-block;
+  border-bottom: 4px solid var(--brand);   /* sublinhado de marca */
+  padding-bottom: 4px;
 }
 .nb-row { margin: 0 0 1.4rem; }
 .colab-link img { height: 30px; vertical-align: middle; }
@@ -267,7 +274,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 
 /* ---------- Hero / cards (index) ---------- */
 .hero { text-align: center; padding: 2rem 0 2.5rem; border-bottom: 1px solid var(--line); margin-bottom: 2rem; }
-.hero-title { font-size: 3rem; font-weight: bold; letter-spacing: -0.02em; }
+.hero-title { font-size: 3rem; font-weight: bold; letter-spacing: -0.02em; display: inline-block; border-bottom: 5px solid var(--brand); padding-bottom: 6px; }
 .hero-sub { font-family: 'Courier New', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-top: 0.5rem; }
 .hero-desc { max-width: 560px; margin: 1.25rem auto 0; color: var(--prose-soft); }
 .hero-authors { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--muted); margin-top: 1rem; }
