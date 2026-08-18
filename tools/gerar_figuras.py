@@ -21,23 +21,23 @@ from pathlib import Path
 BASE = Path(__file__).parent.parent
 
 # ── Paleta ───────────────────────────────────────────────────────────────────
-INK    = "#1a1a17"
-PAPER  = "#fcfdf6"
+INK    = "#1b1c12"
+PAPER  = "#f3f6e0"
 BLUE   = "#3266ad"
 RED    = "#c0392b"
 GREEN  = "#1a7a4a"
-MUTED  = "#64684f"
+MUTED  = "#66693f"
 BLUEF  = "#dce7f4"
 REDF   = "#f6dedb"
 GREENF = "#dcefe4"
-GREYF  = "#e6ebd4"
+GREYF  = "#e1e7b8"
 
 plt.rcParams.update({
     "font.family": "serif", "font.size": 18,
-    "axes.edgecolor": "#b3bd95", "axes.linewidth": 1.2,
+    "axes.edgecolor": "#adb87f", "axes.linewidth": 1.2,
     "axes.titlesize": 20, "figure.facecolor": PAPER,
     "axes.facecolor": PAPER, "savefig.facecolor": PAPER,
-    "axes.grid": True, "grid.color": "#dde3c9", "grid.linewidth": 0.7,
+    "axes.grid": True, "grid.color": "#d7deb2", "grid.linewidth": 0.7,
     "xtick.color": MUTED, "ytick.color": MUTED,
     "axes.labelcolor": INK, "text.color": INK,
     "legend.fontsize": 17, "axes.labelsize": 18,

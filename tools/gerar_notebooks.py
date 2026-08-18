@@ -23,14 +23,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Paleta do curso (idêntica ao site)
-INK, PAPER = "#1a1a17", "#fcfdf6"
-BLUE, RED, GREEN, MUTED = "#3266ad", "#c0392b", "#1a7a4a", "#64684f"
+INK, PAPER = "#1b1c12", "#f3f6e0"
+BLUE, RED, GREEN, MUTED = "#3266ad", "#c0392b", "#1a7a4a", "#66693f"
 
 plt.rcParams.update({
     "font.family": "serif", "font.size": 12,
     "figure.facecolor": PAPER, "axes.facecolor": PAPER,
-    "axes.edgecolor": "#b3bd95", "axes.grid": True,
-    "grid.color": "#dde3c9", "grid.linewidth": 0.7,
+    "axes.edgecolor": "#adb87f", "axes.grid": True,
+    "grid.color": "#d7deb2", "grid.linewidth": 0.7,
     "axes.labelcolor": INK, "text.color": INK,
     "xtick.color": MUTED, "ytick.color": MUTED,
 })
