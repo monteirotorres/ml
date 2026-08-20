@@ -23,6 +23,7 @@
   --link: #5f7300;         /* links: oliva legível */
   --brand: #7e9603;        /* acento de marca (yellowgreen/oliva) */
   --brand-ink: #ffffff;    /* texto sobre o brand */
+  --section-title: #3f4d15;/* títulos de seção no índice (oliva escuro) */
   --sidebar-w: 300px;
 }
 
@@ -45,6 +46,7 @@
   --link: #aecb1f;         /* links: lima sobre escuro */
   --brand: #c6db25;        /* acento de marca no escuro (lima) */
   --brand-ink: #1d1d1d;
+  --section-title: #cdd98a;/* títulos de seção no índice (lima clara) */
 }
 
 body {
@@ -88,14 +90,34 @@ a { color: var(--ink); }
   color: var(--muted);
   margin-top: 2px;
 }
+.toggle-all {
+  display: block;
+  margin: 0 1.4rem 0.75rem;
+  width: calc(100% - 2.8rem);
+  font-family: 'Courier New', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.42rem 0.7rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.toggle-all:hover { background: var(--sidebar-hover); color: var(--ink); border-color: var(--brand); }
+
 .nav-group { margin-bottom: 0.35rem; }
 .nav-group-title {
   font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  padding: 0.5rem 1.4rem 0.35rem;
+  letter-spacing: 0.04em;
+  color: var(--section-title);
+  padding: 0.6rem 1.4rem 0.4rem;
   cursor: pointer;
   user-select: none;
 }

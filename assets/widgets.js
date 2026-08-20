@@ -268,10 +268,27 @@ window.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.sidebar')?.classList.toggle('open');
   });
 
-  // colapsar/expandir grupos da sidebar
+  // colapsar/expandir grupos da sidebar (individual)
   document.querySelectorAll('.nav-group-title').forEach(t => {
-    t.addEventListener('click', () => t.parentElement.classList.toggle('collapsed'));
+    t.addEventListener('click', () => { t.parentElement.classList.toggle('collapsed'); syncToggleAll(); });
   });
+
+  // botão "mostrar/esconder tudo"
+  const toggleAll = document.getElementById('toggleAll');
+  function anyOpen() {
+    return [...document.querySelectorAll('.nav-group')].some(g => !g.classList.contains('collapsed'));
+  }
+  function syncToggleAll() {
+    if (toggleAll) toggleAll.textContent = anyOpen() ? '− Esconder tudo' : '+ Mostrar tudo';
+  }
+  if (toggleAll) {
+    toggleAll.addEventListener('click', () => {
+      const collapse = anyOpen();   // se algum aberto -> fecha todos; senão abre todos
+      document.querySelectorAll('.nav-group').forEach(g => g.classList.toggle('collapsed', collapse));
+      syncToggleAll();
+    });
+    syncToggleAll();
+  }
 
   // alternar tema claro/escuro
   document.getElementById('themeToggle')?.addEventListener('click', () => {

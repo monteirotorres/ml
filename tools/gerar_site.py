@@ -183,6 +183,7 @@ FOOT = """
 def sidebar(sections, current_file):
     out = ['<nav class="sidebar" id="sidebar">']
     out.append(f'<a class="sidebar-brand" href="index.html">{COURSE_NAME}<span>{COURSE_INST}</span></a>')
+    out.append('<button class="toggle-all" id="toggleAll" aria-label="Mostrar ou esconder todas as seções">− Esconder tudo</button>')
     for si, (sec, items) in enumerate(sections, 1):
         page = SECTION_FILES.get(sec, "index.html")
         out.append('<div class="nav-group">')
