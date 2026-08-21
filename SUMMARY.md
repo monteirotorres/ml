@@ -56,3 +56,7 @@
 * [Validação e seleção de modelos](07_exercicios/03_validacao.md)
 * [Clustering e PCA](07_exercicios/04_clustering_pca.md)
 * [Pipeline completo](07_exercicios/05_pipeline.md)
+
+## Aula prática — Bioinformática
+
+* [ML aplicado a inibidores (ChEMBL)](08_aula_bioinfo/01_ml_bioinformatica.md)

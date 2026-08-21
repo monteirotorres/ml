@@ -1,0 +1,81 @@
+# Aula prática — ML aplicado a inibidores (ChEMBL) · guia do docente
+
+Material de uma aula prática de aprendizado de máquina aplicado à bioinformática.
+A partir de dados reais de inibidores da **acetilcolinesterase** (AChE, `CHEMBL220`),
+os alunos treinam modelos que classificam qualquer molécula (via SMILES) como
+**FORTE**, **FRACO** ou **INCERTO**.
+
+Público: graduação em ciências biológicas/biomédicas com Python básico, `numpy`,
+`pandas` e `matplotlib`, mas **sem** experiência em treinar modelos. Roda no Google
+Colab, em CPU.
+
+## Arquivos
+
+| Arquivo | O que é |
+| --- | --- |
+| `aula_gabarito.ipynb` | Versão completa: perguntas com resposta e todas as células de modelagem preenchidas. |
+| `aula_aluno.ipynb` | Mesma estrutura, com as células de modelagem das Seções 5–7 esvaziadas (instruções em comentário) e as respostas das perguntas removidas. |
+| `dados_alvo_bruto.csv` | Extração pré-feita do ChEMBL (10.079 medidas de IC50). Caminho alternativo quando a API do EBI não está acessível em sala. |
+| `01_ml_bioinformatica.md` | Página de apresentação da aula no site do curso. |
+
+## Antes da aula
+
+1. Abra o `aula_aluno.ipynb` no Colab (`File → Upload notebook` ou via GitHub).
+2. Suba o `dados_alvo_bruto.csv` para a sessão do Colab (ou deixe a célula de
+   extração buscar da API — ela cai no CSV automaticamente se a rede falhar).
+3. Rode a Seção 0 uma vez para instalar `rdkit`, `plotly` e demais pacotes
+   (cerca de 1 minuto). O restante já vem no Colab.
+4. Se for usar o TensorBoard ao vivo (Seção 5b), **abra o painel antes de
+   treinar**, para vê-lo atualizar durante a aula.
+
+## Tempo estimado por seção
+
+| Seção | Assunto | Tempo | Pode cortar? |
+| --- | --- | --- | --- |
+| 0 | Ambiente, semente, versões | 5 min | não |
+| 1 | IC50/pIC50; carregar dados | 10 min | não |
+| 2 | Curadoria + funil de proveniência | 15 min | não |
+| 3 | Descritores e fingerprint de Morgan | 20 min | não |
+| 4 | Partição aleatória × esqueleto; espaço químico | 15 min | encurtar (mostrar só a projeção 2D) |
+| 5 | Quatro modelos + rede em PyTorch + TensorBoard | 35 min | 5b (PyTorch/TensorBoard) para 2ª aula |
+| 6 | Interpretabilidade e confundimento por tamanho | 20 min | SHAP (6.3) é o mais lento — pode cortar |
+| 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta o INCERTO) |
+| 8 | Predição conformal | 10 min | **opcional** — marcada como tal |
+| 9 | `classificar()` em uso + galeria | 10 min | não (é o pagamento da aula) |
+| 10 | Persistência e exercícios | 5 min | exercícios ficam de casa |
+
+**Total cheio:** ~2 h 40 min. Para caber em **2 h**, corte a Seção 8 (conformal)
+e adie a subseção 5b (PyTorch/TensorBoard) e o SHAP (6.3) para uma segunda aula.
+O núcleo mínimo — Seções 0 a 4, os modelos sklearn da Seção 5, a Seção 7 e a 9 —
+cabe em ~90 min.
+
+## O que não pode ser cortado (a espinha pedagógica)
+
+- **Seção 2** (curadoria com proveniência) — sem ela os modelos aprendem lixo.
+- **A decisão FORTE/FRACO/INCERTO** — INCERTO não é classe dos dados; é produzido
+  pelo modelo (ambiguidade + fora de domínio). Não vire três classes por faixa.
+- **Seção 4** (divisão por esqueleto) — a lição central: a partição importa mais
+  que o algoritmo.
+- **Seção 7** (domínio) e **Seção 9** (`classificar`) — é onde o INCERTO ganha
+  sentido concreto (cafeína e etanol devem cair em INCERTO).
+
+## Notas técnicas
+
+- **Tempo de execução** do notebook inteiro: alguns minutos em CPU. A SVM (5.2) e
+  o SHAP (6.3) são os trechos mais lentos; ambos já subamostram e avisam.
+- **Plotly no Colab:** os gráficos aparecem inline; se não renderizarem após
+  salvar/reabrir, reexecute a célula. Não há renderizador manual a configurar.
+- **TensorBoard** (5b): é a experiência ao vivo; como o painel não fica salvo no
+  arquivo, **toda curva mostrada nele é replicada em Plotly** na célula seguinte.
+  Limpe a pasta de logs entre execuções (a célula já faz isso).
+- **ipywidgets** (Seção 10): o controle deslizante atualiza métricas ao vivo; o
+  estado não é salvo — é preciso reexecutar a célula.
+- **Reprodutibilidade:** uma única constante `SEMENTE` no topo é propagada a
+  `random`, `numpy`, `torch` e a todo estimador.
+
+## Trocar de alvo
+
+O notebook resolve o alvo pelo símbolo do gene (`ALVO_GENE = "ACHE"`) via API do
+ChEMBL. Para outro alvo, troque essa constante e reexecute a extração — ou gere um
+novo `dados_alvo_bruto.csv` com `tools/extrair_chembl.py` (ajustando o ChEMBL ID
+do alvo).

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aprendizagem Não Supervisionada — Aprendizagem de Máquina</title>
+<title>Aula prática — Bioinformática — Aprendizagem de Máquina</title>
 <script>(function(){try{var t=localStorage.getItem('tema');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -59,10 +59,10 @@
 <div class="nav-group">
 <div class="nav-group-title">5. Aprendizagem Não Supervisionada</div>
 <ul>
-<li><a class="nav-link" data-target="05-nao-supervisionado-01-kmeans-md" href="#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
-<li><a class="nav-link" data-target="05-nao-supervisionado-02-hierarquico-md" href="#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
-<li><a class="nav-link" data-target="05-nao-supervisionado-03-pca-md" href="#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
-<li><a class="nav-link" data-target="05-nao-supervisionado-04-tsne-umap-md" href="#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-01-kmeans-md"><span class="n">5.1</span>k-means clustering</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-02-hierarquico-md"><span class="n">5.2</span>Clustering hierárquico</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-03-pca-md"><span class="n">5.3</span>Análise de Componentes Principais (PCA)</a></li>
+<li><a href="nao_supervisionado.html#05-nao-supervisionado-04-tsne-umap-md"><span class="n">5.4</span>t-SNE e UMAP</a></li>
 </ul></div>
 <div class="nav-group">
 <div class="nav-group-title">6. Redes Neurais</div>
@@ -84,125 +84,111 @@
 <div class="nav-group">
 <div class="nav-group-title">8. Aula prática — Bioinformática</div>
 <ul>
-<li><a href="aula_bioinfo.html#08-aula-bioinfo-01-ml-bioinformatica-md"><span class="n">8.1</span>ML aplicado a inibidores (ChEMBL)</a></li>
+<li><a class="nav-link" data-target="08-aula-bioinfo-01-ml-bioinformatica-md" href="#08-aula-bioinfo-01-ml-bioinformatica-md"><span class="n">8.1</span>ML aplicado a inibidores (ChEMBL)</a></li>
 </ul></div>
 </nav>
 <main class="content"><div class="content-inner">
-<div class="page-eyebrow">5. Aprendizagem Não Supervisionada</div>
-<article id="05-nao-supervisionado-01-kmeans-md" class="topic">
-<div class="topic-num">5.1</div>
-<h1 class="topic-title">k-means clustering</h1>
-<p>O k-means agrupa dados em $k$ conglomerados minimizando a distância de cada ponto ao centro do seu grupo. É o algoritmo de clustering mais usado — rápido, simples e um excelente primeiro passo para explorar estrutura em dados não rotulados.</p>
-<p>Discutiremos a inicialização (k-means++), como escolher $k$ (método do cotovelo e silhueta) e as limitações do método: sensibilidade à escala e a suposição de grupos esféricos de tamanho parecido.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
+<div class="page-eyebrow">8. Aula prática — Bioinformática</div>
+<article id="08-aula-bioinfo-01-ml-bioinformatica-md" class="topic">
+<div class="topic-num">8.1</div>
+<h1 class="topic-title">ML aplicado a inibidores (ChEMBL)</h1>
+<p>Uma aula prática de aprendizagem de máquina aplicada à <strong>bioinformática e à
+descoberta de fármacos</strong>. A partir de dados reais de inibidores de um alvo
+proteico extraídos do <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a>, treinamos modelos
+que recebem qualquer molécula (via SMILES) e a classificam como <strong>FORTE</strong>,
+<strong>FRACO</strong> ou <strong>INCERTO</strong> para aquele alvo.</p>
+<p>O material foi escrito para alunos de graduação em ciências biológicas e
+biomédicas que já conhecem Python básico, <code>numpy</code>, <code>pandas</code> e <code>matplotlib</code>, mas
+<strong>nunca treinaram um modelo</strong>. Roda inteiro no Google Colab, em CPU.</p>
+<p><strong>Abra no Colab:</strong>
+<a href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula_gabarito.ipynb"><img alt="Gabarito" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
+&nbsp; (gabarito completo) &nbsp;·&nbsp;
+<a href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula_aluno.ipynb"><img alt="Aluno" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
+&nbsp; (versão do aluno)</p>
+<h2>O alvo</h2>
+<p>O notebook usa a <strong>acetilcolinesterase</strong> (AChE, <code>CHEMBL220</code>) — enzima que degrada
+o neurotransmissor acetilcolina. É um alvo de enorme relevância: seus inibidores
+incluem fármacos contra o Alzheimer (donepezila, rivastigmina) e também
+inseticidas organofosforados e agentes neurotóxicos. O ChEMBL reúne milhares de
+moléculas com potência (IC50) medida contra ela.</p>
+<p>O identificador do alvo é resolvido pela API do ChEMBL dentro do notebook, então
+trocar de alvo é uma mudança de uma linha.</p>
+<h2>Por que "INCERTO" não é uma classe dos dados</h2>
+<p>Esta é a decisão de projeto central da aula. O ChEMBL registra <strong>potência
+medida</strong>, não incerteza — não existe uma coluna "incerto". Por isso:</p>
+<ul>
+<li>o rótulo de treino é <strong>binário</strong> (FORTE/FRACO, por um limiar de pIC50);</li>
+<li>a resposta <strong>INCERTO</strong> é produzida pelo próprio modelo, por duas vias
+  independentes: (a) <strong>ambiguidade estatística</strong> (o modelo não tem confiança
+  suficiente) e (b) molécula <strong>fora do domínio de aplicabilidade</strong> químico (o
+  modelo nunca viu nada parecido e não deveria opinar).</li>
+</ul>
+<p>Reconhecer o que o modelo <strong>não sabe</strong> é tão importante quanto a predição em si —
+uma lição que vale muito além da quimioinformática.</p>
+<h2>O que a aula cobre</h2>
 <table>
 <thead>
 <tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
+<th>Seção</th>
+<th>Conteúdo</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Iterações do k-means</td>
-<td>atribuição e atualização dos centros</td>
+<td>0–1</td>
+<td>Ambiente reprodutível; o que é IC50, pIC50 e por que a escala é logarítmica</td>
 </tr>
 <tr>
-<td>Escolha de $k$</td>
-<td>cotovelo e coeficiente de silhueta</td>
+<td>2</td>
+<td>Curadoria dos dados com tabela de proveniência e gráfico de funil</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Descritores moleculares e fingerprint de Morgan, explicados um a um</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Partição aleatória × por esqueleto (Bemis-Murcko), com projeção 2D do espaço químico</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Quatro modelos (regressão logística, SVM, floresta aleatória, rede neural) + a mesma rede aberta em PyTorch</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Interpretabilidade (importância por permutação, SHAP) e o confundimento por tamanho molecular</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Domínio de aplicabilidade por similaridade de Tanimoto</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Predição conformal (opcional)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>A função <code>classificar(smiles)</code> em uso, com galeria de moléculas</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Persistência do modelo e exercícios</td>
 </tr>
 </tbody>
 </table>
-
-</article>
-<article id="05-nao-supervisionado-02-hierarquico-md" class="topic">
-<div class="topic-num">5.2</div>
-<h1 class="topic-title">Clustering hierárquico</h1>
-<p>O clustering hierárquico constrói uma árvore de agrupamentos (dendrograma) unindo sucessivamente os pontos ou grupos mais próximos. Não exige fixar $k$ de antemão e revela estrutura em múltiplas escalas.</p>
-<p>É onipresente em bioinformática — pense nos heatmaps de expressão gênica. Veremos os critérios de ligação (simples, completa, média, Ward), como cortar o dendrograma e como interpretá-lo.</p>
+<h2>Como usar</h2>
+<p>O notebook acompanha o material em duas versões: um <strong>gabarito</strong> completo e
+executado, e uma versão <strong>do aluno</strong> com as células de modelagem esvaziadas para
+preencher em sala. Consulte o <code>README.md</code> da pasta para o roteiro do docente
+(o que rodar antes da aula, o que pode ser cortado se o tempo apertar, e o tempo
+estimado por seção).</p>
 <blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
+<p><strong>Nota.</strong> Este é um material extenso, voltado ao Colab. Partes específicas do
+Colab — o painel do TensorBoard ao vivo, as mágicas <code>%tensorboard</code>/<code>%pip</code> e os
+controles interativos <code>ipywidgets</code> — só se comportam plenamente no Colab; toda
+curva mostrada no TensorBoard é também replicada em Plotly como registro
+permanente no arquivo.</p>
 </blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Dendrograma</td>
-<td>leitura e corte em k grupos</td>
-</tr>
-<tr>
-<td>Critérios de ligação</td>
-<td>single, complete, average, Ward</td>
-</tr>
-</tbody>
-</table>
-
-</article>
-<article id="05-nao-supervisionado-03-pca-md" class="topic">
-<div class="topic-num">5.3</div>
-<h1 class="topic-title">Análise de Componentes Principais (PCA)</h1>
-<p>A PCA reduz a dimensionalidade projetando os dados nas direções de maior variância — as componentes principais. Ela comprime informação, remove redundância e permite visualizar dados de alta dimensão em 2D ou 3D.</p>
-<p>É a técnica de redução de dimensionalidade mais fundamental. Discutiremos a ligação com autovalores da matriz de covariância, a variância explicada acumulada e a importância de padronizar antes de aplicá-la.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Variância explicada</td>
-<td>quantas componentes reter</td>
-</tr>
-<tr>
-<td>Projeção 2D</td>
-<td>visualização de dados multivariados</td>
-</tr>
-</tbody>
-</table>
-
-</article>
-<article id="05-nao-supervisionado-04-tsne-umap-md" class="topic">
-<div class="topic-num">5.4</div>
-<h1 class="topic-title">t-SNE e UMAP</h1>
-<p>t-SNE e UMAP são técnicas não lineares de redução de dimensionalidade voltadas à <strong>visualização</strong>. Elas preservam a estrutura local — pontos vizinhos permanecem vizinhos — revelando agrupamentos que a PCA linear pode não capturar.</p>
-<p>São padrão em single-cell RNA-seq e outros dados biológicos de altíssima dimensão. Veremos os hiperparâmetros críticos (perplexidade, <code>n_neighbors</code>), suas armadilhas de interpretação e por que distâncias globais nesses mapas enganam.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Perplexidade / n_neighbors</td>
-<td>efeito no mapa resultante</td>
-</tr>
-<tr>
-<td>Armadilhas de interpretação</td>
-<td>o que NÃO ler nos eixos</td>
-</tr>
-</tbody>
-</table>
 
 </article>
 </div>

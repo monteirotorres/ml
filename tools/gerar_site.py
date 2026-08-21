@@ -41,6 +41,7 @@ SECTION_FILES = {
     "Aprendizagem Não Supervisionada":  "nao_supervisionado.html",
     "Redes Neurais":                    "redes_neurais.html",
     "Exercícios":                       "exercicios.html",
+    "Aula prática — Bioinformática":     "aula_bioinfo.html",
 }
 
 
@@ -257,6 +258,7 @@ SECTION_DESCS = {
     "Aprendizagem Não Supervisionada": "k-means, clustering hierárquico, PCA, t-SNE e UMAP.",
     "Redes Neurais": "Perceptron, backpropagation, funções de ativação e deep learning.",
     "Exercícios": "Exercícios resolvidos por tema, com soluções em Python.",
+    "Aula prática — Bioinformática": "Aula prática: classificar inibidores de um alvo (ChEMBL) como forte, fraco ou incerto.",
 }
 
 
