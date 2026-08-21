@@ -1364,9 +1364,9 @@ md("""## Seção 7 — Domínio de aplicabilidade, revisitado
 Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Medimos,
 para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
 treino. O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios
-dados — o **percentil 15** das similaridades internas do treino — e não arbitrado.
-Um percentil conservador torna o domínio mais estrito: o modelo se abstém mais,
-coerente com a ideia de "na dúvida, não opine".""")
+dados — o **percentil 5** das similaridades internas do treino — e não arbitrado.
+Uma molécula menos conectada ao espaço químico do que 95% do treino é considerada
+fora do domínio.""")
 code(r'''# fingerprints como objetos RDKit para calcular Tanimoto
 def fingerprints_rdkit(indices):
     """Lista de fingerprints (bit vectors do RDKit) para um conjunto de indices."""
@@ -1396,8 +1396,8 @@ for i in range(len(fp_treino_rdkit_lista)):
     sims = DataStructs.BulkTanimotoSimilarity(fp_treino_rdkit_lista[i], fp_treino_rdkit_lista)
     sims[i] = -1.0                 # ignora a similaridade da molecula consigo mesma
     similaridade_treino_interna.append(max(sims))
-LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 15))
-print("limiar de dominio (percentil 15 do treino):", round(LIMIAR_DOMINIO, 3))''')
+LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 5))
+print("limiar de dominio (percentil 5 do treino):", round(LIMIAR_DOMINIO, 3))''')
 code(r'''figura_dominio = px.histogram(
     x=similaridade_teste, nbins=40,
     labels={"x": "Tanimoto maxima ao treino"},
@@ -1559,9 +1559,15 @@ md("""### 9.1 — Galeria de teste
 Testamos com uma grade de moléculas desenhadas pelo RDKit, com a resposta do
 modelo como legenda: inibidores conhecidos da acetilcolinesterase (donepezila,
 tacrina, galantamina), fármacos sem relação com o alvo (aspirina, paracetamol) e
-moléculas cotidianas (cafeína, etanol). As irrelevantes **devem** cair em
-INCERTO por atipicidade; se não caírem, o limiar de domínio está frouxo, e o
-notebook deve dizer isso.""")
+moléculas cotidianas (cafeína, etanol).
+
+Espere respostas de três naturezas, e **leia os motivos impressos**, não só as
+classes: moléculas muito diferentes de tudo que o modelo viu (como o etanol) caem
+em INCERTO por atipicidade; um inibidor conhecido de esqueleto familiar tende a
+FORTE; e há um caso instrutivo — uma molécula "cotidiana" pode, ainda assim,
+**estar dentro do domínio** se sua estrutura se parece com algo do treino, e então
+receber uma resposta confiante. Não presuma o resultado: observe o que o modelo de
+fato responde e por quê.""")
 code(r'''galeria = [
     ("donepezila",  "O=C1CC2(CCN(Cc3ccccc3)CC2)Cc2cc(OC)c(OC)cc21"),
     ("tacrina",     "Nc1c2c(nc3ccccc13)CCCC2"),
@@ -1582,15 +1588,21 @@ for nome, smiles in galeria:
 Draw.MolsToGridImage(moleculas_galeria, legends=legendas_galeria,
                      molsPerRow=4, subImgSize=(230, 180))''')
 
-mdq("""**Pergunta.** A cafeína e o etanol caíram em INCERTO? Se sim, foi por
-ambiguidade do modelo ou por estarem fora do domínio — e por que essa distinção
-importa?""",
-"""**Resposta.** Devem cair em INCERTO por **fora do domínio** (motivo com
-"Tanimoto"), não por ambiguidade. A distinção importa porque um INCERTO por
-atipicidade diz "não tenho moléculas parecidas, não opino", enquanto um INCERTO
-por ambiguidade diz "tenho moléculas parecidas, mas a evidência está dividida".
-São ignorâncias de naturezas diferentes, e só a primeira protege contra
-extrapolações absurdas.""")
+mdq("""**Pergunta.** Olhe os motivos impressos para a cafeína e o etanol. Um deles
+caiu em INCERTO por estar fora do domínio; o outro recebeu uma classe com
+probabilidade confiante. O que isso revela sobre a diferença entre "irrelevante
+para um biólogo" e "fora do domínio do modelo"?""",
+"""**Resposta.** O **etanol** cai em INCERTO por atipicidade — é tão pequeno e
+diferente do treino que o modelo, corretamente, se abstém. A **cafeína**, porém,
+fica **dentro do domínio**: seu anel purínico/xantínico se parece com esqueletos
+presentes no conjunto (xantinas já foram estudadas contra a acetilcolinesterase),
+então o modelo tem base para opinar — e responde FRACO com alta confiança (~0,06
+de probabilidade de FORTE), o que é **quimicamente correto**: cafeína não é um
+inibidor potente. A lição: "irrelevante" é uma intuição biológica; "fora do
+domínio" é uma medida estrutural. Elas nem sempre coincidem — e um FRACO confiante
+e correto é uma resposta tão honesta quanto um INCERTO. O modelo só deve abster-se
+quando de fato não tem base, não sempre que a molécula parece incomum aos nossos
+olhos.""")
 
 
 # ══════════════════════════════════════════════════════════════════════════
