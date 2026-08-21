@@ -313,18 +313,51 @@ registrar_etapa("ensaio tipo B", antes, len(curados), "ensaio nao-binding (nao c
 
 md("""### 2.3 — Unidades e valores numéricos
 
-Padronizamos para nanomolar (nM) e descartamos valores não numéricos, nulos ou
-não positivos (um IC50 zero ou negativo é impossível). Só depois disso o pIC50
-fará sentido.""")
-code(r'''antes = len(curados)
-curados = curados[curados["standard_units"] == "nM"].copy()
-registrar_etapa("unidade nM", antes, len(curados), "unidade diferente de nM")
+Queremos tudo em **nanomolar (nM)** para que o pIC50 faça sentido. Aqui vale um
+detalhe do ChEMBL: usamos o campo `standard_units`, que é a unidade **já
+padronizada** pela curadoria do ChEMBL. Ou seja, os µM e pM que apareciam nos
+artigos originais **já foram convertidos para nM** rio acima — por isso a coluna é
+quase toda "nM". Vamos primeiro **olhar** a distribuição de unidades antes de
+filtrar (nunca uma etapa silenciosa).""")
+code(r'''print("distribuicao de unidades (standard_units):")
+print(curados["standard_units"].value_counts(dropna=False))''')
 
+md("""Mesmo assim, para o código ficar **correto em qualquer alvo** (nem todo
+conjunto vem tão limpo), convertemos explicitamente as unidades molares
+recuperáveis para nM — µM, mM, M, pM — em vez de descartá-las. Imprimimos quantas
+linhas foram convertidas. O que sobra e não é molar (por exemplo `ug.mL-1`,
+concentração em massa, que exigiria a massa molecular) ou está malformado será
+descartado no filtro seguinte.""")
+code(r'''# fatores para converter cada unidade molar para nM
+fator_para_nM = {
+    "nM": 1.0, "uM": 1000.0, "um": 1000.0, "µM": 1000.0,
+    "mM": 1e6, "M": 1e9, "pM": 0.001, "fM": 1e-6,
+}
 antes = len(curados)
-curados["standard_value"] = pd.to_numeric(curados["standard_value"], errors="coerce")
+convertidas = 0
+valores_nM = []
+unidades_nM = []
+for valor, unidade in zip(curados["standard_value"], curados["standard_units"]):
+    if unidade in fator_para_nM:
+        try:
+            valores_nM.append(float(valor) * fator_para_nM[unidade])
+            unidades_nM.append("nM")
+            if unidade != "nM":
+                convertidas = convertidas + 1
+        except (TypeError, ValueError):
+            valores_nM.append(np.nan); unidades_nM.append(unidade)
+    else:
+        valores_nM.append(np.nan); unidades_nM.append(unidade)   # nao-molar: sera descartado
+curados["standard_value"] = valores_nM
+curados["standard_units"] = unidades_nM
+print("linhas convertidas de outra unidade molar para nM:", convertidas)
+
+# agora filtra o que sobrou: manter nM com valor numerico positivo
+curados = curados[curados["standard_units"] == "nM"].copy()
 curados = curados[curados["standard_value"].notna()].copy()
 curados = curados[curados["standard_value"] > 0].copy()
-registrar_etapa("valor numerico > 0", antes, len(curados), "valor ausente, nao numerico ou <= 0")''')
+registrar_etapa("nM, valor > 0", antes, len(curados),
+                "unidade nao-molar (ex. ug/mL), malformada, ou valor ausente/<=0")''')
 
 md("""### 2.4 — Dados censurados: por que manter os "maior que"
 
@@ -351,12 +384,31 @@ print("censurados '>' mantidos (serao FRACO):", curados["censurado_maior"].sum()
 
 md("""### 2.5 — pIC50 e agregação de duplicatas
 
-Calculamos o pIC50 a partir do IC50 em nM. Uma mesma molécula costuma ter várias
-medidas (ensaios diferentes); agregamos por molécula usando a **mediana** (robusta
-a outliers) e **descartamos moléculas cuja dispersão passa de uma unidade log** —
-se as medidas discordam por mais de 10x, não há um valor confiável.""")
-code(r'''# pIC50 = 9 - log10(IC50 em nM), pois nM = 1e-9 mol/L
-curados["pic50"] = 9.0 - np.log10(curados["standard_value"])
+O ChEMBL **já fornece o pIC50 pronto**, na coluna `pchembl_value` — é
+$-\\log_{10}$ da potência em mol/L, curado por eles. Usamos esse valor sempre que
+existe. Mas há uma exceção que importa: o `pchembl_value` fica **vazio para as
+medidas censuradas** `>`, porque não se toma o logaritmo de um "maior que". E são
+justamente esses os inativos (FRACO) que decidimos manter na Seção 2.4. Então,
+**só para os censurados**, calculamos o pIC50 na mão ($9 - \\log_{10}$ do IC50 em
+nM), para colocá-los na mesma escala. Para as medidas exatas, o cálculo à mão e o
+`pchembl_value` coincidem — o que serve de verificação.
+
+Uma mesma molécula costuma ter várias medidas; agregamos por molécula pela
+**mediana** (robusta a outliers) e **descartamos moléculas cuja dispersão passa de
+uma unidade log** (medidas que discordam por mais de 10x não são confiáveis).""")
+code(r'''# usa o pIC50 curado do ChEMBL quando existe; calcula na mao so quando falta
+# (medidas censuradas '>', que o ChEMBL deixa em branco)
+pchembl = pd.to_numeric(curados["pchembl_value"], errors="coerce")
+pic50_calculado = 9.0 - np.log10(curados["standard_value"])   # 9 - log10(nM) = -log10(mol/L)
+curados["pic50"] = pchembl.where(pchembl.notna(), pic50_calculado)
+n_do_chembl = int(pchembl.notna().sum())
+print("pIC50 direto do ChEMBL (pchembl_value):", n_do_chembl)
+print("pIC50 calculado (censurados sem pchembl):", len(curados) - n_do_chembl)
+
+# verificacao: onde os dois existem, eles concordam?
+concordancia = (pchembl - pic50_calculado).abs()
+print("diferenca media |pchembl - calculado| onde ambos existem:",
+      round(concordancia[pchembl.notna()].mean(), 3), "(esperado ~0)")
 
 # agrega por molecula: mediana do pIC50, dispersao (max-min), e se alguma medida era censurada
 grupos = curados.groupby("molecule_chembl_id")
