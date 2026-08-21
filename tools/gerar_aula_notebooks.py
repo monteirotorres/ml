@@ -380,43 +380,59 @@ eh_censurado_maior = []
 for relacao in curados["standard_relation"]:
     eh_censurado_maior.append(relacao in (">", ">>"))
 curados["censurado_maior"] = eh_censurado_maior
-print("censurados '>' mantidos (serao FRACO):", curados["censurado_maior"].sum())''')
+print("medidas '>' mantidas (viram FRACO nas moleculas que so tem elas):",
+      int(curados["censurado_maior"].sum()))''')
 
 md("""### 2.5 — pIC50 e agregação de duplicatas
 
 O ChEMBL **já fornece o pIC50 pronto**, na coluna `pchembl_value` — é
-$-\\log_{10}$ da potência em mol/L, curado por eles. Usamos esse valor sempre que
-existe. Mas há uma exceção que importa: o `pchembl_value` fica **vazio para as
-medidas censuradas** `>`, porque não se toma o logaritmo de um "maior que". E são
-justamente esses os inativos (FRACO) que decidimos manter na Seção 2.4. Então,
-**só para os censurados**, calculamos o pIC50 na mão ($9 - \\log_{10}$ do IC50 em
-nM), para colocá-los na mesma escala. Para as medidas exatas, o cálculo à mão e o
-`pchembl_value` coincidem — o que serve de verificação.
+$-\\log_{10}$ da potência em mol/L, curado por eles. Usamos esse valor direto (para
+medidas exatas o `pchembl_value` e o cálculo à mão $9 - \\log_{10}(\\text{nM})$
+coincidem, o que serve de verificação).
 
-Uma mesma molécula costuma ter várias medidas; agregamos por molécula pela
-**mediana** (robusta a outliers) e **descartamos moléculas cuja dispersão passa de
-uma unidade log** (medidas que discordam por mais de 10x não são confiáveis).""")
-code(r'''# usa o pIC50 curado do ChEMBL quando existe; calcula na mao so quando falta
-# (medidas censuradas '>', que o ChEMBL deixa em branco)
+**E as medidas censuradas `>`?** Elas **não recebem pIC50**. Uma medida
+"IC50 > 30000 nM" não é um valor pontual — é só um **limite** ("no mínimo tão
+fraca quanto isto"). Fabricar um número a partir dela seria inventar precisão que
+não existe, e esse número nem é usado: uma molécula que só tem medidas `>` é
+rotulada **FRACO por regra** (é um inativo conhecido). O pIC50 só faz falta para
+molécula que tem medida **exata** — e essas têm.
+
+Consequência importante: o rótulo de uma molécula vem das suas medidas **exatas**,
+quando existem. Uma molécula com um IC50 exato potente **não** vira FRACO só
+porque um outro ensaio reportou `>` — as medidas exatas decidem; as censuradas só
+confirmam a fraqueza de quem não tem nenhuma medida exata.
+
+Agregamos por molécula pela **mediana** das medidas exatas (robusta a outliers) e
+**descartamos moléculas cuja dispersão passa de uma unidade log** (exatas que
+discordam por mais de 10x não são confiáveis).""")
+code(r'''# pIC50 apenas das medidas EXATAS: usa o pchembl_value curado; onde faltar
+# (raro, medidas exatas sem pchembl) calcula 9 - log10(nM).
 pchembl = pd.to_numeric(curados["pchembl_value"], errors="coerce")
-pic50_calculado = 9.0 - np.log10(curados["standard_value"])   # 9 - log10(nM) = -log10(mol/L)
+pic50_calculado = 9.0 - np.log10(curados["standard_value"])   # = -log10(mol/L)
 curados["pic50"] = pchembl.where(pchembl.notna(), pic50_calculado)
-n_do_chembl = int(pchembl.notna().sum())
-print("pIC50 direto do ChEMBL (pchembl_value):", n_do_chembl)
-print("pIC50 calculado (censurados sem pchembl):", len(curados) - n_do_chembl)
+# medidas censuradas '>' sao apenas um limite: nao entram no pIC50
+curados.loc[curados["censurado_maior"], "pic50"] = np.nan
 
-# verificacao: onde os dois existem, eles concordam?
-concordancia = (pchembl - pic50_calculado).abs()
-print("diferenca media |pchembl - calculado| onde ambos existem:",
-      round(concordancia[pchembl.notna()].mean(), 3), "(esperado ~0)")
+n_exatas = int(curados["pic50"].notna().sum())
+print("medidas com pIC50 (exatas):", n_exatas,
+      "| censuradas (so limite, sem pIC50):", len(curados) - n_exatas)
+mascara_ambos = pchembl.notna() & curados["pic50"].notna()
+print("diferenca media |pchembl - calculado| (medidas exatas):",
+      round((pchembl[mascara_ambos] - pic50_calculado[mascara_ambos]).abs().mean(), 3),
+      "(esperado ~0)")
 
-# agrega por molecula: mediana do pIC50, dispersao (max-min), e se alguma medida era censurada
+# agrega por molecula usando SO as medidas exatas
 grupos = curados.groupby("molecule_chembl_id")
 linhas_agregadas = []
 for id_molecula, bloco in grupos:
-    pic50_mediana = bloco["pic50"].median()
-    dispersao = bloco["pic50"].max() - bloco["pic50"].min()
-    algum_censurado = bool(bloco["censurado_maior"].any())
+    pic50_exatas = bloco["pic50"].dropna()          # descarta os NaN dos censurados
+    apenas_censurado = len(pic50_exatas) == 0       # molecula so tem medidas '>'
+    if apenas_censurado:
+        pic50_mediana = np.nan
+        dispersao = 0.0                             # sem exatas para discordar
+    else:
+        pic50_mediana = pic50_exatas.median()
+        dispersao = pic50_exatas.max() - pic50_exatas.min()
     smiles = bloco["canonical_smiles"].iloc[0]
     # documento de origem mais frequente (usado no diagnostico de efeito de lote)
     documentos = bloco["document_chembl_id"].dropna()
@@ -429,12 +445,14 @@ for id_molecula, bloco in grupos:
         "canonical_smiles": smiles,
         "pic50": pic50_mediana,
         "dispersao_log": dispersao,
-        "censurado_maior": algum_censurado,
+        "apenas_censurado": apenas_censurado,
         "documento": documento_principal,
         "n_medidas": len(bloco),
     })
 agregados = pd.DataFrame(linhas_agregadas)
 print("moleculas unicas apos agregacao:", len(agregados))
+print("  destas, so com medida '>' (serao FRACO por regra):",
+      int(agregados["apenas_censurado"].sum()))
 
 antes = len(agregados)
 agregados = agregados[agregados["dispersao_log"] <= 1.0].copy()
@@ -572,8 +590,10 @@ os primeiros bits do fingerprint e o rótulo em **uma tabela numérica**. Treina
 ajustar uma função que, dessa tabela de entrada, prevê a coluna de rótulo. Não há
 mágica — há uma tabela de números.
 
-O rótulo binário: **FORTE** se pIC50 ≥ `LIMIAR_POTENCIA`, senão **FRACO**. As
-moléculas censuradas `>` são forçadas a FRACO, como decidido na Seção 2.""")
+O rótulo binário: uma molécula que só tem medida `>` é **FRACO** por regra (é um
+inativo conhecido, sem pIC50). As demais são **FORTE** se o pIC50 ≥
+`LIMIAR_POTENCIA`, senão **FRACO** — decididas pela sua medida exata, como na
+Seção 2.5.""")
 code(r'''LIMIAR_POTENCIA = 6.0   # pIC50 >= 6 equivale a IC50 <= 1 uM (1000 nM)
 
 # calcula o fingerprint de todas as moleculas (matriz densa de 0/1)
@@ -592,12 +612,10 @@ matriz_fingerprint = np.array(lista_fingerprints)
 # rotulo: 1 = FORTE, 0 = FRACO
 rotulo = []
 for indice in agregados.index:
-    pic50 = agregados.loc[indice, "pic50"]
-    censurado = agregados.loc[indice, "censurado_maior"]
-    if censurado:
-        rotulo.append(0)                       # '>' e sempre FRACO
-    elif pic50 >= LIMIAR_POTENCIA:
-        rotulo.append(1)                       # FORTE
+    if agregados.loc[indice, "apenas_censurado"]:
+        rotulo.append(0)                       # so tem medida '>': FRACO por regra
+    elif agregados.loc[indice, "pic50"] >= LIMIAR_POTENCIA:
+        rotulo.append(1)                       # FORTE (decidido pela medida exata)
     else:
         rotulo.append(0)                       # FRACO
 agregados["rotulo"] = rotulo
@@ -644,14 +662,18 @@ Para estimar honestamente o desempenho, separamos os dados em **treino**
 (ajusta o modelo), **calibração** (usada na Seção 8) e **teste** (tocado só no
 fim). *Como* separamos importa mais do que parece.
 
-- **Divisão aleatória**: sorteia moléculas para cada conjunto. Problema: séries
-  químicas têm muitos análogos quase idênticos; se um análogo cai no treino e
-  outro no teste, o modelo "acerta" por ter visto um primo — e o desempenho
-  **infla**.
-- **Divisão por esqueleto (Bemis-Murcko)**: agrupa moléculas pelo mesmo esqueleto
-  (o núcleo, sem as cadeias laterais) e mantém cada esqueleto inteiro em um único
-  conjunto. É mais dura e mais realista: o teste tem núcleos que o treino nunca
-  viu.""")
+A regra, em uma frase: **moléculas de mesmo esqueleto devem ficar do mesmo lado**
+(todas no treino ou todas no teste), **nunca separadas** entre treino e teste.
+
+- **Divisão aleatória**: sorteia moléculas uma a uma. O problema é que ela
+  **separa** os análogos — séries químicas têm muitos quase-idênticos, e sortear
+  faz um cair no treino e o quase-gêmeo no teste. O modelo então "acerta" no teste
+  porque já viu um primo no treino, sem ter aprendido nada generalizável — e o
+  desempenho **infla**. Essa separação é, na prática, um vazamento.
+- **Divisão por esqueleto (Bemis-Murcko)**: agrupa as moléculas pelo esqueleto
+  (o núcleo, sem as cadeias laterais) e mantém **cada esqueleto inteiro em um único
+  conjunto** — os análogos nunca se separam. Assim o teste contém núcleos que o
+  treino **nunca viu**, que é a situação real de uso. É mais dura e mais honesta.""")
 code(r'''def esqueleto_murcko(molecula):
     """Devolve o SMILES do esqueleto de Bemis-Murcko (nucleo da molecula)."""
     esqueleto = MurckoScaffold.GetScaffoldForMol(molecula)
@@ -1336,21 +1358,21 @@ pIC50 8,9 e outra com 6,1 viram a mesma classe "FORTE". A alternativa é **preve
 pIC50 diretamente** — uma tarefa de **regressão** (valor contínuo), não de
 classificação.
 
-Uma diferença importante liga isto à Seção 2.4: as medidas censuradas `>` **não
-entram** na regressão. Elas não têm um valor pontual (só um limite inferior), e um
-regressor precisa de um número exato como alvo. Na classificação nós as
-aproveitávamos como FRACO; na regressão elas saem. É o outro lado da mesma
+Uma diferença importante liga isto à Seção 2.4: as moléculas que só têm medida
+censurada `>` **não entram** na regressão. Elas não têm um valor pontual (só um
+limite), e um regressor precisa de um número exato como alvo. Na classificação
+elas eram FRACO por regra; na regressão, sem pIC50, saem. É o outro lado da mesma
 decisão.""")
 codex(r'''from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# dados de regressao: pIC50 continuo, apenas moleculas NAO censuradas
+# dados de regressao: so moleculas com pIC50 exato (as 'apenas_censurado' saem)
 def dados_regressao(indices):
-    """Recorta X e o pIC50 continuo para um conjunto, excluindo censurados '>'."""
+    """Recorta X e o pIC50 continuo, excluindo moleculas so com medida '>'."""
     posicoes = []
     for indice in indices:
-        if not agregados.loc[indice, "censurado_maior"]:
+        if not agregados.loc[indice, "apenas_censurado"]:
             posicoes.append(agregados.index.get_loc(indice))
     return X[posicoes], agregados["pic50"].values[posicoes]
 
@@ -1373,10 +1395,10 @@ rmse_base = np.sqrt(mean_squared_error(yr_teste, np.full_like(yr_teste, media_tr
 print(f"RMSE modelo: {rmse:.3f}  | RMSE base (media): {rmse_base:.3f}")
 print(f"MAE  modelo: {mae:.3f}")
 print(f"R2   modelo: {r2:.3f}  | R2 base: 0.000")''',
-"""Monte os dados de regressão excluindo as moléculas censuradas '>' (elas não têm
-valor pontual). Treine um RandomForestRegressor no pIC50 contínuo, avalie no teste
-e imprima RMSE, MAE e R2 — sempre ao lado da linha de base (prever a média do
-treino).""")
+"""Monte os dados de regressão excluindo as moléculas que só têm medida '>'
+(apenas_censurado — elas não têm pIC50 pontual). Treine um RandomForestRegressor
+no pIC50 contínuo, avalie no teste e imprima RMSE, MAE e R2 — sempre ao lado da
+linha de base (prever a média do treino).""")
 
 md("""O gráfico de predito × observado mostra o ajuste. As linhas tracejadas
 marcam o limiar de potência: os pontos se dividem em quatro quadrantes que são,
