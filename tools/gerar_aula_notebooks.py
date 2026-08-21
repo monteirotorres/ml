@@ -1235,7 +1235,7 @@ todas as features. Mas permutar os 2048 bits um a um é caro e pouco informativo
 descritores interpretáveis** e implementamos a permutação com um laço explícito —
 que também deixa o mecanismo à mostra.""")
 code(r'''gerador_perm = np.random.RandomState(SEMENTE)
-n_amostra_perm = min(500, len(X_teste))
+n_amostra_perm = min(400, len(X_teste))
 amostra_perm = gerador_perm.choice(len(X_teste), n_amostra_perm, replace=False)
 X_perm = X_teste[amostra_perm].copy()
 y_perm = y_teste[amostra_perm]
@@ -1243,12 +1243,12 @@ y_perm = y_teste[amostra_perm]
 # MCC de referencia (sem permutar nada)
 mcc_referencia = matthews_corrcoef(y_perm, modelo_floresta.predict(X_perm))
 
-# permuta cada coluna de descritor 5 vezes e mede a queda media de MCC
+# permuta cada coluna de descritor 3 vezes e mede a queda media de MCC
 n_descritores = len(tabela_descritores.columns)
 importancia_descritores = []
 for indice_coluna in range(n_descritores):
     quedas = []
-    for repeticao in range(5):
+    for repeticao in range(3):
         X_embaralhado = X_perm.copy()
         coluna = X_embaralhado[:, indice_coluna].copy()
         gerador_perm.shuffle(coluna)
@@ -1364,7 +1364,9 @@ md("""## Seção 7 — Domínio de aplicabilidade, revisitado
 Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Medimos,
 para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
 treino. O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios
-dados (um percentil baixo das similaridades do treino), não arbitrado.""")
+dados — o **percentil 15** das similaridades internas do treino — e não arbitrado.
+Um percentil conservador torna o domínio mais estrito: o modelo se abstém mais,
+coerente com a ideia de "na dúvida, não opine".""")
 code(r'''# fingerprints como objetos RDKit para calcular Tanimoto
 def fingerprints_rdkit(indices):
     """Lista de fingerprints (bit vectors do RDKit) para um conjunto de indices."""
@@ -1394,8 +1396,8 @@ for i in range(len(fp_treino_rdkit_lista)):
     sims = DataStructs.BulkTanimotoSimilarity(fp_treino_rdkit_lista[i], fp_treino_rdkit_lista)
     sims[i] = -1.0                 # ignora a similaridade da molecula consigo mesma
     similaridade_treino_interna.append(max(sims))
-LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 5))
-print("limiar de dominio (percentil 5 do treino):", round(LIMIAR_DOMINIO, 3))''')
+LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 15))
+print("limiar de dominio (percentil 15 do treino):", round(LIMIAR_DOMINIO, 3))''')
 code(r'''figura_dominio = px.histogram(
     x=similaridade_teste, nbins=40,
     labels={"x": "Tanimoto maxima ao treino"},
