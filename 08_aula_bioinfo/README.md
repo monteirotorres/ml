@@ -68,9 +68,12 @@ cabe em ~90 min.
   o SHAP (6.3) são os trechos mais lentos; ambos já subamostram e avisam.
 - **Plotly no Colab:** os gráficos aparecem inline; se não renderizarem após
   salvar/reabrir, reexecute a célula. Não há renderizador manual a configurar.
-- **TensorBoard** (5b): é a experiência ao vivo; como o painel não fica salvo no
-  arquivo, **toda curva mostrada nele é replicada em Plotly** na célula seguinte.
-  Limpe a pasta de logs entre execuções (a célula já faz isso).
+- **TensorBoard** (5b–5c): é a experiência ao vivo; como o painel não fica salvo
+  no arquivo, **toda curva mostrada nele é replicada em Plotly** na célula
+  seguinte. Registra a perda da rede (PyTorch e sklearn), a comparação de 3 taxas
+  de aprendizado e também o MCC da floresta em função do número de árvores (5.4c) —
+  para deixar claro que o TensorBoard não é só para redes. Limpe a pasta de logs
+  entre execuções (a célula já faz isso).
 - **ipywidgets** (Seção 10): o controle deslizante atualiza métricas ao vivo; o
   estado não é salvo — é preciso reexecutar a célula.
 - **Reprodutibilidade:** uma única constante `SEMENTE` no topo é propagada a

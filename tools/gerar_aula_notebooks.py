@@ -658,9 +658,22 @@ print("linha de base (chutar a classe maioritaria):",
 # ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 4 — Partição, com representação gráfica
 
-Para estimar honestamente o desempenho, separamos os dados em **treino**
-(ajusta o modelo), **calibração** (usada na Seção 8) e **teste** (tocado só no
-fim). *Como* separamos importa mais do que parece.
+Para estimar honestamente o desempenho, separamos os dados em três papéis:
+**treino** (ajusta o modelo), **calibração** e **teste** (tocado só no fim).
+
+Um esclarecimento que confunde muita gente: **não há aqui um conjunto de
+"validação" no sentido usual.** Um conjunto de validação separado serve para
+**escolher hiperparâmetros** ou comparar modelos durante o desenvolvimento —
+e nesta aula não fazemos busca de hiperparâmetros. Quando precisamos comparar de
+forma robusta, usamos **validação cruzada** (o segundo diagrama abaixo e a Seção
+4.4), que valida *sem* reservar um bloco fixo. Duas ressalvas: a rede neural cria
+internamente uma fração de validação **a partir do próprio treino** para decidir
+quando parar (early stopping) — não é um quarto bloco; e o terceiro bloco aqui, a
+**calibração**, tem um papel específico e diferente — a predição conformal da
+Seção 8 precisa de dados não usados nem no treino nem no teste. Se você pular a
+Seção 8, pode devolver a calibração ao treino.
+
+*Como* separamos importa mais do que o tamanho de cada parte.
 
 A regra, em uma frase: **moléculas de mesmo esqueleto devem ficar do mesmo lado**
 (todas no treino ou todas no teste), **nunca separadas** entre treino e teste.
@@ -737,9 +750,14 @@ print("divisao aleatoria     -> treino", len(idx_treino_ale),
 
 md("""### 4.2 — Diagramas do particionamento e da validação cruzada
 
-Dois esquemas desenhados no próprio notebook (Plotly, sem imagem externa): os
-blocos treino/calibração/teste em proporção, e o esquema de validação cruzada em
-k dobras, mostrando qual bloco é teste em cada rodada.""")
+Dois esquemas desenhados no próprio notebook (Plotly, sem imagem externa). O
+primeiro mostra os três blocos em proporção — treino, **calibração** (o bloco do
+meio; não é um conjunto de validação, e sim o reservado para a Seção 8) e teste.
+O segundo mostra a validação cruzada em k dobras: repare que ela **não tem um
+bloco fixo de validação** — o papel de teste **roda** por todas as dobras, e é
+exatamente assim que ela valida sem reservar um conjunto à parte. Por isso o
+"conjunto de validação" não aparece como um bloco no segundo diagrama: ele foi
+substituído pelo rodízio.""")
 code(r'''# diagrama 1: blocos treino/calibracao/teste
 tamanhos = [len(idx_treino_esq), len(idx_calib_esq), len(idx_teste_esq)]
 nomes = ["treino", "calibracao", "teste"]
@@ -1291,6 +1309,49 @@ estável**: oscila, sobe e desce, ou estaciona alta — o passo é grande demais
 otimizador "salta por cima" do mínimo. A taxa muito baixa (0.0001) desce, mas
 devagar demais; a intermediária desce de forma suave e consistente.""")
 
+md("""### 5.4c — TensorBoard não é só para redes neurais
+
+O TensorBoard aceita qualquer sequência de números via `add_scalar` — não precisa
+ser a perda de uma rede. A rigor, os modelos do scikit-learn que não treinam por
+época (regressão logística, SVM, floresta) não têm uma "curva de treino" a
+registrar; mas dá para registrar **qualquer progressão** que faça sentido. Para a
+floresta, a progressão natural é o desempenho **conforme se adicionam árvores**.
+Usamos `warm_start=True` para crescer a floresta em etapas e registramos o MCC no
+teste a cada etapa — no TensorBoard e, como sempre, replicado em Plotly.""")
+code(r'''escritor_floresta = SummaryWriter(os.path.join(PASTA_LOGS, "floresta_arvores"))
+floresta_incremental = RandomForestClassifier(
+    n_estimators=10, warm_start=True, n_jobs=-1, random_state=SEMENTE)
+
+n_arvores_etapas = list(range(20, 301, 20))
+curva_floresta = []
+for n_arvores in n_arvores_etapas:
+    floresta_incremental.set_params(n_estimators=n_arvores)
+    floresta_incremental.fit(X_treino, y_treino)     # warm_start: so cresce as novas arvores
+    mcc = matthews_corrcoef(y_teste, floresta_incremental.predict(X_teste))
+    curva_floresta.append(mcc)
+    escritor_floresta.add_scalar("mcc/teste", mcc, n_arvores)
+escritor_floresta.close()
+
+figura_floresta = go.Figure(go.Scatter(
+    x=n_arvores_etapas, y=curva_floresta, mode="lines+markers", line=dict(color="#1a7a4a")))
+figura_floresta.update_layout(
+    title="Floresta aleatoria: MCC no teste conforme se adicionam arvores",
+    xaxis_title="numero de arvores", yaxis_title="MCC", height=360)
+figura_floresta.show()
+print("MCC estabiliza em torno de", round(curva_floresta[-1], 3),
+      "- mais arvores alem disso quase nao mudam nada")''')
+
+mdq("""**Pergunta.** A curva de MCC da floresta em função do número de árvores tem
+o mesmo significado que a curva de perda por época da rede? O que cada uma diz?""",
+"""**Resposta.** Não são a mesma coisa. A curva de **perda por época** da rede
+mostra o modelo **aprendendo** (ajustando pesos) e pode revelar sobreajuste se a
+validação descolar. A curva de **MCC × número de árvores** da floresta mostra
+outra coisa: como o desempenho **converge** conforme agregamos mais estimadores —
+ela sobe e **estabiliza** num platô (mais árvores não pioram, só param de ajudar).
+São progressões diferentes; o TensorBoard registra ambas porque é só um plotador
+de escalares ao longo de um eixo — o eixo é que muda de sentido (épocas vs.
+árvores).""")
+
 md("""### 5.5 — Comparação de todos os modelos
 
 Uma única tabela e um gráfico com MCC, AUC, precisão e revocação por classe e
@@ -1488,11 +1549,14 @@ importa. Ela é preferível à importância por impureza da floresta, que é
 **enviesada** a favor de variáveis com muitos valores distintos (como os
 descritores contínuos) contra as binárias (os bits).
 
-O scikit-learn tem `sklearn.inspection.permutation_importance`, que faz isso para
-todas as features. Mas permutar os 2048 bits um a um é caro e pouco informativo
-(cada bit isolado quase não muda o resultado). Então focamos nos **nove
-descritores interpretáveis** e implementamos a permutação com um laço explícito —
-que também deixa o mecanismo à mostra.""")
+Permutar os 2048 bits **um a um** é caro e enganoso: cada bit isolado quase não
+muda o resultado, então todos apareceriam como "sem importância" — e daria a
+falsa impressão de que o fingerprint não conta. A saída correta é permutar o
+fingerprint **como um bloco**: embaralhamos as linhas de todas as 2048 colunas de
+uma vez (mantendo cada fingerprint interno intacto, mas quebrando sua associação
+com o rótulo) e medimos a queda. Assim comparamos, na mesma escala, a importância
+de **cada descritor** e a do **fingerprint inteiro**. Fazemos tudo com laços
+explícitos.""")
 code(r'''gerador_perm = np.random.RandomState(SEMENTE)
 n_amostra_perm = min(400, len(X_teste))
 amostra_perm = gerador_perm.choice(len(X_teste), n_amostra_perm, replace=False)
@@ -1516,18 +1580,33 @@ for indice_coluna in range(n_descritores):
         quedas.append(mcc_referencia - mcc_permutado)
     importancia_descritores.append(float(np.mean(quedas)))
 
-nomes_descritores = list(tabela_descritores.columns)
-ordem_importancia = np.argsort(importancia_descritores)
+# permuta o FINGERPRINT como um bloco: embaralha as linhas das colunas de bits
+# juntas (cada fingerprint fica intacto, mas some a associacao com o rotulo)
+colunas_fp = list(range(n_descritores, X_perm.shape[1]))
+quedas_fp = []
+for repeticao in range(3):
+    X_embaralhado = X_perm.copy()
+    ordem_linhas = gerador_perm.permutation(len(X_perm))
+    X_embaralhado[:, colunas_fp] = X_perm[np.ix_(ordem_linhas, colunas_fp)]
+    mcc_permutado = matthews_corrcoef(y_perm, modelo_floresta.predict(X_embaralhado))
+    quedas_fp.append(mcc_referencia - mcc_permutado)
+importancia_fp = float(np.mean(quedas_fp))
+
+# junta os 9 descritores + o bloco do fingerprint na mesma escala
+nomes = list(tabela_descritores.columns) + ["fingerprint (2048 bits)"]
+valores = importancia_descritores + [importancia_fp]
+cores = ["#7e9603"] * n_descritores + ["#3266ad"]     # fingerprint em azul
+ordem_importancia = np.argsort(valores)
 figura_importancia = go.Figure(go.Bar(
-    x=[importancia_descritores[i] for i in ordem_importancia],
-    y=[nomes_descritores[i] for i in ordem_importancia],
-    orientation="h", marker_color="#7e9603"))
+    x=[valores[i] for i in ordem_importancia],
+    y=[nomes[i] for i in ordem_importancia],
+    orientation="h", marker_color=[cores[i] for i in ordem_importancia]))
 figura_importancia.update_layout(
-    title="Importancia por permutacao dos descritores fisico-quimicos",
-    height=380, xaxis_title="queda media de MCC ao embaralhar")
+    title="Importancia por permutacao: descritores x fingerprint (bloco)",
+    height=400, xaxis_title="queda media de MCC ao embaralhar")
 figura_importancia.show()
-print("descritor mais importante:",
-      nomes_descritores[int(np.argmax(importancia_descritores))])''')
+print("queda de MCC ao embaralhar o fingerprint inteiro:", round(importancia_fp, 3))
+print("maior queda entre os descritores:", round(max(importancia_descritores), 3))''')
 
 md("""### 6.3 — SHAP sobre a floresta
 
@@ -1622,9 +1701,20 @@ md("""## Seção 7 — Domínio de aplicabilidade, revisitado
 
 Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Medimos,
 para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
-treino. O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios
-dados — o **percentil 5** das similaridades internas do treino — e não arbitrado.
-Uma molécula menos conectada ao espaço químico do que 95% do treino é considerada
+treino.
+
+Antes, um esclarecimento que costuma confundir: **Morgan e Tanimoto não são duas
+representações concorrentes.** O fingerprint de Morgan (Seção 3) é a
+**representação** — o vetor de bits que descreve a molécula, e que serve de
+*feature* para os modelos. A similaridade de Tanimoto é uma **medida** de quão
+parecidos são **dois desses fingerprints** (interseção sobre união dos bits
+ligados). Ou seja, calculamos Tanimoto **sobre** os mesmos fingerprints de
+Morgan; um é a representação, o outro é a régua que compara duas representações.
+Aqui a régua serve para o domínio de aplicabilidade, não para treinar.
+
+O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios dados —
+o **percentil 5** das similaridades internas do treino — e não arbitrado. Uma
+molécula menos conectada ao espaço químico do que 95% do treino é considerada
 fora do domínio.""")
 code(r'''# fingerprints como objetos RDKit para calcular Tanimoto
 def fingerprints_rdkit(indices):
