@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
+
+# artefatos de execução da aula (gerados em runtime)
+08_aula_bioinfo/logs_tb/
+08_aula_bioinfo/*.joblib
