@@ -95,8 +95,9 @@
 <p>Uma aula prática de aprendizagem de máquina aplicada à <strong>bioinformática e à
 descoberta de fármacos</strong>. A partir de dados reais de inibidores de um alvo
 proteico extraídos do <a href="https://www.ebi.ac.uk/chembl/">ChEMBL</a>, treinamos modelos
-que recebem qualquer molécula (via SMILES) e a classificam como <strong>FORTE</strong>,
-<strong>FRACO</strong> ou <strong>INCERTO</strong> para aquele alvo.</p>
+que recebem qualquer molécula (via SMILES) e a classificam como <strong>FORTE</strong> ou
+<strong>FRACO</strong> para aquele alvo — ou se <strong>abstêm</strong> (classe <strong>INDEFINIDA</strong>) quando não
+têm base para decidir.</p>
 <p>O material foi escrito para alunos de graduação em ciências biológicas e
 biomédicas que já conhecem Python básico, <code>numpy</code>, <code>pandas</code> e <code>matplotlib</code>, mas
 <strong>nunca treinaram um modelo</strong>. Roda inteiro no Google Colab, em CPU.</p>
@@ -113,18 +114,19 @@ inseticidas organofosforados e agentes neurotóxicos. O ChEMBL reúne milhares d
 moléculas com potência (IC50) medida contra ela.</p>
 <p>O identificador do alvo é resolvido pela API do ChEMBL dentro do notebook, então
 trocar de alvo é uma mudança de uma linha.</p>
-<h2>Por que "INCERTO" não é uma classe dos dados</h2>
-<p>Esta é a decisão de projeto central da aula. O ChEMBL registra <strong>potência
-medida</strong>, não incerteza — não existe uma coluna "incerto". Por isso:</p>
+<h2>Treino binário, resposta com abstenção</h2>
+<p>Esta é a decisão de projeto central da aula. O modelo é treinado só para separar
+<strong>FORTE</strong> de <strong>FRACO</strong> (o rótulo, por um limiar de pIC50). Mas, na hora de
+responder, ele pode <strong>se abster</strong> — devolver a classe <strong>INDEFINIDA</strong> — por duas
+razões distintas:</p>
 <ul>
-<li>o rótulo de treino é <strong>binário</strong> (FORTE/FRACO, por um limiar de pIC50);</li>
-<li>a resposta <strong>INCERTO</strong> é produzida pelo próprio modelo, por duas vias
-  independentes: (a) <strong>ambiguidade estatística</strong> (o modelo não tem confiança
-  suficiente) e (b) molécula <strong>fora do domínio de aplicabilidade</strong> químico (o
-  modelo nunca viu nada parecido e não deveria opinar).</li>
+<li><strong>abstenção por ambiguidade</strong>: a probabilidade fica perto do meio, sem
+  evidência clara para nenhum dos lados;</li>
+<li><strong>fora do domínio de aplicabilidade</strong>: a molécula não se parece com nada que o
+  modelo viu, então ele não tem base para opinar.</li>
 </ul>
-<p>Reconhecer o que o modelo <strong>não sabe</strong> é tão importante quanto a predição em si —
-uma lição que vale muito além da quimioinformática.</p>
+<p>Saber <strong>quando não decidir</strong> é tão importante quanto a predição em si — uma lição
+que vale muito além da quimioinformática.</p>
 <h2>O que a aula cobre</h2>
 <table>
 <thead>
@@ -148,15 +150,15 @@ uma lição que vale muito além da quimioinformática.</p>
 </tr>
 <tr>
 <td>4</td>
-<td>Partição aleatória × por esqueleto (Bemis-Murcko), com projeção 2D do espaço químico</td>
+<td>Partição (aleatória × esqueleto de Bemis-Murcko), projeção 2D do espaço químico e efeito de lote (batch effect) com mitigação por GroupKFold</td>
 </tr>
 <tr>
 <td>5</td>
-<td>Quatro modelos (regressão logística, SVM, floresta aleatória, rede neural) + a mesma rede aberta em PyTorch</td>
+<td>Quatro modelos de classificação + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo</td>
 </tr>
 <tr>
 <td>6</td>
-<td>Interpretabilidade (importância por permutação, SHAP) e o confundimento por tamanho molecular</td>
+<td>Interpretabilidade (importância por permutação, SHAP), confundimento por tamanho e controle de vazamento (data leakage)</td>
 </tr>
 <tr>
 <td>7</td>

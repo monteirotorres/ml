@@ -36,8 +36,8 @@ md("""# Aprendizado de máquina aplicado à bioinformática
 
 Aula prática. A partir de dados reais de inibidores da **acetilcolinesterase**
 (AChE) extraídos do ChEMBL, vamos treinar modelos que recebem qualquer molécula
-(pelo seu SMILES) e a classificam como **FORTE**, **FRACO** ou **INCERTO** para
-esse alvo.
+(pelo seu SMILES) e a classificam como **FORTE** ou **FRACO** para esse alvo — ou
+se **abstêm** (classe **INDEFINIDA**) quando não têm base para decidir.
 
 A acetilcolinesterase degrada o neurotransmissor acetilcolina. Seus inibidores
 incluem fármacos contra o Alzheimer (donepezila, rivastigmina), inseticidas
@@ -49,11 +49,13 @@ texto que explica *o que* ela faz, *por que* é necessária e *o que observar* n
 resultado. Rode as células em ordem, de cima para baixo. O notebook inteiro roda
 em CPU, sem GPU, em poucos minutos.
 
-**A decisão de projeto central: "INCERTO" não é uma classe dos dados.** O ChEMBL
-registra potência medida, não incerteza. O rótulo de treino é binário
-(FORTE/FRACO). A resposta INCERTO é produzida pelo modelo por duas vias: (a)
-ambiguidade estatística e (b) molécula fora do domínio de aplicabilidade
-químico. Reconhecer o que o modelo não sabe é parte do trabalho.""")
+**A decisão de projeto central: treino binário, resposta com abstenção.** O modelo
+é treinado só para separar FORTE de FRACO (o rótulo, por um limiar de pIC50). Mas,
+na hora de responder, ele pode **se abster** e devolver a classe **INDEFINIDA** por
+duas razões distintas: (a) **abstenção por ambiguidade** — a probabilidade fica
+perto do meio, sem evidência clara; (b) **fora do domínio de aplicabilidade** — a
+molécula não se parece com nada que o modelo viu, então ele não deveria opinar.
+Saber quando não decidir é parte do trabalho.""")
 
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 0 — AMBIENTE
@@ -364,12 +366,19 @@ for id_molecula, bloco in grupos:
     dispersao = bloco["pic50"].max() - bloco["pic50"].min()
     algum_censurado = bool(bloco["censurado_maior"].any())
     smiles = bloco["canonical_smiles"].iloc[0]
+    # documento de origem mais frequente (usado no diagnostico de efeito de lote)
+    documentos = bloco["document_chembl_id"].dropna()
+    if len(documentos) > 0:
+        documento_principal = documentos.mode().iloc[0]
+    else:
+        documento_principal = "desconhecido"
     linhas_agregadas.append({
         "molecule_chembl_id": id_molecula,
         "canonical_smiles": smiles,
         "pic50": pic50_mediana,
         "dispersao_log": dispersao,
         "censurado_maior": algum_censurado,
+        "documento": documento_principal,
         "n_medidas": len(bloco),
     })
 agregados = pd.DataFrame(linhas_agregadas)
@@ -745,6 +754,89 @@ divisão por esqueleto reproduz. Preferimos a estimativa mais baixa e mais
 honesta.""")
 
 
+md("""### 4.4 — Efeito de lote (batch effect) e vazamento por fonte
+
+Os dados não vieram de um experimento só: cada medida saiu de um **documento**
+(um artigo, uma patente) com seu próprio laboratório, protocolo e condições de
+ensaio. Diferenças sistemáticas entre essas fontes são um **efeito de lote**
+(batch effect) — o análogo, em quimioinformática, do efeito de lote entre
+plataformas em dados de expressão gênica.
+
+Isso ameaça o modelo de duas formas. Primeiro, ele pode aprender "de qual
+laboratório veio a molécula" em vez de química. Segundo, e mais perigoso: se
+moléculas do mesmo documento caírem dos dois lados de uma divisão aleatória, o
+modelo vê no teste primos vindos da mesma fonte que treinou — **vazamento de
+dados (data leakage) por fonte**, que infla o desempenho. Vamos primeiro
+diagnosticar e depois mitigar.""")
+code(r'''# quantas fontes, e quantas moleculas por fonte
+contagem_por_documento = agregados["documento"].value_counts()
+print("documentos distintos:", len(contagem_por_documento))
+print("moleculas na maior fonte:", int(contagem_por_documento.iloc[0]))
+print("mediana de moleculas por fonte:", int(contagem_por_documento.median()))
+
+# distribuicao de pIC50 nas maiores fontes: se diferem muito, ha efeito de lote
+maiores_documentos = contagem_por_documento.head(8).index.tolist()
+subconjunto = agregados[agregados["documento"].isin(maiores_documentos)]
+figura_lote = px.box(subconjunto, x="documento", y="pic50",
+                     title="Distribuicao de pIC50 por fonte (8 maiores documentos)")
+figura_lote.update_layout(height=400, xaxis_tickangle=45)
+figura_lote.show()''')
+
+md("""As caixas em alturas diferentes já sugerem que a potência típica varia de
+fonte para fonte. Um teste mais direto: **conseguimos prever a fonte a partir só
+da estrutura da molécula?** Rotulamos as moléculas da maior fonte como 1 e as
+demais como 0, e tentamos prever esse rótulo pelo fingerprint. Se a AUC ficar bem
+acima de 0,5, as moléculas se agrupam por fonte no espaço químico — o efeito de
+lote está entrelaçado com a química, e é isso que a divisão aleatória vaza.""")
+code(r'''from sklearn.model_selection import cross_val_score, StratifiedKFold, GroupKFold
+
+# rotulo auxiliar: pertence a maior fonte?
+maior_fonte = contagem_por_documento.index[0]
+y_fonte = (agregados["documento"] == maior_fonte).astype(int).values
+print("moleculas na maior fonte:", int(y_fonte.sum()), "de", len(y_fonte))
+
+sonda = LogisticRegression(max_iter=1000, random_state=SEMENTE)
+auc_fonte = cross_val_score(sonda, matriz_fingerprint.astype(float), y_fonte,
+                            cv=5, scoring="roc_auc")
+print("AUC ao prever a fonte pela estrutura:", round(auc_fonte.mean(), 3),
+      "(0.5 = fonte indistinguivel; alto = ha efeito de lote estrutural)")''')
+
+md("""A mitigação: validar com **GroupKFold por documento**. Em vez de sortear
+moléculas para as dobras, mantemos cada documento inteiro em uma única dobra —
+assim o teste nunca contém moléculas da mesma fonte que o treino. Comparamos a
+estimativa da validação cruzada comum (que embaralha) com a por grupo. Se a por
+grupo for **mais baixa**, a diferença era vazamento por fonte que a comum não
+enxergava.""")
+code(r'''grupos_documento = agregados["documento"].values
+
+modelo_cv = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=SEMENTE)
+
+# validacao cruzada comum: embaralha moleculas (pode vazar por fonte)
+cv_comum = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEMENTE)
+mcc_comum = cross_val_score(modelo_cv, X, y, cv=cv_comum, scoring="matthews_corrcoef")
+
+# validacao cruzada por grupo: cada documento fica inteiro em uma dobra
+cv_grupo = GroupKFold(n_splits=5)
+mcc_grupo = cross_val_score(modelo_cv, X, y, cv=cv_grupo, groups=grupos_documento,
+                            scoring="matthews_corrcoef")
+
+print("MCC validacao comum (embaralhada):", round(mcc_comum.mean(), 3),
+      "+/-", round(mcc_comum.std(), 3))
+print("MCC validacao por documento (GroupKFold):", round(mcc_grupo.mean(), 3),
+      "+/-", round(mcc_grupo.std(), 3))
+print("queda ao respeitar a fonte:", round(mcc_comum.mean() - mcc_grupo.mean(), 3))''')
+
+mdq("""**Pergunta.** Se a validação por documento dá um MCC mais baixo que a
+validação embaralhada, qual das duas você reporta — e o que a diferença mede?""",
+"""**Resposta.** Reporta-se a **por documento** (GroupKFold). Ela é a estimativa
+honesta de como o modelo se sai em moléculas de uma **fonte nova**, que é a
+situação real de uso. A diferença entre as duas mede exatamente o **vazamento por
+fonte**: o quanto a validação embaralhada estava inflando o desempenho ao deixar
+o modelo reencontrar, no teste, moléculas da mesma fonte (mesmo laboratório,
+mesma série química) que ele viu no treino. É o mesmo fenômeno da divisão por
+esqueleto da Seção 4.1, agora visto pela lente da origem experimental.""")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 5 — MODELOS
 # ══════════════════════════════════════════════════════════════════════════
@@ -810,7 +902,15 @@ O modelo mais simples que ainda é um modelo — e a referência contra a qual o
 outros são julgados. Ele soma as features com pesos e passa o resultado por uma
 sigmoide, produzindo uma **probabilidade**. Seus coeficientes são interpretáveis:
 o sinal diz se a feature empurra para FORTE ou para FRACO. Padronizamos as
-features num `Pipeline`, porque a regressão logística é sensível à escala.""")
+features num `Pipeline`, porque a regressão logística é sensível à escala.
+
+**Por que dentro de um `Pipeline`, e não antes?** Para evitar **vazamento de dados
+(data leakage)**. Se ajustássemos o `StandardScaler` no conjunto todo antes de
+dividir, a média e o desvio usados carregariam informação do teste para dentro do
+treino, e a estimativa de desempenho sairia otimista. Dentro do `Pipeline`, o
+scaler é ajustado **só no treino** de cada divisão. Vazamento é o erro mais comum
+e mais silencioso da área — já o vimos por fonte na Seção 4.4, e o testaremos de
+frente na Seção 6.5.""")
 codex(r'''inicio = time.time()
 modelo_logistico = Pipeline([
     ("escala", StandardScaler()),
@@ -1177,6 +1277,91 @@ divisão aleatória, é que a diferença **entre modelos** é menor do que a dif
 avaliação honesta muda o número que você reporta.""")
 
 
+md("""### 5.6 — E se o alvo fosse contínuo? Regressão do pIC50
+
+Ao binarizar o pIC50 em FORTE/FRACO, jogamos fora informação: uma molécula com
+pIC50 8,9 e outra com 6,1 viram a mesma classe "FORTE". A alternativa é **prever o
+pIC50 diretamente** — uma tarefa de **regressão** (valor contínuo), não de
+classificação.
+
+Uma diferença importante liga isto à Seção 2.4: as medidas censuradas `>` **não
+entram** na regressão. Elas não têm um valor pontual (só um limite inferior), e um
+regressor precisa de um número exato como alvo. Na classificação nós as
+aproveitávamos como FRACO; na regressão elas saem. É o outro lado da mesma
+decisão.""")
+codex(r'''from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+# dados de regressao: pIC50 continuo, apenas moleculas NAO censuradas
+def dados_regressao(indices):
+    """Recorta X e o pIC50 continuo para um conjunto, excluindo censurados '>'."""
+    posicoes = []
+    for indice in indices:
+        if not agregados.loc[indice, "censurado_maior"]:
+            posicoes.append(agregados.index.get_loc(indice))
+    return X[posicoes], agregados["pic50"].values[posicoes]
+
+Xr_treino, yr_treino = dados_regressao(idx_treino_esq)
+Xr_teste, yr_teste = dados_regressao(idx_teste_esq)
+print("regressao -> treino:", Xr_treino.shape[0], "| teste:", Xr_teste.shape[0],
+      "(censurados removidos)")
+
+# modelo: floresta de regressao
+regressor = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=SEMENTE)
+regressor.fit(Xr_treino, yr_treino)
+predito_reg = regressor.predict(Xr_teste)
+
+# metricas SEMPRE com a linha de base (prever a media do treino)
+media_treino = yr_treino.mean()
+rmse = np.sqrt(mean_squared_error(yr_teste, predito_reg))
+mae = mean_absolute_error(yr_teste, predito_reg)
+r2 = r2_score(yr_teste, predito_reg)
+rmse_base = np.sqrt(mean_squared_error(yr_teste, np.full_like(yr_teste, media_treino)))
+print(f"RMSE modelo: {rmse:.3f}  | RMSE base (media): {rmse_base:.3f}")
+print(f"MAE  modelo: {mae:.3f}")
+print(f"R2   modelo: {r2:.3f}  | R2 base: 0.000")''',
+"""Monte os dados de regressão excluindo as moléculas censuradas '>' (elas não têm
+valor pontual). Treine um RandomForestRegressor no pIC50 contínuo, avalie no teste
+e imprima RMSE, MAE e R2 — sempre ao lado da linha de base (prever a média do
+treino).""")
+
+md("""O gráfico de predito × observado mostra o ajuste. As linhas tracejadas
+marcam o limiar de potência: os pontos se dividem em quatro quadrantes que são,
+na prática, a matriz de confusão da classificação obtida ao **aplicar o limiar às
+predições da regressão** — as duas tarefas são duas vistas do mesmo sinal.""")
+code(r'''figura_reg = px.scatter(
+    x=yr_teste, y=predito_reg,
+    labels={"x": "pIC50 observado", "y": "pIC50 previsto"},
+    title="Regressao do pIC50: previsto x observado (R2 = " + str(round(r2, 3)) + ")",
+    opacity=0.4)
+figura_reg.update_traces(marker=dict(size=5, color="#3266ad"))
+minimo = float(min(yr_teste.min(), predito_reg.min()))
+maximo = float(max(yr_teste.max(), predito_reg.max()))
+figura_reg.add_trace(go.Scatter(x=[minimo, maximo], y=[minimo, maximo],
+                                mode="lines", line=dict(dash="dash", color="gray"),
+                                name="ideal"))
+figura_reg.add_hline(y=LIMIAR_POTENCIA, line_dash="dot", line_color="#c0392b")
+figura_reg.add_vline(x=LIMIAR_POTENCIA, line_dash="dot", line_color="#c0392b")
+figura_reg.show()
+
+# a classificacao "derivada" da regressao, so para mostrar a ligacao
+classe_derivada = (predito_reg >= LIMIAR_POTENCIA).astype(int)
+classe_real = (yr_teste >= LIMIAR_POTENCIA).astype(int)
+print("MCC da classificacao derivada da regressao:",
+      round(matthews_corrcoef(classe_real, classe_derivada), 3))''')
+
+mdq("""**Pergunta.** Por que as moléculas censuradas (`>`), que na classificação
+eram úteis como FRACO, tiveram de ser removidas da regressão?""",
+"""**Resposta.** Porque a regressão prevê um **número exato** e precisa de um alvo
+numérico exato para treinar. Uma medida "IC50 > 30000 nM" só diz "pelo menos tão
+fraco quanto isto" — é um limite, não um ponto. Na classificação isso bastava
+(qualquer valor acima do limite é FRACO), mas na regressão não há valor pontual
+para ajustar. Mantê-las forçaria um número inventado e enviesaria o modelo. É por
+isso que a mesma decisão de curadoria (Seção 2.4) leva a caminhos opostos nas duas
+tarefas.""")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 6 — INTERPRETABILIDADE
 # ══════════════════════════════════════════════════════════════════════════
@@ -1515,23 +1700,23 @@ específica.""")
 md("""## Seção 9 — O classificador em uso
 
 Juntamos tudo em uma função `classificar(smiles)` que devolve **FORTE**, **FRACO**
-ou **INCERTO**, sempre com o motivo. A ordem importa: primeiro verificamos o
-**domínio de aplicabilidade**; só then interpretamos a probabilidade. Uma molécula
-fora do domínio é INCERTO por atipicidade, independentemente do que o modelo
+ou **INDEFINIDA**, sempre com o motivo. A ordem importa: primeiro verificamos o
+**domínio de aplicabilidade**; só então interpretamos a probabilidade. Uma molécula
+fora do domínio é INDEFINIDA por atipicidade, independentemente do que o modelo
 "acharia". A função funciona mesmo se a Seção 8 for pulada.""")
-code(r'''MARGEM_ABSTENCAO = 0.15   # se |proba - 0.5| < margem, o modelo se abstem (INCERTO)
+code(r'''MARGEM_ABSTENCAO = 0.15   # se |proba - 0.5| < margem, o modelo se abstem (INDEFINIDA)
 
 def classificar(smiles):
-    """Classifica uma molecula (SMILES) como FORTE, FRACO ou INCERTO, com motivo."""
+    """Classifica uma molecula (SMILES) como FORTE, FRACO ou INDEFINIDA, com motivo."""
     molecula = Chem.MolFromSmiles(smiles)
     if molecula is None:
-        return {"classe": "INCERTO", "motivo": "SMILES invalido"}
+        return {"classe": "INDEFINIDA", "motivo": "SMILES invalido"}
 
     # 1. dominio de aplicabilidade primeiro
     fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
     similaridade = max(DataStructs.BulkTanimotoSimilarity(fp, fp_treino_rdkit))
     if similaridade < LIMIAR_DOMINIO:
-        return {"classe": "INCERTO",
+        return {"classe": "INDEFINIDA",
                 "motivo": "fora do dominio (Tanimoto max %.2f < %.2f)" % (similaridade, LIMIAR_DOMINIO)}
 
     # 2. so agora a probabilidade do modelo
@@ -1544,7 +1729,7 @@ def classificar(smiles):
 
     # 3. abstencao por ambiguidade estatistica
     if abs(probabilidade_forte - 0.5) < MARGEM_ABSTENCAO:
-        return {"classe": "INCERTO",
+        return {"classe": "INDEFINIDA",
                 "motivo": "ambiguo (probabilidade FORTE = %.2f)" % probabilidade_forte}
     if probabilidade_forte >= 0.5:
         return {"classe": "FORTE", "motivo": "probabilidade FORTE = %.2f" % probabilidade_forte}
@@ -1563,7 +1748,7 @@ moléculas cotidianas (cafeína, etanol).
 
 Espere respostas de três naturezas, e **leia os motivos impressos**, não só as
 classes: moléculas muito diferentes de tudo que o modelo viu (como o etanol) caem
-em INCERTO por atipicidade; um inibidor conhecido de esqueleto familiar tende a
+em INDEFINIDA por atipicidade; um inibidor conhecido de esqueleto familiar tende a
 FORTE; e há um caso instrutivo — uma molécula "cotidiana" pode, ainda assim,
 **estar dentro do domínio** se sua estrutura se parece com algo do treino, e então
 receber uma resposta confiante. Não presuma o resultado: observe o que o modelo de
@@ -1589,10 +1774,10 @@ Draw.MolsToGridImage(moleculas_galeria, legends=legendas_galeria,
                      molsPerRow=4, subImgSize=(230, 180))''')
 
 mdq("""**Pergunta.** Olhe os motivos impressos para a cafeína e o etanol. Um deles
-caiu em INCERTO por estar fora do domínio; o outro recebeu uma classe com
+caiu em INDEFINIDA por estar fora do domínio; o outro recebeu uma classe com
 probabilidade confiante. O que isso revela sobre a diferença entre "irrelevante
 para um biólogo" e "fora do domínio do modelo"?""",
-"""**Resposta.** O **etanol** cai em INCERTO por atipicidade — é tão pequeno e
+"""**Resposta.** O **etanol** cai em INDEFINIDA por atipicidade — é tão pequeno e
 diferente do treino que o modelo, corretamente, se abstém. A **cafeína**, porém,
 fica **dentro do domínio**: seu anel purínico/xantínico se parece com esqueletos
 presentes no conjunto (xantinas já foram estudadas contra a acetilcolinesterase),
@@ -1600,7 +1785,7 @@ então o modelo tem base para opinar — e responde FRACO com alta confiança (~
 de probabilidade de FORTE), o que é **quimicamente correto**: cafeína não é um
 inibidor potente. A lição: "irrelevante" é uma intuição biológica; "fora do
 domínio" é uma medida estrutural. Elas nem sempre coincidem — e um FRACO confiante
-e correto é uma resposta tão honesta quanto um INCERTO. O modelo só deve abster-se
+e correto é uma resposta tão honesta quanto um INDEFINIDA. O modelo só deve abster-se
 quando de fato não tem base, não sempre que a molécula parece incomum aos nossos
 olhos.""")
 
@@ -1645,7 +1830,7 @@ md("""### Exercícios
 4. **Taxa de aprendizado.** Na rede em PyTorch, encontre uma taxa alta demais e
    descreva a assinatura visual na curva de perda.
 5. **Domínio de aplicabilidade.** Varie o percentil do limiar de domínio (de 1 a
-   20). Como muda a fração de moléculas classificadas como INCERTO?
+   20). Como muda a fração de moléculas classificadas como INDEFINIDA?
 6. **Escrita.** Um usuário recebe FORTE do seu modelo para uma molécula nova. O
    que ele **pode** e o que ele **não pode** concluir a partir dessa resposta?
    (Pense em domínio de aplicabilidade, calibração e na diferença entre potência
@@ -1656,9 +1841,9 @@ md("""### Exercícios
 md("""### Controle interativo (célula de Colab)
 
 Um controle deslizante para o limiar de abstenção que atualiza ao vivo a fração de
-moléculas classificadas como INCERTO no teste. A interatividade muda o que se
+moléculas classificadas como INDEFINIDA no teste. A interatividade muda o que se
 **entende**, não só o que se vê: dá para sentir o compromisso entre abster-se mais
-(mais INCERTO, menos erros declarados) e decidir mais. O estado dos controles
+(mais INDEFINIDA, menos erros declarados) e decidir mais. O estado dos controles
 **não** é salvo no arquivo — é preciso reexecutar a célula.""")
 code(r'''try:
     from ipywidgets import interact, FloatSlider
@@ -1666,12 +1851,12 @@ code(r'''try:
     proba_teste_forte = modelo_floresta.predict_proba(X_teste)[:, 1]
 
     def mostrar_incerto(margem):
-        """Recalcula e imprime a fracao de INCERTO para uma margem de abstencao."""
+        """Recalcula e imprime a fracao de INDEFINIDA para uma margem de abstencao."""
         ambiguo = np.abs(proba_teste_forte - 0.5) < margem
         fora_dom = similaridade_teste < LIMIAR_DOMINIO
         incerto = ambiguo | fora_dom
         print("margem =", round(margem, 2),
-              "| fracao INCERTO =", round(incerto.mean(), 3),
+              "| fracao INDEFINIDA =", round(incerto.mean(), 3),
               "| por ambiguidade =", round(ambiguo.mean(), 3),
               "| fora do dominio =", round(fora_dom.mean(), 3))
 
@@ -1682,12 +1867,14 @@ except Exception as erro:
 
 md("""---
 
-Fim da aula. Você extraiu dados reais, curou-os com prestação de contas, treinou e
-comparou quatro modelos sob a mesma interface, abriu a caixa preta de uma rede em
-PyTorch, investigou se o modelo aprende química ou tamanho, delimitou onde ele
-pode opinar e o empacotou em uma função honesta que sabe dizer "INCERTO". O mais
-importante que fica: um modelo bom não é o que sempre responde, é o que sabe
-quando não deveria responder.""")
+Fim da aula. Você extraiu dados reais, curou-os com prestação de contas,
+diagnosticou o efeito de lote entre fontes, treinou e comparou quatro modelos sob
+a mesma interface (e ainda previu o pIC50 contínuo por regressão), abriu a caixa
+preta de uma rede em PyTorch, investigou se o modelo aprende química ou tamanho,
+controlou o vazamento de dados de frente, delimitou onde o modelo pode opinar e o
+empacotou em uma função honesta que sabe **se abster**. O mais importante que
+fica: um modelo bom não é o que sempre responde, é o que sabe quando não deveria
+responder.""")
 
 
 # ══════════════════════════════════════════════════════════════════════════

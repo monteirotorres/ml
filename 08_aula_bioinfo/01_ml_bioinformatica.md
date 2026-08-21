@@ -3,8 +3,9 @@
 Uma aula prática de aprendizagem de máquina aplicada à **bioinformática e à
 descoberta de fármacos**. A partir de dados reais de inibidores de um alvo
 proteico extraídos do [ChEMBL](https://www.ebi.ac.uk/chembl/), treinamos modelos
-que recebem qualquer molécula (via SMILES) e a classificam como **FORTE**,
-**FRACO** ou **INCERTO** para aquele alvo.
+que recebem qualquer molécula (via SMILES) e a classificam como **FORTE** ou
+**FRACO** para aquele alvo — ou se **abstêm** (classe **INDEFINIDA**) quando não
+têm base para decidir.
 
 O material foi escrito para alunos de graduação em ciências biológicas e
 biomédicas que já conhecem Python básico, `numpy`, `pandas` e `matplotlib`, mas
@@ -27,19 +28,20 @@ moléculas com potência (IC50) medida contra ela.
 O identificador do alvo é resolvido pela API do ChEMBL dentro do notebook, então
 trocar de alvo é uma mudança de uma linha.
 
-## Por que "INCERTO" não é uma classe dos dados
+## Treino binário, resposta com abstenção
 
-Esta é a decisão de projeto central da aula. O ChEMBL registra **potência
-medida**, não incerteza — não existe uma coluna "incerto". Por isso:
+Esta é a decisão de projeto central da aula. O modelo é treinado só para separar
+**FORTE** de **FRACO** (o rótulo, por um limiar de pIC50). Mas, na hora de
+responder, ele pode **se abster** — devolver a classe **INDEFINIDA** — por duas
+razões distintas:
 
-- o rótulo de treino é **binário** (FORTE/FRACO, por um limiar de pIC50);
-- a resposta **INCERTO** é produzida pelo próprio modelo, por duas vias
-  independentes: (a) **ambiguidade estatística** (o modelo não tem confiança
-  suficiente) e (b) molécula **fora do domínio de aplicabilidade** químico (o
-  modelo nunca viu nada parecido e não deveria opinar).
+- **abstenção por ambiguidade**: a probabilidade fica perto do meio, sem
+  evidência clara para nenhum dos lados;
+- **fora do domínio de aplicabilidade**: a molécula não se parece com nada que o
+  modelo viu, então ele não tem base para opinar.
 
-Reconhecer o que o modelo **não sabe** é tão importante quanto a predição em si —
-uma lição que vale muito além da quimioinformática.
+Saber **quando não decidir** é tão importante quanto a predição em si — uma lição
+que vale muito além da quimioinformática.
 
 ## O que a aula cobre
 
@@ -48,9 +50,9 @@ uma lição que vale muito além da quimioinformática.
 | 0–1 | Ambiente reprodutível; o que é IC50, pIC50 e por que a escala é logarítmica |
 | 2 | Curadoria dos dados com tabela de proveniência e gráfico de funil |
 | 3 | Descritores moleculares e fingerprint de Morgan, explicados um a um |
-| 4 | Partição aleatória × por esqueleto (Bemis-Murcko), com projeção 2D do espaço químico |
-| 5 | Quatro modelos (regressão logística, SVM, floresta aleatória, rede neural) + a mesma rede aberta em PyTorch |
-| 6 | Interpretabilidade (importância por permutação, SHAP) e o confundimento por tamanho molecular |
+| 4 | Partição (aleatória × esqueleto de Bemis-Murcko), projeção 2D do espaço químico e efeito de lote (batch effect) com mitigação por GroupKFold |
+| 5 | Quatro modelos de classificação + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo |
+| 6 | Interpretabilidade (importância por permutação, SHAP), confundimento por tamanho e controle de vazamento (data leakage) |
 | 7 | Domínio de aplicabilidade por similaridade de Tanimoto |
 | 8 | Predição conformal (opcional) |
 | 9 | A função `classificar(smiles)` em uso, com galeria de moléculas |

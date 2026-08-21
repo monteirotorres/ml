@@ -3,7 +3,8 @@
 Material de uma aula prática de aprendizado de máquina aplicado à bioinformática.
 A partir de dados reais de inibidores da **acetilcolinesterase** (AChE, `CHEMBL220`),
 os alunos treinam modelos que classificam qualquer molécula (via SMILES) como
-**FORTE**, **FRACO** ou **INCERTO**.
+**FORTE** ou **FRACO** — ou que se **abstêm** (classe **INDEFINIDA**) quando não
+têm base para decidir.
 
 Público: graduação em ciências biológicas/biomédicas com Python básico, `numpy`,
 `pandas` e `matplotlib`, mas **sem** experiência em treinar modelos. Roda no Google
@@ -36,10 +37,10 @@ Colab, em CPU.
 | 1 | IC50/pIC50; carregar dados | 10 min | não |
 | 2 | Curadoria + funil de proveniência | 15 min | não |
 | 3 | Descritores e fingerprint de Morgan | 20 min | não |
-| 4 | Partição aleatória × esqueleto; espaço químico | 15 min | encurtar (mostrar só a projeção 2D) |
-| 5 | Quatro modelos + rede em PyTorch + TensorBoard | 35 min | 5b (PyTorch/TensorBoard) para 2ª aula |
-| 6 | Interpretabilidade e confundimento por tamanho | 20 min | SHAP (6.3) é o mais lento — pode cortar |
-| 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta o INCERTO) |
+| 4 | Partição aleatória × esqueleto; espaço químico; efeito de lote (4.4) | 20 min | 4.4 (batch effect) para 2ª aula |
+| 5 | Quatro modelos + rede em PyTorch + TensorBoard + regressão do pIC50 (5.6) | 40 min | 5b (PyTorch/TensorBoard) e 5.6 (regressão) para 2ª aula |
+| 6 | Interpretabilidade, confundimento por tamanho e vazamento | 20 min | SHAP (6.3) é o mais lento — pode cortar |
+| 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta a abstenção) |
 | 8 | Predição conformal | 10 min | **opcional** — marcada como tal |
 | 9 | `classificar()` em uso + galeria | 10 min | não (é o pagamento da aula) |
 | 10 | Persistência e exercícios | 5 min | exercícios ficam de casa |
@@ -52,12 +53,14 @@ cabe em ~90 min.
 ## O que não pode ser cortado (a espinha pedagógica)
 
 - **Seção 2** (curadoria com proveniência) — sem ela os modelos aprendem lixo.
-- **A decisão FORTE/FRACO/INCERTO** — INCERTO não é classe dos dados; é produzido
-  pelo modelo (ambiguidade + fora de domínio). Não vire três classes por faixa.
+- **Treino binário com abstenção** — o rótulo é FORTE/FRACO; a classe INDEFINIDA
+  é uma **abstenção** do modelo (por ambiguidade ou por estar fora do domínio de
+  aplicabilidade), não uma terceira faixa de potência. Não vire três classes.
 - **Seção 4** (divisão por esqueleto) — a lição central: a partição importa mais
   que o algoritmo.
-- **Seção 7** (domínio) e **Seção 9** (`classificar`) — é onde o INCERTO ganha
-  sentido concreto (cafeína e etanol devem cair em INCERTO).
+- **Seção 7** (domínio) e **Seção 9** (`classificar`) — é onde a abstenção ganha
+  sentido concreto (o etanol cai em INDEFINIDA por estar fora do domínio; a
+  cafeína, dentro do domínio, recebe um FRACO confiante e correto).
 
 ## Notas técnicas
 
