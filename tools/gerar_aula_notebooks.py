@@ -1227,24 +1227,48 @@ Qual feature o modelo realmente usa? A **importância por permutação** embaral
 uma feature de cada vez e mede quanto o desempenho cai: se cai muito, a feature
 importa. Ela é preferível à importância por impureza da floresta, que é
 **enviesada** a favor de variáveis com muitos valores distintos (como os
-descritores contínuos) contra as binárias (os bits). Restringimos a uma amostra
-do teste por custo de tempo.""")
+descritores contínuos) contra as binárias (os bits).
+
+O scikit-learn tem `sklearn.inspection.permutation_importance`, que faz isso para
+todas as features. Mas permutar os 2048 bits um a um é caro e pouco informativo
+(cada bit isolado quase não muda o resultado). Então focamos nos **nove
+descritores interpretáveis** e implementamos a permutação com um laço explícito —
+que também deixa o mecanismo à mostra.""")
 code(r'''gerador_perm = np.random.RandomState(SEMENTE)
-n_amostra_perm = min(400, len(X_teste))
+n_amostra_perm = min(500, len(X_teste))
 amostra_perm = gerador_perm.choice(len(X_teste), n_amostra_perm, replace=False)
+X_perm = X_teste[amostra_perm].copy()
+y_perm = y_teste[amostra_perm]
 
-importancia = permutation_importance(
-    modelo_floresta, X_teste[amostra_perm], y_teste[amostra_perm],
-    n_repeats=5, random_state=SEMENTE, scoring="matthews_corrcoef", n_jobs=-1)
+# MCC de referencia (sem permutar nada)
+mcc_referencia = matthews_corrcoef(y_perm, modelo_floresta.predict(X_perm))
 
-ordem_importancia = np.argsort(importancia.importances_mean)[::-1][:15]
-nomes_top = [nomes_features[i] for i in ordem_importancia]
-valores_top = importancia.importances_mean[ordem_importancia]
+# permuta cada coluna de descritor 5 vezes e mede a queda media de MCC
+n_descritores = len(tabela_descritores.columns)
+importancia_descritores = []
+for indice_coluna in range(n_descritores):
+    quedas = []
+    for repeticao in range(5):
+        X_embaralhado = X_perm.copy()
+        coluna = X_embaralhado[:, indice_coluna].copy()
+        gerador_perm.shuffle(coluna)
+        X_embaralhado[:, indice_coluna] = coluna
+        mcc_permutado = matthews_corrcoef(y_perm, modelo_floresta.predict(X_embaralhado))
+        quedas.append(mcc_referencia - mcc_permutado)
+    importancia_descritores.append(float(np.mean(quedas)))
+
+nomes_descritores = list(tabela_descritores.columns)
+ordem_importancia = np.argsort(importancia_descritores)
 figura_importancia = go.Figure(go.Bar(
-    x=valores_top[::-1], y=nomes_top[::-1], orientation="h", marker_color="#7e9603"))
-figura_importancia.update_layout(title="Importancia por permutacao (15 maiores)",
-                                 height=430, xaxis_title="queda de MCC ao embaralhar")
-figura_importancia.show()''')
+    x=[importancia_descritores[i] for i in ordem_importancia],
+    y=[nomes_descritores[i] for i in ordem_importancia],
+    orientation="h", marker_color="#7e9603"))
+figura_importancia.update_layout(
+    title="Importancia por permutacao dos descritores fisico-quimicos",
+    height=380, xaxis_title="queda media de MCC ao embaralhar")
+figura_importancia.show()
+print("descritor mais importante:",
+      nomes_descritores[int(np.argmax(importancia_descritores))])''')
 
 md("""### 6.3 — SHAP sobre a floresta
 
@@ -1254,16 +1278,50 @@ explicamos duas moléculas individualmente, com o desenho ao lado. Restringimos 
 uma amostra do teste porque o SHAP é custoso.""")
 code(r'''import shap
 
-n_amostra_shap = min(150, len(X_teste))
+n_amostra_shap = min(120, len(X_teste))
 amostra_shap = gerador_perm.choice(len(X_teste), n_amostra_shap, replace=False)
 X_shap = X_teste[amostra_shap]
 
-explicador = shap.TreeExplainer(modelo_floresta)
-valores_shap = explicador.shap_values(X_shap)
-# em classificacao binaria, usamos as contribuicoes para a classe FORTE (indice 1)
-valores_shap_forte = valores_shap[1] if isinstance(valores_shap, list) else valores_shap[:, :, 1]
+# feature_perturbation e check_additivity=False evitam um erro de aditividade
+# comum em florestas grandes com muitas features binarias
+explicador = shap.TreeExplainer(modelo_floresta, feature_perturbation="tree_path_dependent")
+valores_shap = explicador.shap_values(X_shap, check_additivity=False)
+# em classificacao binaria, pegamos as contribuicoes para a classe FORTE (indice 1)
+if isinstance(valores_shap, list):
+    valores_shap_forte = valores_shap[1]
+else:
+    valores_shap_forte = valores_shap[:, :, 1]
 shap.summary_plot(valores_shap_forte, X_shap, feature_names=nomes_features,
                   max_display=12, show=True)''')
+
+md("""Duas moléculas explicadas individualmente: para cada uma, o desenho da
+molécula ao lado das features que mais empurraram a predição para FORTE (verde) ou
+para FRACO (vermelho). É a mesma informação do resumo, agora molécula a molécula.""")
+code(r'''def explicar_molecula(posicao_no_shap):
+    """Desenha a molecula e as 8 features de maior contribuicao SHAP (para FORTE)."""
+    indice_teste = amostra_shap[posicao_no_shap]
+    indice_molecula = idx_teste_esq[indice_teste]
+    molecula = agregados.loc[indice_molecula, "molecula"]
+    contribuicoes = valores_shap_forte[posicao_no_shap]
+
+    ordem = np.argsort(np.abs(contribuicoes))[::-1][:8]
+    nomes = [nomes_features[i] for i in ordem]
+    valores = [contribuicoes[i] for i in ordem]
+    cores = ["#1a7a4a" if v > 0 else "#c0392b" for v in valores]
+
+    figura, (eixo_mol, eixo_shap) = plt.subplots(1, 2, figsize=(11, 3.6))
+    eixo_mol.imshow(Draw.MolToImage(molecula, size=(320, 300)))
+    eixo_mol.axis("off")
+    eixo_mol.set_title(agregados.loc[indice_molecula, "molecule_chembl_id"], fontsize=10)
+    eixo_shap.barh(range(len(valores)), valores[::-1], color=cores[::-1])
+    eixo_shap.set_yticks(range(len(valores)))
+    eixo_shap.set_yticklabels(nomes[::-1], fontsize=9)
+    eixo_shap.axvline(0, color="black", linewidth=0.8)
+    eixo_shap.set_title("contribuicao SHAP (verde=FORTE, vermelho=FRACO)", fontsize=9)
+    plt.tight_layout(); plt.show()
+
+explicar_molecula(0)
+explicar_molecula(1)''')
 
 md("""### 6.4 — Dependência parcial
 
