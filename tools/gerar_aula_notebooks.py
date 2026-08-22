@@ -81,21 +81,23 @@ code(r'''import importlib.util
 import subprocess
 import sys
 
-def garantir(pacote_import, pacote_pip=None):
-    """Instala o pacote apenas se ele ainda não puder ser importado."""
-    if importlib.util.find_spec(pacote_import) is not None:
-        print("ja instalado:", pacote_import)
-        return
-    alvo = pacote_pip if pacote_pip is not None else pacote_import
-    print("instalando:", alvo)
-    subprocess.run([sys.executable, "-m", "pip", "install", "-q", alvo], check=True)
+# pares (nome para importar, nome para instalar via pip)
+pacotes = [
+    ("rdkit", "rdkit"),
+    ("plotly", "plotly"),
+    ("chembl_webresource_client", "chembl_webresource_client"),
+    ("shap", "shap"),
+    ("umap", "umap-learn"),
+    ("tqdm", "tqdm"),
+]
 
-garantir("rdkit", "rdkit")
-garantir("plotly", "plotly")
-garantir("chembl_webresource_client", "chembl_webresource_client")
-garantir("shap", "shap")
-garantir("umap", "umap-learn")
-garantir("tqdm", "tqdm")
+# instala cada um so se ainda nao puder ser importado
+for nome_import, nome_pip in pacotes:
+    if importlib.util.find_spec(nome_import) is not None:
+        print("ja instalado:", nome_import)
+    else:
+        print("instalando:", nome_pip)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", nome_pip], check=True)
 print("instalacao concluida")''')
 
 md("""### 0.2 — Importações, agrupadas por finalidade
@@ -197,52 +199,59 @@ pelo qual a curadoria da Seção 2 existe.""")
 
 md("""### 1.1 — Carregar os dados
 
-A extração do ChEMBL fica isolada em uma célula com tratamento de exceção: se a
-API do EBI estiver acessível, buscamos ao vivo; senão, lemos o CSV pré-extraído
-`dados_alvo_bruto.csv` que acompanha a aula. O identificador do alvo é resolvido
-pela API a partir do **nome do gene**, nunca fixado no código — trocar de alvo é
+Nós já extraímos os dados do ChEMBL e deixamos o CSV num **link público** no
+repositório. Assim o notebook lê direto da internet — **sem precisar subir
+arquivo nenhum** no Colab. É o caminho padrão, e é rápido.""")
+code(r'''URL_DADOS = ("https://raw.githubusercontent.com/monteirotorres/ml/"
+             "main/08_aula_bioinfo/dados_alvo_bruto.csv")
+
+# le o CSV direto da URL; se a internet falhar, tenta um arquivo local de mesmo nome
+try:
+    dados_brutos = pd.read_csv(URL_DADOS)
+    print("lidos do repositorio (URL):", len(dados_brutos), "registros")
+except Exception as erro:
+    print("URL indisponivel (", type(erro).__name__, "); tentando arquivo local")
+    dados_brutos = pd.read_csv("dados_alvo_bruto.csv")
+    print("lidos do arquivo local:", len(dados_brutos), "registros")
+
+dados_brutos.head()''')
+
+md("""**Opcional — como o CSV foi produzido.** A célula abaixo re-extrai os dados
+direto da API do ChEMBL, para mostrar de onde eles vêm. É **lenta** (alguns
+minutos, baixa ~10 mil medidas uma a uma), então vem **desligada** — deixe
+`EXECUTAR_EXTRACAO_API = False` em sala e rode em casa se tiver curiosidade. O
+alvo é resolvido pelo **nome do gene**, nunca fixado no código: trocar de alvo é
 mudar uma linha.""")
-code(r'''ALVO_GENE = "ACHE"          # gene da acetilcolinesterase humana
-ARQUIVO_CSV = "dados_alvo_bruto.csv"
+code(r'''ALVO_GENE = "ACHE"                    # gene da acetilcolinesterase humana
+EXECUTAR_EXTRACAO_API = False         # mude para True para baixar da API (lento)
 
-def resolver_alvo_por_gene(nome_gene):
-    """Descobre o ChEMBL ID do alvo a partir do símbolo do gene, via API."""
+if EXECUTAR_EXTRACAO_API:
     from chembl_webresource_client.new_client import new_client
-    busca = new_client.target.filter(
-        target_components__accession__isnull=False,
-        pref_name__isnull=False,
-    ).filter(target_synonym__icontains=nome_gene)
-    for alvo in busca:
+
+    # 1. resolve o ChEMBL ID do alvo a partir do simbolo do gene
+    alvo_id = None
+    for alvo in new_client.target.filter(target_synonym__icontains=ALVO_GENE):
         if alvo.get("organism") == "Homo sapiens":
-            return alvo["target_chembl_id"]
-    return None
+            alvo_id = alvo["target_chembl_id"]
+            break
+    print("alvo resolvido pela API:", alvo_id)
 
-def extrair_da_api(alvo_id):
-    """Baixa as atividades IC50 do alvo. Pode falhar sem rede — por isso o try."""
-    from chembl_webresource_client.new_client import new_client
-    atividades = new_client.activity.filter(
-        target_chembl_id=alvo_id, standard_type="IC50")
+    # 2. baixa as atividades IC50 desse alvo, uma a uma, para uma tabela
     colunas = ["molecule_chembl_id", "canonical_smiles", "standard_type",
                "standard_relation", "standard_value", "standard_units",
                "pchembl_value", "assay_type", "assay_chembl_id",
                "data_validity_comment", "document_chembl_id", "target_chembl_id"]
     linhas = []
-    for atividade in atividades:
-        linhas.append({coluna: atividade.get(coluna) for coluna in colunas})
-    return pd.DataFrame(linhas)
-
-dados_brutos = None
-try:
-    alvo_id = resolver_alvo_por_gene(ALVO_GENE)
-    print("alvo resolvido pela API:", alvo_id)
-    dados_brutos = extrair_da_api(alvo_id)
-    print("extraidos da API:", len(dados_brutos), "registros")
-except Exception as erro:
-    print("API indisponivel (", type(erro).__name__, ") -> usando CSV pre-extraido")
-    dados_brutos = pd.read_csv(ARQUIVO_CSV)
-    print("lidos do CSV:", len(dados_brutos), "registros")
-
-dados_brutos.head()''')
+    for atividade in new_client.activity.filter(target_chembl_id=alvo_id,
+                                                standard_type="IC50"):
+        linha = {}
+        for coluna in colunas:
+            linha[coluna] = atividade.get(coluna)
+        linhas.append(linha)
+    dados_brutos = pd.DataFrame(linhas)
+    print("re-extraidos da API:", len(dados_brutos), "registros")
+else:
+    print("extracao da API desligada; usando o CSV lido acima")''')
 
 md("""### 1.2 — Primeiro olhar
 
@@ -507,8 +516,15 @@ físico-químicos interpretáveis e o fingerprint de Morgan (estrutural).
 
 A regra dos cinco de Lipinski (MW≤500, LogP≤5, HBD≤5, HBA≤10) resume boa parte
 disso para fármacos orais.""")
-code(r'''def calcular_descritores(molecula):
-    """Devolve um dicionario com os nove descritores fisico-quimicos."""
+code(r'''# converte cada SMILES em objeto molecula uma unica vez (reaproveitado adiante)
+moleculas = []
+for smiles in agregados["canonical_smiles"]:
+    moleculas.append(Chem.MolFromSmiles(smiles))
+agregados["molecula"] = moleculas
+
+# calcula os nove descritores de cada molecula, com um laco explicito
+lista_descritores = []
+for molecula in agregados["molecula"]:
     descritores = {}
     descritores["MW"] = Descriptors.MolWt(molecula)
     descritores["LogP"] = Descriptors.MolLogP(molecula)
@@ -519,18 +535,7 @@ code(r'''def calcular_descritores(molecula):
     descritores["aneis_aromaticos"] = Descriptors.NumAromaticRings(molecula)
     descritores["fracao_sp3"] = Descriptors.FractionCSP3(molecula)
     descritores["atomos_pesados"] = molecula.GetNumHeavyAtoms()
-    return descritores
-
-# converte cada SMILES em objeto molecula uma unica vez (reaproveitado adiante)
-moleculas = []
-for smiles in agregados["canonical_smiles"]:
-    moleculas.append(Chem.MolFromSmiles(smiles))
-agregados["molecula"] = moleculas
-
-# calcula os descritores linha a linha, com laco explicito
-lista_descritores = []
-for molecula in agregados["molecula"]:
-    lista_descritores.append(calcular_descritores(molecula))
+    lista_descritores.append(descritores)
 tabela_descritores = pd.DataFrame(lista_descritores, index=agregados.index)
 print("dimensao da tabela de descritores:", tabela_descritores.shape)
 tabela_descritores.describe().round(2)''')
@@ -596,17 +601,13 @@ inativo conhecido, sem pIC50). As demais são **FORTE** se o pIC50 ≥
 Seção 2.5.""")
 code(r'''LIMIAR_POTENCIA = 6.0   # pIC50 >= 6 equivale a IC50 <= 1 uM (1000 nM)
 
-# calcula o fingerprint de todas as moleculas (matriz densa de 0/1)
-def fingerprint_para_array(molecula):
-    """Converte o fingerprint de Morgan em um vetor numpy de inteiros 0/1."""
+# calcula o fingerprint de Morgan de cada molecula e o converte num vetor 0/1
+lista_fingerprints = []
+for molecula in agregados["molecula"]:
     fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
     vetor = np.zeros((N_BITS,), dtype=np.int8)
     DataStructs.ConvertToNumpyArray(fp, vetor)
-    return vetor
-
-lista_fingerprints = []
-for molecula in agregados["molecula"]:
-    lista_fingerprints.append(fingerprint_para_array(molecula))
+    lista_fingerprints.append(vetor)
 matriz_fingerprint = np.array(lista_fingerprints)
 
 # rotulo: 1 = FORTE, 0 = FRACO
@@ -687,14 +688,11 @@ A regra, em uma frase: **moléculas de mesmo esqueleto devem ficar do mesmo lado
   (o núcleo, sem as cadeias laterais) e mantém **cada esqueleto inteiro em um único
   conjunto** — os análogos nunca se separam. Assim o teste contém núcleos que o
   treino **nunca viu**, que é a situação real de uso. É mais dura e mais honesta.""")
-code(r'''def esqueleto_murcko(molecula):
-    """Devolve o SMILES do esqueleto de Bemis-Murcko (nucleo da molecula)."""
-    esqueleto = MurckoScaffold.GetScaffoldForMol(molecula)
-    return Chem.MolToSmiles(esqueleto)
-
+code(r'''# extrai o esqueleto de Bemis-Murcko (o nucleo, sem cadeias laterais) de cada molecula
 esqueletos = []
 for molecula in agregados["molecula"]:
-    esqueletos.append(esqueleto_murcko(molecula))
+    esqueleto = MurckoScaffold.GetScaffoldForMol(molecula)
+    esqueletos.append(Chem.MolToSmiles(esqueleto))
 agregados["esqueleto"] = esqueletos
 print("moleculas:", len(agregados), "| esqueletos distintos:", agregados["esqueleto"].nunique())''')
 
@@ -704,45 +702,38 @@ Implementamos as duas com laços explícitos. Na divisão por esqueleto, ordenam
 grupos do maior para o menor e vamos preenchendo treino, calibração e teste até
 atingir as proporções — nenhum esqueleto se divide entre conjuntos.""")
 code(r'''PROP_TREINO, PROP_CALIB = 0.70, 0.15   # o resto (0.15) vai para teste
+n_total = len(agregados)
 
-def dividir_por_esqueleto(tabela):
-    """Atribui indices a treino/calib/teste mantendo cada esqueleto inteiro."""
-    grupos_por_esqueleto = {}
-    for indice in tabela.index:
-        chave = tabela.loc[indice, "esqueleto"]
-        if chave not in grupos_por_esqueleto:
-            grupos_por_esqueleto[chave] = []
-        grupos_por_esqueleto[chave].append(indice)
+# --- divisao POR ESQUELETO: cada esqueleto inteiro fica em um unico conjunto ---
+# 1. agrupa os indices das moleculas por esqueleto
+grupos_por_esqueleto = {}
+for indice in agregados.index:
+    chave = agregados.loc[indice, "esqueleto"]
+    if chave not in grupos_por_esqueleto:
+        grupos_por_esqueleto[chave] = []
+    grupos_por_esqueleto[chave].append(indice)
 
-    # grupos do maior para o menor (embaralha empates de forma reprodutivel)
-    grupos_ordenados = sorted(grupos_por_esqueleto.values(),
-                              key=lambda grupo: (-len(grupo), tabela.loc[grupo[0], "esqueleto"]))
-    n_total = len(tabela)
-    treino, calib, teste = [], [], []
-    for grupo in grupos_ordenados:
-        if len(treino) < PROP_TREINO * n_total:
-            treino.extend(grupo)
-        elif len(calib) < PROP_CALIB * n_total:
-            calib.extend(grupo)
-        else:
-            teste.extend(grupo)
-    return treino, calib, teste
+# 2. do maior grupo para o menor, enche treino, depois calibracao, depois teste
+grupos_ordenados = sorted(grupos_por_esqueleto.values(),
+                          key=lambda grupo: (-len(grupo), agregados.loc[grupo[0], "esqueleto"]))
+idx_treino_esq, idx_calib_esq, idx_teste_esq = [], [], []
+for grupo in grupos_ordenados:
+    if len(idx_treino_esq) < PROP_TREINO * n_total:
+        idx_treino_esq.extend(grupo)
+    elif len(idx_calib_esq) < PROP_CALIB * n_total:
+        idx_calib_esq.extend(grupo)
+    else:
+        idx_teste_esq.extend(grupo)
 
-def dividir_aleatorio(tabela):
-    """Sorteia indices para treino/calib/teste, ignorando o esqueleto."""
-    indices = list(tabela.index)
-    gerador = np.random.RandomState(SEMENTE)
-    gerador.shuffle(indices)
-    n_total = len(indices)
-    corte_treino = int(PROP_TREINO * n_total)
-    corte_calib = int((PROP_TREINO + PROP_CALIB) * n_total)
-    treino = indices[:corte_treino]
-    calib = indices[corte_treino:corte_calib]
-    teste = indices[corte_calib:]
-    return treino, calib, teste
+# --- divisao ALEATORIA: sorteia moleculas, ignorando o esqueleto ---
+indices_embaralhados = list(agregados.index)
+np.random.RandomState(SEMENTE).shuffle(indices_embaralhados)
+corte_treino = int(PROP_TREINO * n_total)
+corte_calib = int((PROP_TREINO + PROP_CALIB) * n_total)
+idx_treino_ale = indices_embaralhados[:corte_treino]
+idx_calib_ale = indices_embaralhados[corte_treino:corte_calib]
+idx_teste_ale = indices_embaralhados[corte_calib:]
 
-idx_treino_esq, idx_calib_esq, idx_teste_esq = dividir_por_esqueleto(agregados)
-idx_treino_ale, idx_calib_ale, idx_teste_ale = dividir_aleatorio(agregados)
 print("divisao por esqueleto -> treino", len(idx_treino_esq),
       "calib", len(idx_calib_esq), "teste", len(idx_teste_esq))
 print("divisao aleatoria     -> treino", len(idx_treino_ale),
@@ -807,19 +798,20 @@ coords = pca.fit_transform(matriz_fingerprint.astype(float))
 agregados["pca_x"] = coords[:, 0]
 agregados["pca_y"] = coords[:, 1]
 
-def rotular_conjunto(indices_treino, indices_calib, indices_teste):
-    """Cria uma coluna 'conjunto' para colorir a projecao."""
+# marca, para cada molecula, a qual conjunto ela pertence em cada divisao
+# (uma coluna por divisao, so para colorir a projecao)
+for nome_coluna, idx_tr, idx_ca, idx_te in [
+    ("conjunto_aleatorio", idx_treino_ale, idx_calib_ale, idx_teste_ale),
+    ("conjunto_esqueleto", idx_treino_esq, idx_calib_esq, idx_teste_esq),
+]:
     pertence = {}
-    for indice in indices_treino: pertence[indice] = "treino"
-    for indice in indices_calib: pertence[indice] = "calibracao"
-    for indice in indices_teste: pertence[indice] = "teste"
+    for indice in idx_tr: pertence[indice] = "treino"
+    for indice in idx_ca: pertence[indice] = "calibracao"
+    for indice in idx_te: pertence[indice] = "teste"
     coluna = []
     for indice in agregados.index:
         coluna.append(pertence.get(indice, "?"))
-    return coluna
-
-agregados["conjunto_aleatorio"] = rotular_conjunto(idx_treino_ale, idx_calib_ale, idx_teste_ale)
-agregados["conjunto_esqueleto"] = rotular_conjunto(idx_treino_esq, idx_calib_esq, idx_teste_esq)
+    agregados[nome_coluna] = coluna
 
 figura_espaco = make_subplots(rows=1, cols=2,
     subplot_titles=("Divisao aleatoria (sobreposta)", "Divisao por esqueleto (separada)"))
@@ -941,52 +933,33 @@ calibrar todos eles com o **mesmo** código, sem "adaptadores" que o aluno teria
 de decifrar.
 
 A partir daqui usamos a **divisão por esqueleto** como padrão (a honesta).""")
-code(r'''# matrizes de treino/calibracao/teste (divisao por esqueleto)
-def submatriz(indices):
-    """Recorta X e y para um conjunto de indices, preservando a ordem."""
-    posicoes = [agregados.index.get_loc(indice) for indice in indices]
-    return X[posicoes], y[posicoes]
-
-X_treino, y_treino = submatriz(idx_treino_esq)
-X_calib, y_calib = submatriz(idx_calib_esq)
-X_teste, y_teste = submatriz(idx_teste_esq)
+code(r'''# recorta X e y para treino/calibracao/teste (divisao por esqueleto).
+# X e y estao na ordem de agregados.index; convertemos cada indice na sua posicao.
+pos_treino = [agregados.index.get_loc(indice) for indice in idx_treino_esq]
+pos_calib  = [agregados.index.get_loc(indice) for indice in idx_calib_esq]
+pos_teste  = [agregados.index.get_loc(indice) for indice in idx_teste_esq]
+X_treino, y_treino = X[pos_treino], y[pos_treino]
+X_calib,  y_calib  = X[pos_calib],  y[pos_calib]
+X_teste,  y_teste  = X[pos_teste],  y[pos_teste]
 print("treino", X_treino.shape, "| calib", X_calib.shape, "| teste", X_teste.shape)
 
 # linha de base do teste: chutar sempre a classe maioritaria do treino
 classe_maioritaria = 1 if (y_treino == 1).mean() >= 0.5 else 0
 acuracia_base = (y_teste == classe_maioritaria).mean()
-print("linha de base (classe maioritaria) no teste:", round(acuracia_base, 3))''')
+print("linha de base (classe maioritaria) no teste:", round(acuracia_base, 3))
 
-md("""### 5.0 — Uma função de avaliação única
+# guardaremos aqui cada modelo treinado e seu tempo, para comparar todos juntos em 5.5
+modelos_treinados = {}
+tempos_treino = {}''')
 
-Para não repetir código e comparar tudo de forma idêntica, uma função que recebe
-um modelo treinado e devolve as métricas — sempre acompanhadas da linha de base.
-Usamos o **MCC** (coeficiente de correlação de Matthews) como métrica principal:
-diferente da acurácia, ele não se deixa enganar por classes desbalanceadas.""")
-code(r'''resultados = {}   # nome do modelo -> dicionario de metricas
+md("""### 5.0 — Como vamos avaliar
 
-def avaliar_modelo(nome, modelo, tempo_treino):
-    """Calcula metricas no teste e guarda em 'resultados'. Imprime com a base."""
-    predito = modelo.predict(X_teste)
-    try:
-        proba = modelo.predict_proba(X_teste)[:, 1]
-    except AttributeError:
-        proba = modelo.decision_function(X_teste)
-    mcc = matthews_corrcoef(y_teste, predito)
-    auc = roc_auc_score(y_teste, proba)
-    relatorio = classification_report(y_teste, predito, output_dict=True,
-                                      target_names=["FRACO", "FORTE"], zero_division=0)
-    resultados[nome] = {
-        "MCC": mcc, "AUC": auc,
-        "prec_FORTE": relatorio["FORTE"]["precision"],
-        "rec_FORTE": relatorio["FORTE"]["recall"],
-        "prec_FRACO": relatorio["FRACO"]["precision"],
-        "rec_FRACO": relatorio["FRACO"]["recall"],
-        "tempo_s": tempo_treino,
-        "proba": proba, "predito": predito,
-    }
-    print(f"{nome}: MCC={mcc:.3f}  AUC={auc:.3f}  (base MCC=0.000, base AUC=0.500)")
-    return resultados[nome]''')
+Treinamos cada modelo em sua própria célula (guardando-o num dicionário
+`modelos_treinados`) e, ao final, comparamos **todos de uma vez** com um laço
+explícito na Seção 5.5. Assim o código de avaliação aparece **uma vez só**, e você
+vê o mesmo cálculo aplicado igualmente a cada modelo. A métrica principal é o
+**MCC** (coeficiente de correlação de Matthews): diferente da acurácia, ele não se
+deixa enganar por classes desbalanceadas (base = 0; perfeito = 1).""")
 
 md("""### 5.1 — Regressão logística
 
@@ -1010,10 +983,15 @@ modelo_logistico = Pipeline([
 ])
 modelo_logistico.fit(X_treino, y_treino)
 tempo = time.time() - inicio
-avaliar_modelo("Regressao logistica", modelo_logistico, tempo)''',
+
+modelos_treinados["Regressao logistica"] = modelo_logistico
+tempos_treino["Regressao logistica"] = tempo
+mcc = matthews_corrcoef(y_teste, modelo_logistico.predict(X_teste))
+print(f"Regressao logistica treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''',
 """Treine uma regressão logística dentro de um Pipeline com StandardScaler
-(use max_iter=1000 e random_state=SEMENTE), meça o tempo de treino com time.time()
-e chame avaliar_modelo("Regressao logistica", modelo, tempo).""")
+(max_iter=1000, random_state=SEMENTE), meça o tempo com time.time(), guarde o
+modelo em modelos_treinados["Regressao logistica"] e o tempo em tempos_treino, e
+imprima o MCC no teste.""")
 
 md("""### 5.2 — Máquina de vetores de suporte (SVM)
 
@@ -1067,10 +1045,15 @@ modelo_svm = Pipeline([
 ])
 modelo_svm.fit(X_treino_svm, y_treino_svm)
 tempo = time.time() - inicio
-avaliar_modelo("SVM (RBF)", modelo_svm, tempo)''',
-"""Treine uma SVM RBF dentro de um Pipeline com StandardScaler
-(probability=True, random_state=SEMENTE). Subamostre o treino para no máximo 1500
-moléculas e avise o aluno. Meça o tempo e chame avaliar_modelo("SVM (RBF)", ...).""")
+
+modelos_treinados["SVM (RBF)"] = modelo_svm
+tempos_treino["SVM (RBF)"] = tempo
+mcc = matthews_corrcoef(y_teste, modelo_svm.predict(X_teste))
+print(f"SVM (RBF) treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''',
+"""Treine uma SVM RBF dentro de um Pipeline com StandardScaler (probability=True,
+random_state=SEMENTE). Subamostre o treino para no máximo 1500 moléculas e avise o
+aluno. Meça o tempo, guarde em modelos_treinados["SVM (RBF)"] e tempos_treino, e
+imprima o MCC no teste.""")
 
 md("""### 5.3 — Floresta aleatória
 
@@ -1092,10 +1075,14 @@ modelo_floresta = RandomForestClassifier(
     n_estimators=300, max_depth=None, n_jobs=-1, random_state=SEMENTE)
 modelo_floresta.fit(X_treino, y_treino)
 tempo = time.time() - inicio
-avaliar_modelo("Floresta aleatoria", modelo_floresta, tempo)''',
+
+modelos_treinados["Floresta aleatoria"] = modelo_floresta
+tempos_treino["Floresta aleatoria"] = tempo
+mcc = matthews_corrcoef(y_teste, modelo_floresta.predict(X_teste))
+print(f"Floresta aleatoria treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''',
 """Treine uma RandomForestClassifier (n_estimators=300, n_jobs=-1,
-random_state=SEMENTE), meça o tempo e chame
-avaliar_modelo("Floresta aleatoria", modelo, tempo).""")
+random_state=SEMENTE), meça o tempo, guarde em modelos_treinados["Floresta
+aleatoria"] e tempos_treino, e imprima o MCC no teste.""")
 
 md("""### 5.4a — Rede neural (scikit-learn)
 
@@ -1116,7 +1103,11 @@ modelo_rede = MLPClassifier(
     random_state=SEMENTE)
 modelo_rede.fit(X_treino, y_treino)
 tempo = time.time() - inicio
-avaliar_modelo("Rede neural (MLP)", modelo_rede, tempo)
+
+modelos_treinados["Rede neural (MLP)"] = modelo_rede
+tempos_treino["Rede neural (MLP)"] = tempo
+mcc = matthews_corrcoef(y_teste, modelo_rede.predict(X_teste))
+print(f"Rede neural (MLP) treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")
 
 figura_rede = make_subplots(specs=[[{"secondary_y": True}]])
 epocas = list(range(1, len(modelo_rede.loss_curve_) + 1))
@@ -1130,7 +1121,8 @@ figura_rede.add_trace(go.Scatter(x=list(range(1, len(modelo_rede.validation_scor
 figura_rede.update_layout(title="MLP: perda de treino x desempenho na validacao", height=380)
 figura_rede.show()''',
 """Treine um MLPClassifier hidden_layer_sizes=(128, 64), activation='relu',
-early_stopping=True, max_iter=200, random_state=SEMENTE. Avalie com avaliar_modelo.
+early_stopping=True, max_iter=200, random_state=SEMENTE. Guarde-o em
+modelos_treinados["Rede neural (MLP)"] e o tempo em tempos_treino, e imprima o MCC.
 Depois plote em Plotly a loss_curve_ (perda de treino) e validation_scores_
 (validação) por época, e explique o sobreajuste onde as curvas se descolam.""")
 
@@ -1265,12 +1257,15 @@ md("""**Comparação de execuções no TensorBoard (célula de Colab).** Onde o
 TensorBoard ganha da curva estática é comparar execuções. Treinamos a mesma rede
 três vezes com taxas de aprendizado diferentes, cada uma em sua subpasta, e as
 três curvas aparecem no mesmo painel. Replicamos em Plotly logo abaixo.""")
-code(r'''def treinar_rede_simples(taxa_aprendizado, subpasta):
-    """Treina a RedeMLP com uma taxa dada e registra a perda no TensorBoard."""
+code(r'''taxas = [0.0001, 0.001, 0.05]   # baixa, boa, alta demais
+curvas_por_taxa = {}
+
+# treina a MESMA rede uma vez para cada taxa de aprendizado (mesmo laco da 5.4b)
+for taxa in taxas:
     torch.manual_seed(SEMENTE)
     rede = RedeMLP(X_treino.shape[1]).to(DISPOSITIVO)
-    otim = torch.optim.Adam(rede.parameters(), lr=taxa_aprendizado)
-    escr = SummaryWriter(os.path.join(PASTA_LOGS, subpasta))
+    otim = torch.optim.Adam(rede.parameters(), lr=taxa)
+    escritor_taxa = SummaryWriter(os.path.join(PASTA_LOGS, "lr_" + str(taxa)))
     curva = []
     for epoca in range(N_EPOCAS):
         ordem = torch.randperm(n_treino)
@@ -1280,18 +1275,15 @@ code(r'''def treinar_rede_simples(taxa_aprendizado, subpasta):
             otim.zero_grad()
             perda = funcao_perda(rede(Xt_treino[idx].to(DISPOSITIVO)),
                                  yt_treino[idx].to(DISPOSITIVO))
-            perda.backward(); otim.step()
-            soma += perda.item(); n_lotes += 1
+            perda.backward()
+            otim.step()
+            soma += perda.item()
+            n_lotes += 1
         media = soma / n_lotes
         curva.append(media)
-        escr.add_scalar("perda/treino", media, epoca)
-    escr.close()
-    return curva
-
-taxas = [0.0001, 0.001, 0.05]   # baixa, boa, alta demais
-curvas_por_taxa = {}
-for taxa in taxas:
-    curvas_por_taxa[taxa] = treinar_rede_simples(taxa, "lr_" + str(taxa))
+        escritor_taxa.add_scalar("perda/treino", media, epoca)
+    escritor_taxa.close()
+    curvas_por_taxa[taxa] = curva
 
 figura_taxas = go.Figure()
 for taxa in taxas:
@@ -1354,8 +1346,35 @@ de escalares ao longo de um eixo — o eixo é que muda de sentido (épocas vs.
 
 md("""### 5.5 — Comparação de todos os modelos
 
-Uma única tabela e um gráfico com MCC, AUC, precisão e revocação por classe e
-tempo de treino. Depois, curvas ROC e de precisão-revocação sobrepostas e as
+Agora a **avaliação em um laço só**: percorremos os modelos guardados e aplicamos
+a cada um exatamente o mesmo cálculo de métricas. Como todos compartilham a
+interface do scikit-learn (`predict`, `predict_proba`), o mesmo código serve para
+todos — sem ramificações. Guardamos tudo em `resultados` para os gráficos.""")
+code(r'''# avalia todos os modelos com o MESMO codigo, num laco explicito
+resultados = {}
+for nome, modelo in modelos_treinados.items():
+    predito = modelo.predict(X_teste)
+    if hasattr(modelo, "predict_proba"):
+        proba = modelo.predict_proba(X_teste)[:, 1]
+    else:
+        proba = modelo.decision_function(X_teste)
+    relatorio = classification_report(y_teste, predito, output_dict=True,
+                                      target_names=["FRACO", "FORTE"], zero_division=0)
+    resultados[nome] = {
+        "MCC": matthews_corrcoef(y_teste, predito),
+        "AUC": roc_auc_score(y_teste, proba),
+        "prec_FORTE": relatorio["FORTE"]["precision"],
+        "rec_FORTE": relatorio["FORTE"]["recall"],
+        "prec_FRACO": relatorio["FRACO"]["precision"],
+        "rec_FRACO": relatorio["FRACO"]["recall"],
+        "tempo_s": tempos_treino[nome],
+        "proba": proba, "predito": predito,
+    }
+    print(f"{nome}: MCC={resultados[nome]['MCC']:.3f}  AUC={resultados[nome]['AUC']:.3f}"
+          f"  (base MCC=0.000, AUC=0.500)")''')
+
+md("""Uma tabela e um gráfico com MCC, AUC, precisão e revocação por classe e
+tempo de treino; depois as curvas ROC e de precisão-revocação sobrepostas e as
 matrizes de confusão lado a lado. Nenhum número aparece sozinho: a linha de base
 (MCC 0, AUC 0,5) está sempre à vista.""")
 code(r'''tabela_comparacao = pd.DataFrame(resultados).T[
@@ -1428,17 +1447,19 @@ codex(r'''from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# dados de regressao: so moleculas com pIC50 exato (as 'apenas_censurado' saem)
-def dados_regressao(indices):
-    """Recorta X e o pIC50 continuo, excluindo moleculas so com medida '>'."""
-    posicoes = []
-    for indice in indices:
-        if not agregados.loc[indice, "apenas_censurado"]:
-            posicoes.append(agregados.index.get_loc(indice))
-    return X[posicoes], agregados["pic50"].values[posicoes]
+# dados de regressao: so moleculas com pIC50 exato (as 'apenas_censurado' saem).
+# monta as posicoes de treino e de teste com dois lacos explicitos.
+pos_reg_treino = []
+for indice in idx_treino_esq:
+    if not agregados.loc[indice, "apenas_censurado"]:
+        pos_reg_treino.append(agregados.index.get_loc(indice))
+pos_reg_teste = []
+for indice in idx_teste_esq:
+    if not agregados.loc[indice, "apenas_censurado"]:
+        pos_reg_teste.append(agregados.index.get_loc(indice))
 
-Xr_treino, yr_treino = dados_regressao(idx_treino_esq)
-Xr_teste, yr_teste = dados_regressao(idx_teste_esq)
+Xr_treino, yr_treino = X[pos_reg_treino], agregados["pic50"].values[pos_reg_treino]
+Xr_teste, yr_teste = X[pos_reg_teste], agregados["pic50"].values[pos_reg_teste]
 print("regressao -> treino:", Xr_treino.shape[0], "| teste:", Xr_teste.shape[0],
       "(censurados removidos)")
 
@@ -1635,17 +1656,21 @@ shap.summary_plot(valores_shap_forte, X_shap, feature_names=nomes_features,
 md("""Duas moléculas explicadas individualmente: para cada uma, o desenho da
 molécula ao lado das features que mais empurraram a predição para FORTE (verde) ou
 para FRACO (vermelho). É a mesma informação do resumo, agora molécula a molécula.""")
-code(r'''def explicar_molecula(posicao_no_shap):
-    """Desenha a molecula e as 8 features de maior contribuicao SHAP (para FORTE)."""
-    indice_teste = amostra_shap[posicao_no_shap]
-    indice_molecula = idx_teste_esq[indice_teste]
+code(r'''# explica duas moleculas (as posicoes 0 e 1 da amostra do SHAP), uma por vez
+for posicao_no_shap in [0, 1]:
+    indice_molecula = idx_teste_esq[amostra_shap[posicao_no_shap]]
     molecula = agregados.loc[indice_molecula, "molecula"]
     contribuicoes = valores_shap_forte[posicao_no_shap]
 
+    # pega as 8 features de maior contribuicao (em modulo)
     ordem = np.argsort(np.abs(contribuicoes))[::-1][:8]
-    nomes = [nomes_features[i] for i in ordem]
-    valores = [contribuicoes[i] for i in ordem]
-    cores = ["#1a7a4a" if v > 0 else "#c0392b" for v in valores]
+    nomes = []
+    valores = []
+    cores = []
+    for i in ordem:
+        nomes.append(nomes_features[i])
+        valores.append(contribuicoes[i])
+        cores.append("#1a7a4a" if contribuicoes[i] > 0 else "#c0392b")
 
     figura, (eixo_mol, eixo_shap) = plt.subplots(1, 2, figsize=(11, 3.6))
     eixo_mol.imshow(Draw.MolToImage(molecula, size=(320, 300)))
@@ -1656,10 +1681,8 @@ code(r'''def explicar_molecula(posicao_no_shap):
     eixo_shap.set_yticklabels(nomes[::-1], fontsize=9)
     eixo_shap.axvline(0, color="black", linewidth=0.8)
     eixo_shap.set_title("contribuicao SHAP (verde=FORTE, vermelho=FRACO)", fontsize=9)
-    plt.tight_layout(); plt.show()
-
-explicar_molecula(0)
-explicar_molecula(1)''')
+    plt.tight_layout()
+    plt.show()''')
 
 md("""### 6.4 — Dependência parcial
 
@@ -1716,33 +1739,27 @@ O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios dad
 o **percentil 5** das similaridades internas do treino — e não arbitrado. Uma
 molécula menos conectada ao espaço químico do que 95% do treino é considerada
 fora do domínio.""")
-code(r'''# fingerprints como objetos RDKit para calcular Tanimoto
-def fingerprints_rdkit(indices):
-    """Lista de fingerprints (bit vectors do RDKit) para um conjunto de indices."""
-    lista = []
-    for indice in indices:
-        molecula = agregados.loc[indice, "molecula"]
-        lista.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
-    return lista
+code(r'''# fingerprints de Morgan (objetos do RDKit) do treino e do teste, para o Tanimoto
+fp_treino_rdkit = []
+for indice in idx_treino_esq:
+    molecula = agregados.loc[indice, "molecula"]
+    fp_treino_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
+fp_teste_rdkit = []
+for indice in idx_teste_esq:
+    molecula = agregados.loc[indice, "molecula"]
+    fp_teste_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
 
-fp_treino_rdkit = fingerprints_rdkit(idx_treino_esq)
-fp_teste_rdkit = fingerprints_rdkit(idx_teste_esq)
-
-def tanimoto_maxima_ao_treino(fp_consulta):
-    """Maior similaridade de Tanimoto de uma molecula contra todo o treino."""
-    similaridades = DataStructs.BulkTanimotoSimilarity(fp_consulta, fp_treino_rdkit)
-    return max(similaridades)
-
+# para cada molecula de teste, a MAIOR similaridade de Tanimoto contra o treino
 similaridade_teste = []
 for fp in fp_teste_rdkit:
-    similaridade_teste.append(tanimoto_maxima_ao_treino(fp))
+    similaridades = DataStructs.BulkTanimotoSimilarity(fp, fp_treino_rdkit)
+    similaridade_teste.append(max(similaridades))
 similaridade_teste = np.array(similaridade_teste)
 
 # limiar = percentil 5 das similaridades treino-treino (auto-similaridade excluida)
-fp_treino_rdkit_lista = fp_treino_rdkit
 similaridade_treino_interna = []
-for i in range(len(fp_treino_rdkit_lista)):
-    sims = DataStructs.BulkTanimotoSimilarity(fp_treino_rdkit_lista[i], fp_treino_rdkit_lista)
+for i in range(len(fp_treino_rdkit)):
+    sims = DataStructs.BulkTanimotoSimilarity(fp_treino_rdkit[i], fp_treino_rdkit)
     sims[i] = -1.0                 # ignora a similaridade da molecula consigo mesma
     similaridade_treino_interna.append(max(sims))
 LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 5))
@@ -1768,22 +1785,19 @@ code(r'''dentro = similaridade_teste >= LIMIAR_DOMINIO
 fora = ~dentro
 predito_floresta = resultados["Floresta aleatoria"]["predito"]
 
-def resumo_grupo(nome, mascara):
-    """Imprime n, composicao de classe e MCC de um subgrupo do teste."""
+# para cada grupo (dentro/fora), imprime n, composicao de classe e MCC
+print("Comparacao estratificada (floresta aleatoria):")
+for nome_grupo, mascara in [("dentro dom.", dentro), ("fora dom.", fora)]:
     n = int(mascara.sum())
     if n == 0:
-        print(nome, "-> grupo vazio")
-        return
+        print(nome_grupo, "-> grupo vazio")
+        continue
     frac_forte = float(y_teste[mascara].mean())
     if len(np.unique(y_teste[mascara])) < 2:
-        mcc = float("nan")
+        mcc = float("nan")            # so uma classe no grupo: MCC indefinido
     else:
         mcc = matthews_corrcoef(y_teste[mascara], predito_floresta[mascara])
-    print(f"{nome:14s} n={n:4d}  fracao FORTE={frac_forte:.2f}  MCC={mcc:.3f}")
-
-print("Comparacao estratificada (floresta aleatoria):")
-resumo_grupo("dentro dom.", dentro)
-resumo_grupo("fora dom.", fora)
+    print(f"{nome_grupo:14s} n={n:4d}  fracao FORTE={frac_forte:.2f}  MCC={mcc:.3f}")
 print("\\nObservacao: se os grupos tem composicao de classe muito diferente,")
 print("a comparacao direta de desempenho e enganosa. Olhe n e fracao FORTE antes de concluir.")''')
 
@@ -1817,21 +1831,17 @@ for classe in (0, 1):
     limiar_conformal[classe] = float(np.quantile(escores_por_classe[classe], 1.0 - alfa))
 print("limiares conformais por classe:", {k: round(v, 3) for k, v in limiar_conformal.items()})
 
-def conjunto_predicao(proba_linha):
-    """Monta o conjunto de predicao de uma molecula a partir das probabilidades."""
-    conjunto = []
-    for classe in (0, 1):
-        escore = 1.0 - proba_linha[classe]
-        if escore <= limiar_conformal[classe]:
-            conjunto.append(classe)
-    return conjunto
-
-# aplica ao teste e verifica a cobertura empirica
+# aplica ao teste: para cada molecula, monta o conjunto de predicao e checa cobertura
 proba_teste_rf = modelo_floresta.predict_proba(X_teste)
 conjuntos = []
 cobertos = 0
 for posicao in range(len(y_teste)):
-    conjunto = conjunto_predicao(proba_teste_rf[posicao])
+    # o conjunto tem cada classe cujo escore de nao-conformidade cabe no limiar dela
+    conjunto = []
+    for classe in (0, 1):
+        escore = 1.0 - proba_teste_rf[posicao, classe]
+        if escore <= limiar_conformal[classe]:
+            conjunto.append(classe)
     conjuntos.append(conjunto)
     if y_teste[posicao] in conjunto:
         cobertos = cobertos + 1
@@ -1863,11 +1873,17 @@ específica.""")
 # ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 9 — O classificador em uso
 
-Juntamos tudo em uma função `classificar(smiles)` que devolve **FORTE**, **FRACO**
-ou **INDEFINIDA**, sempre com o motivo. A ordem importa: primeiro verificamos o
-**domínio de aplicabilidade**; só então interpretamos a probabilidade. Uma molécula
-fora do domínio é INDEFINIDA por atipicidade, independentemente do que o modelo
-"acharia". A função funciona mesmo se a Seção 8 for pulada.""")
+Até aqui o código foi **procedural** — cada célula mostra os passos, sem funções
+escondendo a lógica. Agora, porém, uma função **se justifica**: `classificar` é a
+**ferramenta** que queremos reutilizar em qualquer molécula nova, e reutilização é
+exatamente para o que servem as funções. É o único caso deste tipo na aula (fora a
+classe da rede em PyTorch e o widget, que os frameworks exigem).
+
+A função `classificar(smiles)` devolve **FORTE**, **FRACO** ou **INDEFINIDA**,
+sempre com o motivo. A ordem importa: primeiro verificamos o **domínio de
+aplicabilidade**; só então interpretamos a probabilidade. Uma molécula fora do
+domínio é INDEFINIDA por atipicidade, independentemente do que o modelo "acharia".
+A função funciona mesmo se a Seção 8 for pulada.""")
 code(r'''MARGEM_ABSTENCAO = 0.15   # se |proba - 0.5| < margem, o modelo se abstem (INDEFINIDA)
 
 def classificar(smiles):
@@ -1883,9 +1899,15 @@ def classificar(smiles):
         return {"classe": "INDEFINIDA",
                 "motivo": "fora do dominio (Tanimoto max %.2f < %.2f)" % (similaridade, LIMIAR_DOMINIO)}
 
-    # 2. so agora a probabilidade do modelo
-    descritores = calcular_descritores(molecula)
-    vetor_desc = np.array([descritores[nome] for nome in tabela_descritores.columns], dtype=float)
+    # 2. so agora a probabilidade do modelo. Monta o mesmo vetor de features do treino:
+    #    os 9 descritores (na ordem das colunas) seguidos dos 2048 bits do fingerprint.
+    vetor_desc = np.array([
+        Descriptors.MolWt(molecula), Descriptors.MolLogP(molecula),
+        Descriptors.TPSA(molecula), Descriptors.NumHDonors(molecula),
+        Descriptors.NumHAcceptors(molecula), Descriptors.NumRotatableBonds(molecula),
+        Descriptors.NumAromaticRings(molecula), Descriptors.FractionCSP3(molecula),
+        molecula.GetNumHeavyAtoms(),
+    ], dtype=float)
     vetor_fp = np.zeros((N_BITS,), dtype=float)
     DataStructs.ConvertToNumpyArray(fp, vetor_fp)
     entrada = np.hstack([vetor_desc, vetor_fp]).reshape(1, -1)
