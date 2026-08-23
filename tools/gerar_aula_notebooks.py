@@ -203,7 +203,7 @@ Nós já extraímos os dados do ChEMBL e deixamos o CSV num **link público** no
 repositório. Assim o notebook lê direto da internet — **sem precisar subir
 arquivo nenhum** no Colab. É o caminho padrão, e é rápido.""")
 code(r'''URL_DADOS = ("https://raw.githubusercontent.com/monteirotorres/ml/"
-             "main/08_aula_bioinfo/dados_alvo_bruto.csv")
+             "main/dados_alvo_bruto.csv")
 
 # le o CSV direto da URL; se a internet falhar, tenta um arquivo local de mesmo nome
 try:

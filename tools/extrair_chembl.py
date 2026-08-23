@@ -21,7 +21,7 @@ from pathlib import Path
 BASE = Path(__file__).parent.parent
 ALVO = "CHEMBL220"                      # acetilcolinesterase
 API = "https://www.ebi.ac.uk/chembl/api/data"
-SAIDA = BASE / "08_aula_bioinfo" / "dados_alvo_bruto.csv"
+SAIDA = BASE / "dados_alvo_bruto.csv"
 
 # Campos que o notebook usa na curadoria.
 CAMPOS = [
