@@ -368,14 +368,15 @@ curados = curados[curados["standard_value"] > 0].copy()
 registrar_etapa("nM, valor > 0", antes, len(curados),
                 "unidade nao-molar (ex. ug/mL), malformada, ou valor ausente/<=0")''')
 
-md("""### 2.4 — Dados censurados: por que manter os "maior que"
+md("""### 2.4 — Medidas de limite (`>`): por que manter os "maior que"
 
-Uma medida com relação `>` ("IC50 > 30000 nM") não é um valor pontual: significa
-"não conseguimos inibir nem nessa concentração alta" — ou seja, um inibidor
-**fraco de verdade**. Em um problema de **regressão** essas medidas seriam
-descartadas por não terem valor exato. Aqui, num problema de **classificação**,
-elas são exatamente a classe FRACO — a classe que o viés de publicação torna
-escassa, porque poucos artigos relatam moléculas que não funcionam.
+Uma medida com relação `>` ("IC50 > 30000 nM") não é um valor pontual: ela dá só
+um **limite** — "não conseguimos inibir nem nessa concentração alta" —, ou seja,
+um inibidor **fraco de verdade**. Em um problema de **regressão** essas medidas
+seriam descartadas por não terem valor exato. Aqui, num problema de
+**classificação**, elas são exatamente a classe FRACO — a classe que o viés de
+publicação torna escassa, porque poucos artigos relatam moléculas que não
+funcionam.
 
 Regra: **manter as relações `>`** e rotulá-las FRACO; **descartar as `<`** (uma
 molécula "melhor que" um limite baixo é ambígua para a classe). As relações `=`
@@ -384,13 +385,13 @@ code(r'''antes = len(curados)
 curados = curados[curados["standard_relation"] != "<"].copy()
 registrar_etapa("descarta relacao <", antes, len(curados), "relacao '<' (limite inferior, ambiguo)")
 
-# marca quais linhas sao censuradas '>' (serao forcadas a FRACO adiante)
-eh_censurado_maior = []
+# marca quais linhas dao apenas um limite '>' (serao forcadas a FRACO adiante)
+eh_apenas_limite = []
 for relacao in curados["standard_relation"]:
-    eh_censurado_maior.append(relacao in (">", ">>"))
-curados["censurado_maior"] = eh_censurado_maior
+    eh_apenas_limite.append(relacao in (">", ">>"))
+curados["apenas_limite"] = eh_apenas_limite
 print("medidas '>' mantidas (viram FRACO nas moleculas que so tem elas):",
-      int(curados["censurado_maior"].sum()))''')
+      int(curados["apenas_limite"].sum()))''')
 
 md("""### 2.5 — pIC50 e agregação de duplicatas
 
@@ -399,7 +400,7 @@ $-\\log_{10}$ da potência em mol/L, curado por eles. Usamos esse valor direto (
 medidas exatas o `pchembl_value` e o cálculo à mão $9 - \\log_{10}(\\text{nM})$
 coincidem, o que serve de verificação).
 
-**E as medidas censuradas `>`?** Elas **não recebem pIC50**. Uma medida
+**E as medidas de limite `>`?** Elas **não recebem pIC50**. Uma medida
 "IC50 > 30000 nM" não é um valor pontual — é só um **limite** ("no mínimo tão
 fraca quanto isto"). Fabricar um número a partir dela seria inventar precisão que
 não existe, e esse número nem é usado: uma molécula que só tem medidas `>` é
@@ -408,7 +409,7 @@ molécula que tem medida **exata** — e essas têm.
 
 Consequência importante: o rótulo de uma molécula vem das suas medidas **exatas**,
 quando existem. Uma molécula com um IC50 exato potente **não** vira FRACO só
-porque um outro ensaio reportou `>` — as medidas exatas decidem; as censuradas só
+porque um outro ensaio reportou `>` — as medidas exatas decidem; as de limite só
 confirmam a fraqueza de quem não tem nenhuma medida exata.
 
 Agregamos por molécula pela **mediana** das medidas exatas (robusta a outliers) e
@@ -419,12 +420,12 @@ code(r'''# pIC50 apenas das medidas EXATAS: usa o pchembl_value curado; onde fal
 pchembl = pd.to_numeric(curados["pchembl_value"], errors="coerce")
 pic50_calculado = 9.0 - np.log10(curados["standard_value"])   # = -log10(mol/L)
 curados["pic50"] = pchembl.where(pchembl.notna(), pic50_calculado)
-# medidas censuradas '>' sao apenas um limite: nao entram no pIC50
-curados.loc[curados["censurado_maior"], "pic50"] = np.nan
+# medidas '>' dao apenas um limite: nao entram no pIC50
+curados.loc[curados["apenas_limite"], "pic50"] = np.nan
 
 n_exatas = int(curados["pic50"].notna().sum())
 print("medidas com pIC50 (exatas):", n_exatas,
-      "| censuradas (so limite, sem pIC50):", len(curados) - n_exatas)
+      "| de limite (so '>', sem pIC50):", len(curados) - n_exatas)
 mascara_ambos = pchembl.notna() & curados["pic50"].notna()
 print("diferenca media |pchembl - calculado| (medidas exatas):",
       round((pchembl[mascara_ambos] - pic50_calculado[mascara_ambos]).abs().mean(), 3),
@@ -434,9 +435,9 @@ print("diferenca media |pchembl - calculado| (medidas exatas):",
 grupos = curados.groupby("molecule_chembl_id")
 linhas_agregadas = []
 for id_molecula, bloco in grupos:
-    pic50_exatas = bloco["pic50"].dropna()          # descarta os NaN dos censurados
-    apenas_censurado = len(pic50_exatas) == 0       # molecula so tem medidas '>'
-    if apenas_censurado:
+    pic50_exatas = bloco["pic50"].dropna()          # descarta os NaN das medidas de limite
+    sem_medida_exata = len(pic50_exatas) == 0       # molecula so tem medidas '>'
+    if sem_medida_exata:
         pic50_mediana = np.nan
         dispersao = 0.0                             # sem exatas para discordar
     else:
@@ -454,14 +455,14 @@ for id_molecula, bloco in grupos:
         "canonical_smiles": smiles,
         "pic50": pic50_mediana,
         "dispersao_log": dispersao,
-        "apenas_censurado": apenas_censurado,
+        "sem_medida_exata": sem_medida_exata,
         "documento": documento_principal,
         "n_medidas": len(bloco),
     })
 agregados = pd.DataFrame(linhas_agregadas)
 print("moleculas unicas apos agregacao:", len(agregados))
 print("  destas, so com medida '>' (serao FRACO por regra):",
-      int(agregados["apenas_censurado"].sum()))
+      int(agregados["sem_medida_exata"].sum()))
 
 antes = len(agregados)
 agregados = agregados[agregados["dispersao_log"] <= 1.0].copy()
@@ -613,7 +614,7 @@ matriz_fingerprint = np.array(lista_fingerprints)
 # rotulo: 1 = FORTE, 0 = FRACO
 rotulo = []
 for indice in agregados.index:
-    if agregados.loc[indice, "apenas_censurado"]:
+    if agregados.loc[indice, "sem_medida_exata"]:
         rotulo.append(0)                       # so tem medida '>': FRACO por regra
     elif agregados.loc[indice, "pic50"] >= LIMIAR_POTENCIA:
         rotulo.append(1)                       # FORTE (decidido pela medida exata)
@@ -653,6 +654,30 @@ print("FORTE:", n_forte, "| FRACO:", n_fraco)
 maior_classe = max(n_forte, n_fraco)
 print("linha de base (chutar a classe maioritaria):",
       round(maior_classe / len(y), 3), "de acuracia")''')
+
+md("""O mesmo balanço, em um gráfico — para **ver** o tamanho de cada classe. A
+barra maior é a linha de base: um modelo que chutasse sempre a classe maior já
+acertaria essa fração. Só faz sentido celebrar um modelo que **supere** essa
+barra.""")
+code(r'''# tamanho de cada classe, com o numero e a fracao anotados na barra
+contagem_classes = [n_fraco, n_forte]
+nomes_classes = ["FRACO (0)", "FORTE (1)"]
+cores_classes = ["#c0392b", "#3266ad"]
+total_moleculas = len(y)
+
+figura_classes, eixo_classes = plt.subplots(figsize=(5, 3.2))
+barras = eixo_classes.bar(nomes_classes, contagem_classes, color=cores_classes)
+for barra, contagem in zip(barras, contagem_classes):
+    fracao = contagem / total_moleculas
+    altura = barra.get_height()
+    rotulo_barra = str(contagem) + "\n(" + str(round(100 * fracao, 1)) + "%)"
+    eixo_classes.text(barra.get_x() + barra.get_width() / 2, altura,
+                      rotulo_barra, ha="center", va="bottom", fontsize=9)
+eixo_classes.set_ylabel("numero de moleculas")
+eixo_classes.set_title("Tamanho de cada classe (n = " + str(total_moleculas) + ")")
+eixo_classes.set_ylim(0, max(contagem_classes) * 1.18)
+plt.tight_layout()
+plt.show()''')
 
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 4 — PARTIÇÃO
@@ -784,12 +809,27 @@ figura_cv.show()''')
 
 md("""### 4.3 — O espaço químico das duas divisões, lado a lado
 
-Aqui está a prova visual. Projetamos os fingerprints em 2D (PCA) e pintamos cada
-molécula pelo conjunto a que pertence — uma vez para a divisão aleatória, outra
-para a por esqueleto. Na aleatória, os conjuntos se **sobrepõem** (mesmos núcleos
-dos dois lados). Na por esqueleto, treino e teste tendem a ocupar **regiões
-distintas** — que é justamente o teste mais honesto. O *hover* mostra o SMILES e
-o pIC50 de cada ponto.""")
+Vamos **ver** as duas divisões. Projetamos os fingerprints em 2D (PCA) e pintamos
+cada molécula pelo **conjunto** a que pertence — treino, calibração ou teste —,
+uma vez para a divisão aleatória, outra para a por esqueleto. O que procurar:
+
+- na **aleatória**, as três cores ficam embaralhadas por todo o gráfico — treino e
+  teste ocupam as mesmas regiões (mesmos núcleos dos dois lados);
+- na **por esqueleto**, o teste (vermelho) tende a se deslocar para regiões que o
+  treino cobre menos.
+
+**Um aviso honesto sobre este gráfico.** Estes dois eixos de PCA resumem só uma
+**fração pequena** da variação do fingerprint (o valor exato é impresso abaixo —
+aqui fica em torno de 10%). Um fingerprint tem centenas de dimensões; espremê-lo
+em duas achata quase tudo. Por isso, **a olho nu, os dois painéis podem parecer
+duas nuvens parecidas** — a diferença é sutil e o olho é um juiz fraco aqui. Não é
+para enxergar dois blocos separados. A prova de verdade não é visual: na célula
+seguinte a gente **mede** a separação, com um número. É lá que a lição mora.
+
+*(E se coloríssemos por classe FORTE/FRACO em vez de por conjunto? As duas classes
+apareceriam bem misturadas — dois eixos de PCA não separam as classes, e não
+deveriam: se um gráfico 2D já separasse, não precisaríamos de modelo nenhum. A
+separação que importa para uma avaliação honesta é entre treino e teste.)*""")
 code(r'''from sklearn.decomposition import PCA
 
 # projecao 2D dos fingerprints (uma PCA so, compartilhada pelas duas visualizacoes)
@@ -797,6 +837,15 @@ pca = PCA(n_components=2, random_state=SEMENTE)
 coords = pca.fit_transform(matriz_fingerprint.astype(float))
 agregados["pca_x"] = coords[:, 0]
 agregados["pca_y"] = coords[:, 1]
+
+# quanto da variacao do fingerprint estes 2 eixos realmente capturam
+var_pc1 = pca.explained_variance_ratio_[0]
+var_pc2 = pca.explained_variance_ratio_[1]
+var_total = var_pc1 + var_pc2
+print("variancia explicada -> PC1:", round(100 * var_pc1, 1), "%",
+      "| PC2:", round(100 * var_pc2, 1), "%",
+      "| juntos:", round(100 * var_total, 1), "%")
+print("(o resto da estrutura quimica vive nas dezenas de eixos que nao vemos aqui)")
 
 # marca, para cada molecula, a qual conjunto ela pertence em cada divisao
 # (uma coluna por divisao, so para colorir a projecao)
@@ -813,8 +862,9 @@ for nome_coluna, idx_tr, idx_ca, idx_te in [
         coluna.append(pertence.get(indice, "?"))
     agregados[nome_coluna] = coluna
 
+titulo_esq = "Divisao por esqueleto (teste mais distante)"
 figura_espaco = make_subplots(rows=1, cols=2,
-    subplot_titles=("Divisao aleatoria (sobreposta)", "Divisao por esqueleto (separada)"))
+    subplot_titles=("Divisao aleatoria (sobreposta)", titulo_esq))
 mapa_cores = {"treino": "#3266ad", "calibracao": "#7e9603", "teste": "#c0392b"}
 for coluna_conjunto, col in [("conjunto_aleatorio", 1), ("conjunto_esqueleto", 2)]:
     for nome_conjunto in ["treino", "calibracao", "teste"]:
@@ -826,15 +876,51 @@ for coluna_conjunto, col in [("conjunto_aleatorio", 1), ("conjunto_esqueleto", 2
             text=sub["canonical_smiles"], customdata=sub["pic50"],
             hovertemplate="pIC50=%{customdata:.2f}<br>%{text}<extra></extra>"),
             row=1, col=col)
-figura_espaco.update_layout(height=430, title="Espaco quimico (PCA sobre fingerprints)")
+rotulo_var = "(PC1+PC2 = " + str(round(100 * var_total, 1)) + "% da variancia)"
+figura_espaco.update_layout(height=430,
+    title="Espaco quimico (PCA sobre fingerprints) " + rotulo_var)
 figura_espaco.show()''')
+
+md("""### 4.3b — A separação que o olho não vê, medida com um número
+
+Em vez de confiar no gráfico, medimos diretamente **quão longe do treino está o
+teste** em cada divisão. Para cada molécula de teste, calculamos a **maior
+similaridade de Tanimoto** contra qualquer molécula de treino (1 = idêntica, 0 =
+nada em comum). A média dessas similaridades resume a divisão:
+
+- na divisão **aleatória**, cada molécula de teste costuma ter um primo quase
+  idêntico no treino — a média fica **alta**;
+- na divisão **por esqueleto**, os núcleos do teste foram mantidos fora do treino —
+  a média cai. **É esse número menor que a projeção 2D não conseguia mostrar.**""")
+code(r'''def similaridade_media_ao_treino(idx_treino, idx_teste):
+    # fingerprints do RDKit (para o Tanimoto) de cada conjunto
+    fps_treino = []
+    for indice in idx_treino:
+        molecula = agregados.loc[indice, "molecula"]
+        fps_treino.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
+    maiores_similaridades = []
+    for indice in idx_teste:
+        molecula = agregados.loc[indice, "molecula"]
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
+        similaridades = DataStructs.BulkTanimotoSimilarity(fp, fps_treino)
+        maiores_similaridades.append(max(similaridades))
+    return float(np.mean(maiores_similaridades))
+
+sim_aleatoria = similaridade_media_ao_treino(idx_treino_ale, idx_teste_ale)
+sim_esqueleto = similaridade_media_ao_treino(idx_treino_esq, idx_teste_esq)
+print("Tanimoto media do teste ao vizinho mais proximo no treino:")
+print("  divisao aleatoria  :", round(sim_aleatoria, 3), "(teste tem primos proximos no treino)")
+print("  divisao esqueleto  :", round(sim_esqueleto, 3), "(teste mais distante do treino)")
+print("  queda              :", round(sim_aleatoria - sim_esqueleto, 3),
+      "-> por isso a divisao por esqueleto e o teste mais honesto")''')
 
 mdq("""**Pergunta.** Se a divisão aleatória dá acurácia mais alta que a por
 esqueleto, qual das duas estima melhor o desempenho em moléculas realmente novas?""",
 """**Resposta.** A por esqueleto. A acurácia mais alta da aleatória é ilusória:
-ela vem de o modelo reencontrar no teste primos próximos de moléculas do treino.
-Em uma triagem real, as moléculas candidatas têm núcleos novos — a situação que a
-divisão por esqueleto reproduz. Preferimos a estimativa mais baixa e mais
+ela vem de o modelo reencontrar no teste primos próximos de moléculas do treino
+(a similaridade média alta que medimos em 4.3b). Em uma triagem real, as moléculas
+candidatas têm núcleos novos — a situação que a divisão por esqueleto reproduz, com
+sua similaridade média mais baixa. Preferimos a estimativa mais baixa e mais
 honesta.""")
 
 
@@ -1439,7 +1525,7 @@ pIC50 diretamente** — uma tarefa de **regressão** (valor contínuo), não de
 classificação.
 
 Uma diferença importante liga isto à Seção 2.4: as moléculas que só têm medida
-censurada `>` **não entram** na regressão. Elas não têm um valor pontual (só um
+de limite `>` **não entram** na regressão. Elas não têm um valor pontual (só um
 limite), e um regressor precisa de um número exato como alvo. Na classificação
 elas eram FRACO por regra; na regressão, sem pIC50, saem. É o outro lado da mesma
 decisão.""")
@@ -1447,21 +1533,21 @@ codex(r'''from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-# dados de regressao: so moleculas com pIC50 exato (as 'apenas_censurado' saem).
+# dados de regressao: so moleculas com pIC50 exato (as 'sem_medida_exata' saem).
 # monta as posicoes de treino e de teste com dois lacos explicitos.
 pos_reg_treino = []
 for indice in idx_treino_esq:
-    if not agregados.loc[indice, "apenas_censurado"]:
+    if not agregados.loc[indice, "sem_medida_exata"]:
         pos_reg_treino.append(agregados.index.get_loc(indice))
 pos_reg_teste = []
 for indice in idx_teste_esq:
-    if not agregados.loc[indice, "apenas_censurado"]:
+    if not agregados.loc[indice, "sem_medida_exata"]:
         pos_reg_teste.append(agregados.index.get_loc(indice))
 
 Xr_treino, yr_treino = X[pos_reg_treino], agregados["pic50"].values[pos_reg_treino]
 Xr_teste, yr_teste = X[pos_reg_teste], agregados["pic50"].values[pos_reg_teste]
 print("regressao -> treino:", Xr_treino.shape[0], "| teste:", Xr_teste.shape[0],
-      "(censurados removidos)")
+      "(medidas de limite removidas)")
 
 # modelo: floresta de regressao
 regressor = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=SEMENTE)
@@ -1478,7 +1564,7 @@ print(f"RMSE modelo: {rmse:.3f}  | RMSE base (media): {rmse_base:.3f}")
 print(f"MAE  modelo: {mae:.3f}")
 print(f"R2   modelo: {r2:.3f}  | R2 base: 0.000")''',
 """Monte os dados de regressão excluindo as moléculas que só têm medida '>'
-(apenas_censurado — elas não têm pIC50 pontual). Treine um RandomForestRegressor
+(sem_medida_exata — elas não têm pIC50 pontual). Treine um RandomForestRegressor
 no pIC50 contínuo, avalie no teste e imprima RMSE, MAE e R2 — sempre ao lado da
 linha de base (prever a média do treino).""")
 
@@ -1507,7 +1593,7 @@ classe_real = (yr_teste >= LIMIAR_POTENCIA).astype(int)
 print("MCC da classificacao derivada da regressao:",
       round(matthews_corrcoef(classe_real, classe_derivada), 3))''')
 
-mdq("""**Pergunta.** Por que as moléculas censuradas (`>`), que na classificação
+mdq("""**Pergunta.** Por que as moléculas de limite (`>`), que na classificação
 eram úteis como FRACO, tiveram de ser removidas da regressão?""",
 """**Resposta.** Porque a regressão prevê um **número exato** e precisa de um alvo
 numérico exato para treinar. Uma medida "IC50 > 30000 nM" só diz "pelo menos tão
@@ -2008,8 +2094,8 @@ md("""### Exercícios
 
 1. **Limiar de potência.** Reexecute a partir da Seção 3 com `LIMIAR_POTENCIA =
    7.0` (mais exigente). Como mudam o balanço de classes e o MCC dos modelos?
-2. **Remover os censurados.** Refaça a curadoria descartando as medidas `>`. O
-   que acontece com a classe FRACO e com a revocação dela? Por quê?
+2. **Remover as medidas de limite.** Refaça a curadoria descartando as medidas
+   `>`. O que acontece com a classe FRACO e com a revocação dela? Por quê?
 3. **Comparar representações.** Troque o fingerprint de Morgan por apenas os nove
    descritores físico-químicos. Quanto se perde? E só com o fingerprint, sem os
    descritores?
