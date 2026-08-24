@@ -809,22 +809,29 @@ figura_cv.show()''')
 
 md("""### 4.3 — O espaço químico das duas divisões, lado a lado
 
-Vamos **ver** as duas divisões. Projetamos os fingerprints em 2D (PCA) e pintamos
-cada molécula pelo **conjunto** a que pertence — treino, calibração ou teste —,
-uma vez para a divisão aleatória, outra para a por esqueleto. O que procurar:
+Vamos **ver** as duas divisões. Aqui há uma escolha importante de projeção:
+**projetamos o esqueleto (Bemis-Murcko) de cada molécula, não a molécula inteira.**
+O motivo é que a divisão é feita *por esqueleto* — então essa é a lente natural
+para enxergá-la. Como cada molécula passa a ocupar a posição do seu **núcleo**,
+todas as moléculas de um mesmo esqueleto **caem exatamente no mesmo ponto**. É esse
+colapso que torna o mecanismo visível.
 
-- na **aleatória**, as três cores ficam embaralhadas por todo o gráfico — treino e
-  teste ocupam as mesmas regiões (mesmos núcleos dos dois lados);
-- na **por esqueleto**, o teste (vermelho) tende a se deslocar para regiões que o
-  treino cobre menos.
+Cada ponto é pintado pelo **conjunto** a que a molécula pertence (treino,
+calibração ou teste), uma vez para a divisão aleatória, outra para a por esqueleto.
+O que procurar:
 
-**Um aviso honesto sobre este gráfico.** Estes dois eixos de PCA resumem só uma
-**fração pequena** da variação do fingerprint (o valor exato é impresso abaixo —
-aqui fica em torno de 10%). Um fingerprint tem centenas de dimensões; espremê-lo
-em duas achata quase tudo. Por isso, **a olho nu, os dois painéis podem parecer
-duas nuvens parecidas** — a diferença é sutil e o olho é um juiz fraco aqui. Não é
-para enxergar dois blocos separados. A prova de verdade não é visual: na célula
-seguinte a gente **mede** a separação, com um número. É lá que a lição mora.
+- na **por esqueleto**, cada aglomerado de pontos coincidentes é de **uma cor só**
+  — o esqueleto inteiro foi para um único conjunto; treino e teste nunca partilham
+  o mesmo núcleo;
+- na **aleatória**, o mesmo aglomerado aparece com **cores misturadas** — os
+  análogos de um núcleo foram rasgados entre treino e teste. **Essa mistura é o
+  vazamento**, agora visível a olho nu.
+
+**Uma ressalva honesta:** estes dois eixos de PCA ainda resumem só parte da
+variação (o valor é impresso abaixo), então não leia distâncias absolutas ao pé da
+letra. O que o gráfico mostra bem é o **mecanismo** — a coincidência de pontos por
+esqueleto e como cada divisão a colore. A magnitude da separação a gente confirma
+com um número na célula 4.3b.
 
 *(E se coloríssemos por classe FORTE/FRACO em vez de por conjunto? As duas classes
 apareceriam bem misturadas — dois eixos de PCA não separam as classes, e não
@@ -832,20 +839,33 @@ deveriam: se um gráfico 2D já separasse, não precisaríamos de modelo nenhum.
 separação que importa para uma avaliação honesta é entre treino e teste.)*""")
 code(r'''from sklearn.decomposition import PCA
 
-# projecao 2D dos fingerprints (uma PCA so, compartilhada pelas duas visualizacoes)
+# fingerprint de Morgan do ESQUELETO (nao da molecula inteira) de cada linha.
+# moleculas de mesmo esqueleto ficam no mesmo ponto; molecula sem anel tem
+# esqueleto vazio -> vetor de zeros (cai na origem).
+lista_fp_esqueleto = []
+for molecula in agregados["molecula"]:
+    mol_esqueleto = MurckoScaffold.GetScaffoldForMol(molecula)
+    vetor = np.zeros((N_BITS,), dtype=np.int8)
+    if mol_esqueleto is not None and mol_esqueleto.GetNumAtoms() > 0:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol_esqueleto, RAIO_MORGAN, nBits=N_BITS)
+        DataStructs.ConvertToNumpyArray(fp, vetor)
+    lista_fp_esqueleto.append(vetor)
+matriz_fp_esqueleto = np.array(lista_fp_esqueleto)
+
+# projecao 2D dos ESQUELETOS (uma PCA so, compartilhada pelas duas visualizacoes)
 pca = PCA(n_components=2, random_state=SEMENTE)
-coords = pca.fit_transform(matriz_fingerprint.astype(float))
+coords = pca.fit_transform(matriz_fp_esqueleto.astype(float))
 agregados["pca_x"] = coords[:, 0]
 agregados["pca_y"] = coords[:, 1]
 
-# quanto da variacao do fingerprint estes 2 eixos realmente capturam
+# quanto da variacao dos esqueletos estes 2 eixos realmente capturam
 var_pc1 = pca.explained_variance_ratio_[0]
 var_pc2 = pca.explained_variance_ratio_[1]
 var_total = var_pc1 + var_pc2
-print("variancia explicada -> PC1:", round(100 * var_pc1, 1), "%",
+print("variancia explicada (esqueletos) -> PC1:", round(100 * var_pc1, 1), "%",
       "| PC2:", round(100 * var_pc2, 1), "%",
       "| juntos:", round(100 * var_total, 1), "%")
-print("(o resto da estrutura quimica vive nas dezenas de eixos que nao vemos aqui)")
+print("(o resto da estrutura vive nas dezenas de eixos que nao vemos aqui)")
 
 # marca, para cada molecula, a qual conjunto ela pertence em cada divisao
 # (uma coluna por divisao, so para colorir a projecao)
@@ -862,9 +882,9 @@ for nome_coluna, idx_tr, idx_ca, idx_te in [
         coluna.append(pertence.get(indice, "?"))
     agregados[nome_coluna] = coluna
 
-titulo_esq = "Divisao por esqueleto (teste mais distante)"
+titulo_esq = "Divisao por esqueleto (cada nucleo de uma cor so)"
 figura_espaco = make_subplots(rows=1, cols=2,
-    subplot_titles=("Divisao aleatoria (sobreposta)", titulo_esq))
+    subplot_titles=("Divisao aleatoria (nucleos com cores misturadas)", titulo_esq))
 mapa_cores = {"treino": "#3266ad", "calibracao": "#7e9603", "teste": "#c0392b"}
 for coluna_conjunto, col in [("conjunto_aleatorio", 1), ("conjunto_esqueleto", 2)]:
     for nome_conjunto in ["treino", "calibracao", "teste"]:
@@ -873,12 +893,12 @@ for coluna_conjunto, col in [("conjunto_aleatorio", 1), ("conjunto_esqueleto", 2
             x=sub["pca_x"], y=sub["pca_y"], mode="markers", name=nome_conjunto,
             marker=dict(size=4, color=mapa_cores[nome_conjunto], opacity=0.5),
             showlegend=(col == 1),
-            text=sub["canonical_smiles"], customdata=sub["pic50"],
-            hovertemplate="pIC50=%{customdata:.2f}<br>%{text}<extra></extra>"),
+            text=sub["esqueleto"], customdata=sub["pic50"],
+            hovertemplate="pIC50=%{customdata:.2f}<br>esqueleto: %{text}<extra></extra>"),
             row=1, col=col)
 rotulo_var = "(PC1+PC2 = " + str(round(100 * var_total, 1)) + "% da variancia)"
 figura_espaco.update_layout(height=430,
-    title="Espaco quimico (PCA sobre fingerprints) " + rotulo_var)
+    title="Espaco quimico dos ESQUELETOS (PCA) " + rotulo_var)
 figura_espaco.show()''')
 
 md("""### 4.3b — A separação que o olho não vê, medida com um número
