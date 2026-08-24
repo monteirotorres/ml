@@ -2066,14 +2066,16 @@ def classificar(smiles):
     """Classifica uma molecula (SMILES) como FORTE, FRACO ou INDEFINIDA, com motivo."""
     molecula = Chem.MolFromSmiles(smiles)
     if molecula is None:
-        return {"classe": "INDEFINIDA", "motivo": "SMILES invalido"}
+        return {"classe": "INDEFINIDA", "motivo": "SMILES invalido",
+                "prob_forte": None, "similaridade": None}
 
     # 1. dominio de aplicabilidade primeiro
     fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
     similaridade = max(DataStructs.BulkTanimotoSimilarity(fp, fp_treino_rdkit))
     if similaridade < LIMIAR_DOMINIO:
         return {"classe": "INDEFINIDA",
-                "motivo": "fora do dominio (Tanimoto max %.2f < %.2f)" % (similaridade, LIMIAR_DOMINIO)}
+                "motivo": "fora do dominio (Tanimoto max %.2f < %.2f)" % (similaridade, LIMIAR_DOMINIO),
+                "prob_forte": None, "similaridade": similaridade}
 
     # 2. so agora a probabilidade do modelo. Monta o mesmo vetor de features do treino:
     #    os 9 descritores (na ordem das colunas) seguidos dos 2048 bits do fingerprint.
@@ -2092,10 +2094,13 @@ def classificar(smiles):
     # 3. abstencao por ambiguidade estatistica
     if abs(probabilidade_forte - 0.5) < MARGEM_ABSTENCAO:
         return {"classe": "INDEFINIDA",
-                "motivo": "ambiguo (probabilidade FORTE = %.2f)" % probabilidade_forte}
+                "motivo": "ambiguo (probabilidade FORTE = %.2f)" % probabilidade_forte,
+                "prob_forte": probabilidade_forte, "similaridade": similaridade}
     if probabilidade_forte >= 0.5:
-        return {"classe": "FORTE", "motivo": "probabilidade FORTE = %.2f" % probabilidade_forte}
-    return {"classe": "FRACO", "motivo": "probabilidade FORTE = %.2f" % probabilidade_forte}
+        return {"classe": "FORTE", "motivo": "probabilidade FORTE = %.2f" % probabilidade_forte,
+                "prob_forte": probabilidade_forte, "similaridade": similaridade}
+    return {"classe": "FRACO", "motivo": "probabilidade FORTE = %.2f" % probabilidade_forte,
+            "prob_forte": probabilidade_forte, "similaridade": similaridade}
 
 # teste rapido com uma molecula do proprio conjunto
 exemplo_smiles = agregados.loc[idx_teste_esq[0], "canonical_smiles"]
@@ -2150,6 +2155,165 @@ domínio" é uma medida estrutural. Elas nem sempre coincidem — e um FRACO con
 e correto é uma resposta tão honesta quanto um INDEFINIDA. O modelo só deve abster-se
 quando de fato não tem base, não sempre que a molécula parece incomum aos nossos
 olhos.""")
+
+md("""### 9.2 — Triagem virtual: procurar inibidores entre fármacos aprovados
+
+Agora o pagamento de verdade da aula. Pegamos uma **biblioteca real** de fármacos
+aprovados no mundo (o conjunto `world` do ZINC15, 512 moléculas) e passamos **cada
+uma** pelo `classificar`. A pergunta prática: **existe, entre remédios que já são
+usados para outras coisas, algum candidato a inibidor da acetilcolinesterase?** É
+exatamente o raciocínio do **reposicionamento de fármacos** — e é para isso que a
+`classificar` foi feita.
+
+Carregamos o arquivo direto do repositório (`data/world.smi`), no formato
+`SMILES  ID_ZINC` por linha.""")
+code(r'''URL_WORLD = ("https://raw.githubusercontent.com/monteirotorres/ml/"
+             "main/data/world.smi")
+try:
+    tabela_world = pd.read_csv(URL_WORLD, sep=r"\s+", header=None, names=["smiles", "zinc_id"])
+    print("biblioteca lida da URL:", len(tabela_world), "farmacos aprovados")
+except Exception as erro:
+    print("URL indisponivel (", type(erro).__name__, "); tentando arquivo local")
+    tabela_world = pd.read_csv("world.smi", sep=r"\s+", header=None, names=["smiles", "zinc_id"])
+    print("biblioteca lida do arquivo local:", len(tabela_world))
+tabela_world.head()''')
+
+md("""Rodamos o classificador em toda a biblioteca. Como a imensa maioria dos
+fármacos aprovados **não** tem nada a ver com a acetilcolinesterase, o esperado é
+um mar de FRACO e INDEFINIDA e **poucos** FORTE — e são justamente esses poucos que
+interessam. Guardamos a probabilidade de FORTE para ordenar os candidatos depois.""")
+code(r'''# passa cada farmaco pela ferramenta da Secao 9 (reuso, nao reimplementacao)
+linhas_triagem = []
+for posicao in range(len(tabela_world)):
+    smiles = tabela_world.iloc[posicao]["smiles"]
+    zinc_id = tabela_world.iloc[posicao]["zinc_id"]
+    resposta = classificar(smiles)
+    linhas_triagem.append({
+        "zinc_id": zinc_id, "smiles": smiles,
+        "classe": resposta["classe"], "prob_forte": resposta["prob_forte"],
+    })
+triagem = pd.DataFrame(linhas_triagem)
+
+print("distribuicao das", len(triagem), "moleculas aprovadas:")
+contagem_triagem = triagem["classe"].value_counts()
+for nome_classe in ["FORTE", "FRACO", "INDEFINIDA"]:
+    n = int(contagem_triagem.get(nome_classe, 0))
+    print(f"  {nome_classe:11s}: {n:4d}  ({round(100 * n / len(triagem), 1)}%)")''')
+
+md("""### 9.2a — Sanidade: recuperamos os inibidores já conhecidos?
+
+Antes de acreditar num candidato novo, uma pergunta de **controle**: dos fármacos
+desta biblioteca que **já têm medida de IC50 no ChEMBL** contra a acetilcolinesterase
+(ou seja, cuja potência real conhecemos), o modelo acerta? Achamos essa interseção
+casando o **esqueleto InChIKey** (robusto a sal/estereo/protonação) e comparamos a
+classe do modelo com o rótulo verdadeiro.
+
+**Ressalva honesta e importante:** alguns desses conhecidos estavam no **treino** do
+modelo — acertá-los ali é em parte memorização, não generalização. Por isso separamos
+os que estavam no treino dos que **não** estavam (o teste honesto), e olhamos os dois
+grupos.""")
+code(r'''# mapa: esqueleto-InChIKey -> (rotulo verdadeiro, estava no treino do modelo?)
+def esqueleto_inchikey(molecula):
+    return Chem.MolToInchiKey(molecula).split("-")[0]
+
+conjunto_treino = set(idx_treino_esq)
+verdade_por_esqueleto = {}
+for indice in agregados.index:
+    chave = esqueleto_inchikey(agregados.loc[indice, "molecula"])
+    verdade_por_esqueleto[chave] = {
+        "rotulo": int(agregados.loc[indice, "rotulo"]),
+        "no_treino": indice in conjunto_treino,
+    }
+
+# quais farmacos da biblioteca tambem estao no ChEMBL AChE (esqueleto conhecido)
+linhas_conhecidas = []
+for posicao in range(len(triagem)):
+    smiles = triagem.iloc[posicao]["smiles"]
+    molecula = Chem.MolFromSmiles(smiles)
+    if molecula is None:
+        continue
+    chave = esqueleto_inchikey(molecula)
+    if chave in verdade_por_esqueleto:
+        verdade = verdade_por_esqueleto[chave]
+        linhas_conhecidas.append({
+            "zinc_id": triagem.iloc[posicao]["zinc_id"],
+            "classe_modelo": triagem.iloc[posicao]["classe"],
+            "verdade": "FORTE" if verdade["rotulo"] == 1 else "FRACO",
+            "no_treino": verdade["no_treino"],
+        })
+conhecidas = pd.DataFrame(linhas_conhecidas)
+print("farmacos aprovados que TAMBEM tem medida no ChEMBL AChE:", len(conhecidas))
+
+# entre os que a VERDADE diz FORTE: quantos o modelo recupera como FORTE?
+verdadeiros_fortes = conhecidas[conhecidas["verdade"] == "FORTE"]
+print("\ndestes, com potencia real FORTE:", len(verdadeiros_fortes))
+for rotulo_grupo, grupo in [("no treino (memoria)", verdadeiros_fortes[verdadeiros_fortes["no_treino"]]),
+                            ("fora do treino (teste honesto)", verdadeiros_fortes[~verdadeiros_fortes["no_treino"]])]:
+    if len(grupo) == 0:
+        print(f"  {rotulo_grupo}: nenhum")
+        continue
+    n_forte = int((grupo["classe_modelo"] == "FORTE").sum())
+    n_fraco = int((grupo["classe_modelo"] == "FRACO").sum())
+    n_indef = int((grupo["classe_modelo"] == "INDEFINIDA").sum())
+    print(f"  {rotulo_grupo}: {len(grupo)} conhecidos -> "
+          f"FORTE {n_forte} | FRACO {n_fraco} (falsos negativos) | INDEFINIDA {n_indef}")''')
+
+md("""### 9.2b — Os candidatos novos
+
+Agora o que a triagem tem de mais interessante: fármacos classificados **FORTE**
+cujo esqueleto **não** aparece no ChEMBL AChE — ou seja, moléculas para as quais o
+modelo aposta em atividade **sem** ter visto nada igual medido contra o alvo. Cada
+uma é uma **hipótese de reposicionamento** a levar para a bancada, não uma verdade:
+o modelo dá a pista, o experimento decide. Ordenamos pela probabilidade de FORTE e
+desenhamos os primeiros.""")
+code(r'''esqueletos_conhecidos = set(verdade_por_esqueleto.keys())
+
+candidatas_novas = []
+for posicao in range(len(triagem)):
+    if triagem.iloc[posicao]["classe"] != "FORTE":
+        continue
+    smiles = triagem.iloc[posicao]["smiles"]
+    molecula = Chem.MolFromSmiles(smiles)
+    if molecula is None:
+        continue
+    if esqueleto_inchikey(molecula) in esqueletos_conhecidos:
+        continue                                   # ja conhecida, nao e novidade
+    candidatas_novas.append((triagem.iloc[posicao]["zinc_id"], smiles,
+                             float(triagem.iloc[posicao]["prob_forte"])))
+
+candidatas_novas.sort(key=lambda t: -t[2])         # maior probabilidade primeiro
+print("candidatas NOVAS classificadas FORTE (esqueleto inedito):", len(candidatas_novas))
+
+n_mostrar = min(8, len(candidatas_novas))
+moleculas_cand = []
+legendas_cand = []
+for zinc_id, smiles, prob in candidatas_novas[:n_mostrar]:
+    moleculas_cand.append(Chem.MolFromSmiles(smiles))
+    legendas_cand.append(zinc_id + "  p=" + str(round(prob, 2)))
+    print(f"  {zinc_id}  prob_forte={round(prob, 2)}  {smiles}")
+
+if n_mostrar > 0:
+    imagem_candidatas = Draw.MolsToGridImage(moleculas_cand, legends=legendas_cand,
+                                             molsPerRow=4, subImgSize=(230, 180))
+else:
+    imagem_candidatas = None
+imagem_candidatas''')
+
+mdq("""**Pergunta.** Um fármaco aprovado classificado FORTE aqui é um inibidor da
+acetilcolinesterase? E se um inibidor conhecido tivesse saído FRACO, o que isso
+significaria?""",
+"""**Resposta.** Não — um FORTE aqui é uma **hipótese**, não um veredito. O modelo
+diz "esta molécula se parece, na representação que ele usa, com inibidores potentes
+que ele viu"; confirmar exige o ensaio de IC50 na bancada. Muitos FORTE serão
+falsos positivos, e tudo bem: a triagem virtual serve para **priorizar** o que
+testar, não para substituir o teste. Já um inibidor conhecido classificado FRACO
+seria um **falso negativo** — e o mais custoso dos erros numa triagem, porque
+descartaria em silêncio um composto que funciona. É por isso que a Seção 9.2a
+mede exatamente isso (recuperação dos conhecidos e falsos negativos): a taxa de
+falsos negativos, sobretudo **fora do treino**, é o que diz se podemos confiar na
+triagem. E note o papel do **domínio**: candidatos bons demais para serem verdade
+muitas vezes caem em INDEFINIDA por atipicidade — a abstenção protegendo você de
+apostar onde o modelo não tem base.""")
 
 
 # ══════════════════════════════════════════════════════════════════════════
