@@ -23,9 +23,9 @@ Colab, em CPU.
 
 1. Abra o `aula_aluno.ipynb` no Colab (`File → Upload notebook` ou via GitHub).
 2. Nada a subir: a célula 1.1 lê o `dados_alvo_bruto.csv` direto do link público
-   do repositório. (Se preferir trabalhar offline, baixe o CSV da raiz do
-   repositório e suba-o para a sessão do Colab — a célula cai no arquivo local se
-   a URL falhar.)
+   do repositório. (Se preferir trabalhar offline, baixe o CSV da pasta `data/`
+   do repositório e suba-o para a sessão do Colab — a célula cai no arquivo local
+   se a URL falhar.)
 3. Rode a Seção 0 uma vez para instalar `rdkit`, `plotly` e demais pacotes
    (cerca de 1 minuto). O restante já vem no Colab.
 4. Se for usar o TensorBoard ao vivo (Seção 5b), **abra o painel antes de
@@ -40,7 +40,7 @@ Colab, em CPU.
 | 2 | Curadoria + funil de proveniência | 15 min | não |
 | 3 | Descritores e fingerprint de Morgan | 20 min | não |
 | 4 | Partição aleatória × esqueleto; projeção do espaço químico; prova quantitativa da separação (Tanimoto) | 20 min | 4.3b (Tanimoto) para 2ª aula |
-| 5 | Quatro modelos + rede em PyTorch + TensorBoard + regressão do pIC50 (5.6) | 40 min | 5b (PyTorch/TensorBoard) e 5.6 (regressão) para 2ª aula |
+| 5 | Cinco modelos (com XGBoost) + rede em PyTorch + TensorBoard + regressão do pIC50 (5.6) | 40 min | 5b (PyTorch/TensorBoard) e 5.6 (regressão) para 2ª aula |
 | 6 | Interpretabilidade, confundimento por tamanho e vazamento | 20 min | SHAP (6.3) é o mais lento — pode cortar |
 | 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta a abstenção) |
 | 8 | Predição conformal | 10 min | **opcional** — marcada como tal |

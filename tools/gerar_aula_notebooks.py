@@ -89,6 +89,7 @@ pacotes = [
     ("shap", "shap"),
     ("umap", "umap-learn"),
     ("tqdm", "tqdm"),
+    ("xgboost", "xgboost"),
 ]
 
 # instala cada um so se ainda nao puder ser importado
@@ -124,6 +125,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, plot_tree
+from xgboost import XGBClassifier   # gradient boosting (Secao 5.3b)
 from sklearn.inspection import permutation_importance, PartialDependenceDisplay
 from sklearn.metrics import (matthews_corrcoef, roc_auc_score, roc_curve,
                              precision_recall_curve, confusion_matrix,
@@ -544,9 +546,26 @@ bits): 1 se a subestrutura está presente, 0 se não.
 
 Cada bit é, portanto, "esta molécula contém esta pequena subestrutura?". Vamos
 ver isso com os olhos: pegamos uma molécula e desenhamos duas subestruturas
-(bits) que ela ativa.""")
+(bits) que ela ativa.
+
+**Variante funcional (FCFP).** Há duas famílias de fingerprint de Morgan: a
+**ECFP** (nosso padrão) identifica cada átomo pelo seu *elemento exato* (C, N,
+O…); a **FCFP** (`useFeatures=True`) identifica cada átomo pelo seu *papel
+farmacofórico* (doador de hidrogênio, aceptor, aromático, halogênio…). A FCFP é
+**mais abstrata**, e a intuição é que ela alargaria o domínio de aplicabilidade.
+Controlamos as duas por uma única constante `USA_FEATURES`, propagada a todo
+cálculo de fingerprint da aula.
+
+**Um resultado honesto, contraintuitivo:** trocamos para FCFP e o domínio **não
+alargou** — a abstenção na triagem (Seção 9.2) ficou praticamente igual. Por quê?
+O limiar do domínio é derivado da própria similaridade interna do treino (Seção
+7); a FCFP sobe *todas* as similaridades, inclusive as do treino, então o limiar
+**sobe junto** e a posição relativa das moléculas estranhas quase não muda. Ficamos
+com a ECFP (`USA_FEATURES = False`), mas o botão fica aqui para você reproduzir o
+experimento.""")
 code(r'''RAIO_MORGAN = 2
 N_BITS = 2048
+USA_FEATURES = False   # False = ECFP (atomo exato, padrao); True = FCFP (farmacoforico)
 
 # escolhe uma molecula relativamente potente para ilustrar
 indice_exemplo = agregados["pic50"].idxmax()
@@ -555,7 +574,7 @@ molecula_exemplo = agregados.loc[indice_exemplo, "molecula"]
 # calcula o fingerprint guardando quais atomos ativaram cada bit (bitInfo)
 info_bits = {}
 fp_exemplo = AllChem.GetMorganFingerprintAsBitVect(
-    molecula_exemplo, RAIO_MORGAN, nBits=N_BITS, bitInfo=info_bits)
+    molecula_exemplo, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES, bitInfo=info_bits)
 bits_ativos = list(info_bits.keys())
 print("molecula de exemplo:", agregados.loc[indice_exemplo, "molecule_chembl_id"])
 print("bits ativados nesta molecula:", len(bits_ativos), "de", N_BITS)
@@ -598,7 +617,7 @@ code(r'''LIMIAR_POTENCIA = 6.0   # pIC50 >= 6 equivale a IC50 <= 1 uM (1000 nM)
 # calcula o fingerprint de Morgan de cada molecula e o converte num vetor 0/1
 lista_fingerprints = []
 for molecula in agregados["molecula"]:
-    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
+    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES)
     vetor = np.zeros((N_BITS,), dtype=np.int8)
     DataStructs.ConvertToNumpyArray(fp, vetor)
     lista_fingerprints.append(vetor)
@@ -840,7 +859,7 @@ for molecula in agregados["molecula"]:
     mol_esqueleto = MurckoScaffold.GetScaffoldForMol(molecula)
     vetor = np.zeros((N_BITS,), dtype=np.int8)
     if mol_esqueleto is not None and mol_esqueleto.GetNumAtoms() > 0:
-        fp = AllChem.GetMorganFingerprintAsBitVect(mol_esqueleto, RAIO_MORGAN, nBits=N_BITS)
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol_esqueleto, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES)
         DataStructs.ConvertToNumpyArray(fp, vetor)
     lista_fp_esqueleto.append(vetor)
 matriz_fp_esqueleto = np.array(lista_fp_esqueleto)
@@ -910,11 +929,11 @@ code(r'''def similaridade_media_ao_treino(idx_treino, idx_teste):
     fps_treino = []
     for indice in idx_treino:
         molecula = agregados.loc[indice, "molecula"]
-        fps_treino.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
+        fps_treino.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES))
     maiores_similaridades = []
     for indice in idx_teste:
         molecula = agregados.loc[indice, "molecula"]
-        fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
+        fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES)
         similaridades = DataStructs.BulkTanimotoSimilarity(fp, fps_treino)
         maiores_similaridades.append(max(similaridades))
     return float(np.mean(maiores_similaridades))
@@ -1169,6 +1188,40 @@ print(f"Floresta aleatoria treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")
 """Treine uma RandomForestClassifier (n_estimators=300, n_jobs=-1,
 random_state=SEMENTE), meça o tempo, guarde em modelos_treinados["Floresta
 aleatoria"] e tempos_treino, e imprima o MCC no teste.""")
+
+md("""### 5.3b — Gradient boosting (XGBoost)
+
+A floresta e o XGBoost são **primos**: os dois somam muitas árvores. A diferença
+está em **como** as somam.
+
+- A **floresta** treina centenas de árvores **independentes**, cada uma numa
+  reamostra dos dados, e tira a **média** dos votos. Cada árvore é fundo e
+  sozinha decora; a média cancela o erro de cada uma (reduz **variância**).
+- O **XGBoost** (gradient boosting) treina as árvores **em sequência**: cada nova
+  árvore é rasa e corrige os **erros que sobraram** das anteriores, dando passos
+  guiados pelo gradiente da perda. Em vez de mediar árvores independentes, ele
+  **empilha correções** — ataca o **viés**, não só a variância.
+
+Na prática, o boosting costuma extrair um pouco mais de sinal de dados tabulares,
+mas é mais sensível a hiperparâmetros e pode sobreajustar se solto. Usamos uma
+configuração modesta e regularizada. Guardamos o modelo no mesmo dicionário, para
+a comparação única da Seção 5.5 tratá-lo como qualquer outro.""")
+codex(r'''inicio = time.time()
+modelo_xgb = XGBClassifier(
+    n_estimators=400, max_depth=4, learning_rate=0.05,
+    subsample=0.8, colsample_bytree=0.8, reg_lambda=1.0,
+    tree_method="hist", eval_metric="logloss", n_jobs=-1, random_state=SEMENTE)
+modelo_xgb.fit(X_treino, y_treino)
+tempo = time.time() - inicio
+
+modelos_treinados["XGBoost"] = modelo_xgb
+tempos_treino["XGBoost"] = tempo
+mcc = matthews_corrcoef(y_teste, modelo_xgb.predict(X_teste))
+print(f"XGBoost treinado em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''',
+"""Treine um XGBClassifier (n_estimators=400, max_depth=4, learning_rate=0.05,
+subsample=0.8, colsample_bytree=0.8, reg_lambda=1.0, tree_method='hist',
+eval_metric='logloss', random_state=SEMENTE), meça o tempo, guarde em
+modelos_treinados["XGBoost"] e tempos_treino, e imprima o MCC no teste.""")
 
 md("""### 5.4a — Rede neural (scikit-learn)
 
@@ -1714,7 +1767,7 @@ for eixo, nome in zip(eixos, nomes_modelos):
             eixo.text(j, i, matriz[i, j], ha="center", va="center", fontsize=11)
 plt.tight_layout(); plt.show()''')
 
-mdq("""**Pergunta.** A diferença de desempenho entre os quatro modelos é grande ou
+mdq("""**Pergunta.** A diferença de desempenho entre os cinco modelos é grande ou
 pequena? Como ela se compara à diferença que a escolha da partição (aleatória x
 esqueleto) costuma causar?""",
 """**Resposta.** Depende do que os dados mostrarem nesta execução — olhe a coluna
@@ -1722,6 +1775,21 @@ MCC da tabela. O padrão típico, que você pode verificar refazendo a Seção 4
 divisão aleatória, é que a diferença **entre modelos** é menor do que a diferença
 **entre esquemas de partição**. Trocar de algoritmo rende pouco; escolher a
 avaliação honesta muda o número que você reporta.""")
+
+md("""### 5.5b — Elegendo o melhor modelo
+
+Em vez de fixar um vencedor no código, deixamos **os dados escolherem**: pegamos o
+modelo de maior **MCC** no teste e é ele que segue para as próximas etapas —
+interpretabilidade (Seção 6), domínio (7), a função `classificar` (9) e a triagem
+virtual (9.2). Assim, se o XGBoost superar a floresta (ou vice-versa), o resto do
+notebook o acompanha **automaticamente**, sem edição manual.""")
+code(r'''# escolhe o melhor modelo pelo MCC no teste (a metrica principal desta aula)
+melhor_nome = max(resultados, key=lambda nome: resultados[nome]["MCC"])
+melhor_modelo = modelos_treinados[melhor_nome]
+print("melhor modelo pelo MCC:", melhor_nome,
+      "| MCC =", round(resultados[melhor_nome]["MCC"], 3),
+      "| AUC =", round(resultados[melhor_nome]["AUC"], 3))
+print("as secoes seguintes (6 a 9) usam este modelo como 'o modelo'.")''')
 
 
 md("""### 5.6 — E se o alvo fosse contínuo? Regressão do pIC50
@@ -1876,13 +1944,13 @@ modelo_tamanho = LogisticRegression(max_iter=1000, random_state=SEMENTE)
 modelo_tamanho.fit(X_treino_tamanho, y_treino)
 predito_tamanho = modelo_tamanho.predict(X_teste_tamanho)
 mcc_tamanho = matthews_corrcoef(y_teste, predito_tamanho)
-mcc_completo = resultados["Floresta aleatoria"]["MCC"]
+mcc_completo = resultados[melhor_nome]["MCC"]
 print("MCC so com tamanho     :", round(mcc_tamanho, 3))
-print("MCC floresta completa  :", round(mcc_completo, 3))
+print("MCC modelo completo    :", round(mcc_completo, 3), "(" + melhor_nome + ")")
 print("diferenca              :", round(mcc_completo - mcc_tamanho, 3))''',
 """Treine uma LogisticRegression usando SÓ a coluna 'atomos_pesados' como feature.
-Calcule o MCC no teste e compare com o MCC da floresta completa. Interprete: se
-forem próximos, o fingerprint contribui pouco.""")
+Calcule o MCC no teste e compare com o MCC do modelo completo (melhor_modelo).
+Interprete: se forem próximos, o fingerprint contribui pouco.""")
 
 md("""### 6.2 — Importância por permutação
 
@@ -1907,7 +1975,7 @@ X_perm = X_teste[amostra_perm].copy()
 y_perm = y_teste[amostra_perm]
 
 # MCC de referencia (sem permutar nada)
-mcc_referencia = matthews_corrcoef(y_perm, modelo_floresta.predict(X_perm))
+mcc_referencia = matthews_corrcoef(y_perm, melhor_modelo.predict(X_perm))
 
 # permuta cada coluna de descritor 3 vezes e mede a queda media de MCC
 n_descritores = len(tabela_descritores.columns)
@@ -1919,7 +1987,7 @@ for indice_coluna in range(n_descritores):
         coluna = X_embaralhado[:, indice_coluna].copy()
         gerador_perm.shuffle(coluna)
         X_embaralhado[:, indice_coluna] = coluna
-        mcc_permutado = matthews_corrcoef(y_perm, modelo_floresta.predict(X_embaralhado))
+        mcc_permutado = matthews_corrcoef(y_perm, melhor_modelo.predict(X_embaralhado))
         quedas.append(mcc_referencia - mcc_permutado)
     importancia_descritores.append(float(np.mean(quedas)))
 
@@ -1931,7 +1999,7 @@ for repeticao in range(3):
     X_embaralhado = X_perm.copy()
     ordem_linhas = gerador_perm.permutation(len(X_perm))
     X_embaralhado[:, colunas_fp] = X_perm[np.ix_(ordem_linhas, colunas_fp)]
-    mcc_permutado = matthews_corrcoef(y_perm, modelo_floresta.predict(X_embaralhado))
+    mcc_permutado = matthews_corrcoef(y_perm, melhor_modelo.predict(X_embaralhado))
     quedas_fp.append(mcc_referencia - mcc_permutado)
 importancia_fp = float(np.mean(quedas_fp))
 
@@ -1964,14 +2032,18 @@ amostra_shap = gerador_perm.choice(len(X_teste), n_amostra_shap, replace=False)
 X_shap = X_teste[amostra_shap]
 
 # feature_perturbation e check_additivity=False evitam um erro de aditividade
-# comum em florestas grandes com muitas features binarias
-explicador = shap.TreeExplainer(modelo_floresta, feature_perturbation="tree_path_dependent")
+# comum em modelos de arvore com muitas features binarias
+explicador = shap.TreeExplainer(melhor_modelo, feature_perturbation="tree_path_dependent")
 valores_shap = explicador.shap_values(X_shap, check_additivity=False)
-# em classificacao binaria, pegamos as contribuicoes para a classe FORTE (indice 1)
+# pega as contribuicoes para a classe FORTE. O formato varia com o modelo:
+# floresta antiga -> lista por classe; floresta nova -> (n, feat, classes);
+# XGBoost binario -> (n, feat) ja e a classe positiva.
 if isinstance(valores_shap, list):
     valores_shap_forte = valores_shap[1]
-else:
+elif valores_shap.ndim == 3:
     valores_shap_forte = valores_shap[:, :, 1]
+else:
+    valores_shap_forte = valores_shap
 shap.summary_plot(valores_shap_forte, X_shap, feature_names=nomes_features,
                   max_display=12, show=True)''')
 
@@ -2015,7 +2087,7 @@ confundimento por tamanho.""")
 code(r'''indices_pdp = [nomes_features.index(nome) for nome in ["MW", "LogP", "TPSA"]]
 figura_pdp, eixo_pdp = plt.subplots(1, 3, figsize=(12, 3.5))
 PartialDependenceDisplay.from_estimator(
-    modelo_floresta, X_treino, indices_pdp, feature_names=nomes_features, ax=eixo_pdp)
+    melhor_modelo, X_treino, indices_pdp, feature_names=nomes_features, ax=eixo_pdp)
 plt.tight_layout(); plt.show()''')
 
 md("""### 6.5 — Controle negativo: rótulos embaralhados
@@ -2065,11 +2137,11 @@ code(r'''# fingerprints de Morgan (objetos do RDKit) do treino e do teste, para 
 fp_treino_rdkit = []
 for indice in idx_treino_esq:
     molecula = agregados.loc[indice, "molecula"]
-    fp_treino_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
+    fp_treino_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES))
 fp_teste_rdkit = []
 for indice in idx_teste_esq:
     molecula = agregados.loc[indice, "molecula"]
-    fp_teste_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
+    fp_teste_rdkit.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES))
 
 # para cada molecula de teste, a MAIOR similaridade de Tanimoto contra o treino
 similaridade_teste = []
@@ -2105,7 +2177,7 @@ exatamente ignorar isso que, num teste preliminar com dados sintéticos, produzi
 a observação contraintuitiva de "melhor fora do que dentro".""")
 code(r'''dentro = similaridade_teste >= LIMIAR_DOMINIO
 fora = ~dentro
-predito_floresta = resultados["Floresta aleatoria"]["predito"]
+predito_floresta = resultados[melhor_nome]["predito"]
 
 # para cada grupo (dentro/fora), imprime n, composicao de classe e MCC
 print("Comparacao estratificada (floresta aleatoria):")
@@ -2140,7 +2212,7 @@ code(r'''NIVEL_CONFIANCA = 0.80   # cobertura pretendida: 80%
 alfa = 1.0 - NIVEL_CONFIANCA
 
 # escores de nao-conformidade = 1 - probabilidade da classe verdadeira, na calibracao
-proba_calib = modelo_floresta.predict_proba(X_calib)
+proba_calib = melhor_modelo.predict_proba(X_calib)
 escores_por_classe = {0: [], 1: []}
 for posicao in range(len(y_calib)):
     classe_real = y_calib[posicao]
@@ -2154,7 +2226,7 @@ for classe in (0, 1):
 print("limiares conformais por classe:", {k: round(v, 3) for k, v in limiar_conformal.items()})
 
 # aplica ao teste: para cada molecula, monta o conjunto de predicao e checa cobertura
-proba_teste_rf = modelo_floresta.predict_proba(X_teste)
+proba_teste_rf = melhor_modelo.predict_proba(X_teste)
 conjuntos = []
 cobertos = 0
 for posicao in range(len(y_teste)):
@@ -2216,7 +2288,7 @@ def classificar(smiles):
                 "prob_forte": None, "similaridade": None}
 
     # 1. dominio de aplicabilidade primeiro
-    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
+    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS, useFeatures=USA_FEATURES)
     similaridade = max(DataStructs.BulkTanimotoSimilarity(fp, fp_treino_rdkit))
     if similaridade < LIMIAR_DOMINIO:
         return {"classe": "INDEFINIDA",
@@ -2235,7 +2307,7 @@ def classificar(smiles):
     vetor_fp = np.zeros((N_BITS,), dtype=float)
     DataStructs.ConvertToNumpyArray(fp, vetor_fp)
     entrada = np.hstack([vetor_desc, vetor_fp]).reshape(1, -1)
-    probabilidade_forte = float(modelo_floresta.predict_proba(entrada)[0, 1])
+    probabilidade_forte = float(melhor_modelo.predict_proba(entrada)[0, 1])
 
     # 3. abstencao por ambiguidade estatistica
     if abs(probabilidade_forte - 0.5) < MARGEM_ABSTENCAO:
@@ -2473,7 +2545,7 @@ treino: o modelo, os fingerprints do treino (para o domínio), os limiares e um
 versão de scikit-learn ou RDKit pode não recarregar corretamente em outra — sem
 registrar isso, um modelo "que funcionava" vira irreproduzível.""")
 code(r'''pacote = {
-    "modelo_floresta": modelo_floresta,
+    "melhor_modelo": melhor_modelo,
     "fp_treino_rdkit": fp_treino_rdkit,
     "limiar_dominio": LIMIAR_DOMINIO,
     "limiar_potencia": LIMIAR_POTENCIA,
@@ -2520,7 +2592,7 @@ moléculas classificadas como INDEFINIDA no teste. A interatividade muda o que s
 code(r'''try:
     from ipywidgets import interact, FloatSlider
 
-    proba_teste_forte = modelo_floresta.predict_proba(X_teste)[:, 1]
+    proba_teste_forte = melhor_modelo.predict_proba(X_teste)[:, 1]
 
     def mostrar_incerto(margem):
         """Recalcula e imprime a fracao de INDEFINIDA para uma margem de abstencao."""
@@ -2540,7 +2612,7 @@ except Exception as erro:
 md("""---
 
 Fim da aula. Você extraiu dados reais, curou-os com prestação de contas,
-comparou partições honestas e desonestas, treinou e comparou quatro modelos sob
+comparou partições honestas e desonestas, treinou e comparou cinco modelos sob
 a mesma interface (e ainda previu o pIC50 contínuo por regressão), abriu a caixa
 preta de uma rede em PyTorch, investigou se o modelo aprende química ou tamanho,
 controlou o vazamento de dados de frente, delimitou onde o modelo pode opinar e o
