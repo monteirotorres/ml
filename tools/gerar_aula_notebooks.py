@@ -2165,16 +2165,16 @@ usados para outras coisas, algum candidato a inibidor da acetilcolinesterase?** 
 exatamente o raciocínio do **reposicionamento de fármacos** — e é para isso que a
 `classificar` foi feita.
 
-Carregamos o arquivo direto do repositório (`data/world.smi`), no formato
-`SMILES  ID_ZINC` por linha.""")
+Carregamos o arquivo direto do repositório (`data/world.csv`), com as colunas
+`zinc_id` (identificador) e `smiles` (estrutura).""")
 code(r'''URL_WORLD = ("https://raw.githubusercontent.com/monteirotorres/ml/"
-             "main/data/world.smi")
+             "main/data/world.csv")
 try:
-    tabela_world = pd.read_csv(URL_WORLD, sep=r"\s+", header=None, names=["smiles", "zinc_id"])
+    tabela_world = pd.read_csv(URL_WORLD)
     print("biblioteca lida da URL:", len(tabela_world), "farmacos aprovados")
 except Exception as erro:
     print("URL indisponivel (", type(erro).__name__, "); tentando arquivo local")
-    tabela_world = pd.read_csv("world.smi", sep=r"\s+", header=None, names=["smiles", "zinc_id"])
+    tabela_world = pd.read_csv("world.csv")
     print("biblioteca lida do arquivo local:", len(tabela_world))
 tabela_world.head()''')
 
