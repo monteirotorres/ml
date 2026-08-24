@@ -1491,6 +1491,152 @@ São progressões diferentes; o TensorBoard registra ambas porque é só um plot
 de escalares ao longo de um eixo — o eixo é que muda de sentido (épocas vs.
 árvores).""")
 
+md("""### 5.4d — Melhorando a rede: mais potência e mais generalização
+
+A rede base (5.4b) é deliberadamente crua — treina um número fixo de épocas, sem
+nenhuma defesa contra o sobreajuste. Vamos aplicar a **caixa de ferramentas
+padrão** para uma rede generalizar melhor, e — o que importa — **medir no teste**
+se cada escolha compensa. As ferramentas:
+
+- **Mais capacidade** (camadas mais largas, 256→128): dá à rede mais poder de
+  representação — a "potência" — mas, sozinha, também mais chance de decorar.
+- **Dropout**: no treino, desliga neurônios ao acaso a cada passo, forçando a rede
+  a não depender de um só caminho. É o regularizador clássico de redes.
+- **Weight decay (L2)**: um freio no tamanho dos pesos embutido no otimizador — a
+  mesma ideia do Ridge (5.6), agora na rede.
+- **Normalização de lote (BatchNorm)**: padroniza as ativações dentro da rede,
+  estabilizando e acelerando o treino.
+- **Early stopping**: separamos uma fatia de **validação** de dentro do treino
+  (nunca tocamos teste nem calibração), acompanhamos a perda nela e ficamos com os
+  pesos da **melhor** época, parando quando ela deixa de melhorar.
+- **Pesos de classe**: como há mais FRACO que FORTE, pesamos a perda pelo inverso
+  da frequência — isso equilibra os erros e costuma subir o MCC.
+
+Nada disso é garantia: por isso comparamos base × melhorada × floresta no teste.""")
+code(r'''# fatia de VALIDACAO retirada de dentro do treino (nao toca teste nem calibracao)
+torch.manual_seed(SEMENTE)
+permutacao = torch.randperm(Xt_treino.shape[0])
+n_val = int(0.2 * Xt_treino.shape[0])
+idx_val, idx_tr = permutacao[:n_val], permutacao[n_val:]
+Xv, yv = Xt_treino[idx_val], yt_treino[idx_val]
+Xtr, ytr = Xt_treino[idx_tr], yt_treino[idx_tr]
+print("treino interno:", Xtr.shape[0], "| validacao interna:", Xv.shape[0])
+
+# pesos de classe = inverso da frequencia (equilibra FORTE x FRACO)
+n0 = int((ytr == 0).sum()); n1 = int((ytr == 1).sum())
+pesos_classe = torch.tensor([(n0 + n1) / (2.0 * n0), (n0 + n1) / (2.0 * n1)],
+                            dtype=torch.float32).to(DISPOSITIVO)
+criterio = nn.CrossEntropyLoss(weight=pesos_classe)
+
+class RedeMLPMelhorada(nn.Module):
+    """Mais larga (256->128), com BatchNorm e Dropout entre as camadas."""
+    def __init__(self, n_entradas, p_dropout=0.3):
+        super().__init__()
+        self.camada1 = nn.Linear(n_entradas, 256)
+        self.norm1 = nn.BatchNorm1d(256)
+        self.camada2 = nn.Linear(256, 128)
+        self.norm2 = nn.BatchNorm1d(128)
+        self.saida = nn.Linear(128, 2)
+        self.ativacao = nn.ReLU()
+        self.dropout = nn.Dropout(p_dropout)
+    def forward(self, entrada):
+        oculta1 = self.dropout(self.ativacao(self.norm1(self.camada1(entrada))))
+        oculta2 = self.dropout(self.ativacao(self.norm2(self.camada2(oculta1))))
+        return self.saida(oculta2)
+
+torch.manual_seed(SEMENTE)
+rede_melhor = RedeMLPMelhorada(X_treino.shape[1]).to(DISPOSITIVO)
+otimizador_m = torch.optim.Adam(rede_melhor.parameters(), lr=0.001, weight_decay=1e-4)
+
+MAX_EPOCAS, PACIENCIA = 120, 12
+melhor_perda_val = float("inf")
+melhor_estado = None
+epocas_sem_melhora = 0
+n_tr = Xtr.shape[0]
+curva_tr, curva_val = [], []
+for epoca in range(MAX_EPOCAS):
+    rede_melhor.train()
+    ordem = torch.randperm(n_tr)
+    soma, n_lotes = 0.0, 0
+    for inicio_lote in range(0, n_tr, TAM_MINILOTE):
+        indices_lote = ordem[inicio_lote:inicio_lote + TAM_MINILOTE]
+        if indices_lote.shape[0] < 2:
+            continue                          # BatchNorm precisa de >=2 exemplos
+        otimizador_m.zero_grad()
+        perda = criterio(rede_melhor(Xtr[indices_lote].to(DISPOSITIVO)),
+                         ytr[indices_lote].to(DISPOSITIVO))
+        perda.backward(); otimizador_m.step()
+        soma += perda.item(); n_lotes += 1
+    curva_tr.append(soma / n_lotes)
+
+    # perda na validacao interna (rede em modo eval: BatchNorm/Dropout desligam)
+    rede_melhor.eval()
+    with torch.no_grad():
+        perda_v = criterio(rede_melhor(Xv.to(DISPOSITIVO)), yv.to(DISPOSITIVO)).item()
+    curva_val.append(perda_v)
+
+    # early stopping: guarda o melhor estado; para apos PACIENCIA epocas sem melhora
+    if perda_v < melhor_perda_val - 1e-4:
+        melhor_perda_val = perda_v
+        melhor_estado = {chave: valor.clone() for chave, valor in rede_melhor.state_dict().items()}
+        epocas_sem_melhora = 0
+    else:
+        epocas_sem_melhora += 1
+        if epocas_sem_melhora >= PACIENCIA:
+            print("early stopping na epoca", epoca + 1)
+            break
+
+rede_melhor.load_state_dict(melhor_estado)   # volta aos pesos de menor perda de validacao
+print("melhor perda de validacao:", round(melhor_perda_val, 4),
+      "| epocas treinadas:", len(curva_tr))''')
+
+md("""Agora o juiz honesto: o **teste**. Avaliamos a rede base (a de 5.4b), a rede
+melhorada e — como norte — a floresta, todas no mesmo conjunto de teste, com MCC e
+AUC. Se a soma das defesas valeu a pena, a rede melhorada supera a base; se ainda
+fica atrás da floresta, é a lição de que, em fingerprints, árvores continuam
+difíceis de bater. A curva de treino × validação mostra o early stopping em ação —
+o ponto onde a validação para de cair é onde guardamos os pesos.""")
+code(r'''def avaliar_rede(rede, X_tensor, y_verdadeiro):
+    rede.eval()
+    with torch.no_grad():
+        logits = rede(X_tensor.to(DISPOSITIVO))
+        probabilidade = torch.softmax(logits, dim=1)[:, 1].cpu().numpy()
+    predito = (probabilidade >= 0.5).astype(int)
+    return matthews_corrcoef(y_verdadeiro, predito), roc_auc_score(y_verdadeiro, probabilidade)
+
+mcc_base, auc_base = avaliar_rede(rede_torch, Xt_teste, y_teste)
+mcc_melhor, auc_melhor = avaliar_rede(rede_melhor, Xt_teste, y_teste)
+mcc_rf = matthews_corrcoef(y_teste, modelo_floresta.predict(X_teste))
+auc_rf = roc_auc_score(y_teste, modelo_floresta.predict_proba(X_teste)[:, 1])
+
+print(f"{'modelo':26s} {'MCC':>7s} {'AUC':>7s}")
+print(f"{'Rede base (5.4b)':26s} {mcc_base:7.3f} {auc_base:7.3f}")
+print(f"{'Rede melhorada':26s} {mcc_melhor:7.3f} {auc_melhor:7.3f}")
+print(f"{'Floresta (referencia)':26s} {mcc_rf:7.3f} {auc_rf:7.3f}")
+print("ganho da rede em MCC:", round(mcc_melhor - mcc_base, 3))
+
+figura_es = go.Figure()
+figura_es.add_trace(go.Scatter(x=list(range(1, len(curva_tr) + 1)), y=curva_tr,
+                               name="treino", line=dict(color="#3266ad")))
+figura_es.add_trace(go.Scatter(x=list(range(1, len(curva_val) + 1)), y=curva_val,
+                               name="validacao", line=dict(color="#c0392b")))
+figura_es.update_layout(title="Rede melhorada: perda treino x validacao (early stopping)",
+                        xaxis_title="epoca", yaxis_title="perda", height=360)
+figura_es.show()''')
+
+mdq("""**Pergunta.** Das ferramentas aplicadas, quais melhoram a **capacidade** do
+modelo e quais melhoram a **generalização**? Pode uma delas atrapalhar se exagerada?""",
+"""**Resposta.** Aumentar a largura (256→128) e treinar mais épocas melhoram a
+**capacidade** — o quanto a rede *pode* aprender. Dropout, weight decay, BatchNorm,
+pesos de classe e early stopping melhoram a **generalização** — o quanto do que ela
+aprende vale fora do treino. As duas famílias se equilibram: mais capacidade sem
+regularização decora; regularização demais (dropout alto, weight decay grande)
+**sufoca** a rede e ela passa a errar por falta de capacidade — o subajuste. O
+early stopping é o mais seguro dos controles porque é guiado pelos dados: ele para
+exatamente quando a validação para de melhorar, sem você adivinhar o número de
+épocas. E o teste continua sendo a palavra final: qualquer ganho só conta se
+aparecer nele, não na perda de treino.""")
+
 md("""### 5.5 — Comparação de todos os modelos
 
 Agora a **avaliação em um laço só**: percorremos os modelos guardados e aplicamos
