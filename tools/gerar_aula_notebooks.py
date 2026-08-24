@@ -1257,74 +1257,39 @@ otimizador = torch.optim.Adam(rede_torch.parameters(), lr=0.001)
 print("rede criada em", DISPOSITIVO, "| parametros:",
       sum(p.numel() for p in rede_torch.parameters()))''')
 
-md("""**Vamos ver a arquitetura que acabamos de montar.** A rede é uma pilha de
-camadas: a entrada (um vetor com todas as features), duas camadas ocultas
-(`Linear` + `ReLU`) que a comprimem de 2057 → 128 → 64, e a saída `Linear` com 2
-neurônios (um por classe). O diagrama abaixo desenha esse fluxo, e a célula também
-imprime um resumo camada a camada com a contagem de parâmetros.
+md("""**Vamos desenhar a arquitetura que acabamos de montar** — o diagrama real,
+gerado a partir do próprio modelo, não um desenho decorativo. Para modelos PyTorch,
+o pacote mais prático hoje é o **`torchview`** (`draw_graph`): ele passa um tensor
+de exemplo pela rede, rastreia as operações e desenha as camadas **com as formas
+dos tensores** em cada ponto — do vetor de entrada até os 2 logits de saída.
+(Alternativas, se quiser explorar: o **`torchinfo`** dá uma tabela textual no
+estilo do `model.summary()` do Keras; o **`torchviz`** desenha o grafo de
+*autograd*, isto é, as operações da retropropagação, útil para depurar em vez da
+arquitetura.)
 
-**Qual o melhor pacote para desenhar redes em Python?** Para modelos PyTorch, o
-mais prático hoje é o **`torchview`** (`draw_graph`), que gera um diagrama limpo
-das camadas *com as formas dos tensores* automaticamente. Alternativas: o
-**`torchinfo`** (`summary`) dá uma tabela textual no estilo do `model.summary()`
-do Keras (camadas, formas de saída, parâmetros), e o **`torchviz`** (`make_dot`)
-desenha o **grafo de autograd** — as operações da retropropagação, útil para
-depurar, não a arquitetura em si. Como esses pacotes precisam ser instalados (e o
-`torchview`/`torchviz` dependem do Graphviz), deixamos o diagrama automático como
-trecho **comentado** para você rodar no Colab, e desenhamos aqui uma versão à mão
-com `matplotlib`, que roda em qualquer lugar e fica salva no arquivo.""")
-code(r'''import matplotlib.patches as mpatches
+O `torchview` não vem no Colab, então a célula abaixo o **instala** (rápido) e
+gera o diagrama. Antes dele, imprimimos um resumo camada a camada com a contagem
+de parâmetros.""")
+code(r'''# instala o torchview se faltar (mesmo padrao robusto da Secao 0)
+import importlib.util
+import subprocess
+import sys
+if importlib.util.find_spec("torchview") is None:
+    print("instalando torchview...")
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "torchview"], check=True)
 
-# --- diagrama da arquitetura, desenhado a mao (sempre disponivel no arquivo) ---
-camadas = [
-    ("Entrada\n" + str(X_treino.shape[1]) + " features", X_treino.shape[1], "#8a8f98"),
-    ("Oculta 1\n128 + ReLU", 128, "#3266ad"),
-    ("Oculta 2\n64 + ReLU", 64, "#3266ad"),
-    ("Saida\n2 (FRACO/FORTE)", 2, "#c0392b"),
-]
-nomes_transformacao = ["Linear\n2057->128", "Linear\n128->64", "Linear\n64->2"]
-
-figura_arq, eixo_arq = plt.subplots(figsize=(8.6, 3.8))
-posicoes_x = [0, 1, 2, 3]
-largura = 0.44
-tamanho_entrada = camadas[0][1]
-for (rotulo, tamanho, cor), centro_x in zip(camadas, posicoes_x):
-    # altura so simbolica (escala log, para a entrada gigante caber ao lado da saida)
-    altura = 0.25 + 0.75 * (np.log10(tamanho) / np.log10(tamanho_entrada))
-    base_y = (1.0 - altura) / 2.0
-    caixa = mpatches.FancyBboxPatch((centro_x - largura / 2, base_y), largura, altura,
-        boxstyle="round,pad=0.02", facecolor=cor, edgecolor="black", alpha=0.85)
-    eixo_arq.add_patch(caixa)
-    eixo_arq.text(centro_x, base_y + altura + 0.07, rotulo, ha="center", va="bottom",
-                  fontsize=8)
-for indice in range(len(nomes_transformacao)):
-    eixo_arq.annotate("", xy=(posicoes_x[indice + 1] - largura / 2, 0.5),
-        xytext=(posicoes_x[indice] + largura / 2, 0.5),
-        arrowprops=dict(arrowstyle="->", color="black"))
-    meio_x = (posicoes_x[indice] + posicoes_x[indice + 1]) / 2.0
-    eixo_arq.text(meio_x, 0.53, nomes_transformacao[indice], ha="center", va="bottom",
-                  fontsize=7.5, color="#333333")
-eixo_arq.set_xlim(-0.6, 3.6)
-eixo_arq.set_ylim(0, 1.7)
-eixo_arq.axis("off")
-eixo_arq.set_title("Arquitetura da RedeMLP: 2057 -> 128 -> 64 -> 2")
-plt.tight_layout()
-plt.show()
-
-# --- resumo textual camada a camada, so com PyTorch (roda offline) ---
+# resumo textual camada a camada, direto do modelo
 print("camada a camada:")
 for nome_camada, modulo in rede_torch.named_children():
     n_parametros = sum(p.numel() for p in modulo.parameters())
     print("  ", nome_camada, "->", modulo, "| parametros:", n_parametros)
 print("total de parametros:", sum(p.numel() for p in rede_torch.parameters()))
 
-# --- opcional (Colab): diagrama automatico com torchview ---
-# !pip -q install torchview torchinfo
-# from torchview import draw_graph
-# grafo = draw_graph(rede_torch, input_size=(1, X_treino.shape[1]), device=DISPOSITIVO)
-# grafo.visual_graph        # mostra o diagrama com as formas dos tensores
-# from torchinfo import summary
-# summary(rede_torch, input_size=(1, X_treino.shape[1]))   # tabela estilo Keras''')
+# diagrama real da arquitetura, com as formas dos tensores (renderiza no Colab)
+from torchview import draw_graph
+grafo_rede = draw_graph(rede_torch, input_size=(1, X_treino.shape[1]),
+                        device=str(DISPOSITIVO), graph_name="RedeMLP")
+grafo_rede.visual_graph   # ultima expressao: o Colab desenha o diagrama aqui''')
 
 md("""O laço de treino, comentado passo a passo, instrumentado com o
 `SummaryWriter` do TensorBoard (registra a perda por época) e com uma barra
