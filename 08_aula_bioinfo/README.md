@@ -16,7 +16,7 @@ Colab, em CPU.
 | --- | --- |
 | `aula_gabarito.ipynb` | Versão completa: perguntas com resposta e todas as células de modelagem preenchidas. |
 | `aula_aluno.ipynb` | Mesma estrutura, com as células de modelagem das Seções 5–7 esvaziadas (instruções em comentário) e as respostas das perguntas removidas. |
-| `../dados_alvo_bruto.csv` | Extração pré-feita do ChEMBL (10.079 medidas de IC50), na **raiz do repositório**. O notebook lê direto do link público; este é o caminho alternativo quando a API do EBI não está acessível em sala. |
+| `../data/dados_alvo_bruto.csv` | Extração pré-feita do ChEMBL (10.079 medidas de IC50), na pasta **`data/`** do repositório. O notebook lê direto do link público; este é o caminho alternativo quando a API do EBI não está acessível em sala. |
 | `01_ml_bioinformatica.md` | Página de apresentação da aula no site do curso. |
 
 ## Antes da aula
@@ -85,5 +85,5 @@ cabe em ~90 min.
 
 O notebook resolve o alvo pelo símbolo do gene (`ALVO_GENE = "ACHE"`) via API do
 ChEMBL. Para outro alvo, troque essa constante e reexecute a extração — ou gere um
-novo `dados_alvo_bruto.csv` (na raiz do repositório) com `tools/extrair_chembl.py`
+novo `data/dados_alvo_bruto.csv` com `tools/extrair_chembl.py`
 (ajustando o ChEMBL ID do alvo).

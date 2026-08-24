@@ -203,7 +203,7 @@ Nós já extraímos os dados do ChEMBL e deixamos o CSV num **link público** no
 repositório. Assim o notebook lê direto da internet — **sem precisar subir
 arquivo nenhum** no Colab. É o caminho padrão, e é rápido.""")
 code(r'''URL_DADOS = ("https://raw.githubusercontent.com/monteirotorres/ml/"
-             "main/dados_alvo_bruto.csv")
+             "main/data/dados_alvo_bruto.csv")
 
 # le o CSV direto da URL; se a internet falhar, tenta um arquivo local de mesmo nome
 try:
@@ -1589,9 +1589,22 @@ Uma diferença importante liga isto à Seção 2.4: as moléculas que só têm m
 de limite `>` **não entram** na regressão. Elas não têm um valor pontual (só um
 limite), e um regressor precisa de um número exato como alvo. Na classificação
 elas eram FRACO por regra; na regressão, sem pIC50, saem. É o outro lado da mesma
-decisão.""")
+decisão.
+
+Como sempre, todo número vem **ao lado de referências**. Comparamos a floresta com
+duas linhas de base: uma **linear** — o `Ridge`, regressão linear com um freio L2
+nos pesos (a análoga da regressão logística, agora prevendo um número) — e uma
+**trivial**, que chuta sempre a média do treino. As métricas: **RMSE** e **MAE**
+(erro médio, em unidades de pIC50 — menor é melhor) e **R²** (fração da variância
+explicada — maior é melhor; 0 = tão bom quanto chutar a média).
+
+Um detalhe que **importa** no Ridge: a força do freio (`alpha`) não é chutada — é
+escolhida por validação cruzada (`RidgeCV`). Aqui isso não é luxo: com ~2000 bits
+de fingerprint esparsos, um freio fraco deixa o modelo linear **estourar** (pior
+que a média); o freio certo é o que o torna uma referência honesta. É a mesma
+lição da rede (5.4): num modelo linear, regularizar bem vale mais que o algoritmo.""")
 codex(r'''from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import RidgeCV
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # dados de regressao: so moleculas com pIC50 exato (as 'sem_medida_exata' saem).
@@ -1610,24 +1623,40 @@ Xr_teste, yr_teste = X[pos_reg_teste], agregados["pic50"].values[pos_reg_teste]
 print("regressao -> treino:", Xr_treino.shape[0], "| teste:", Xr_teste.shape[0],
       "(medidas de limite removidas)")
 
-# modelo: floresta de regressao
+# modelo principal: floresta de regressao (a familia que venceu a classificacao)
 regressor = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=SEMENTE)
 regressor.fit(Xr_treino, yr_treino)
 predito_reg = regressor.predict(Xr_teste)
 
-# metricas SEMPRE com a linha de base (prever a media do treino)
-media_treino = yr_treino.mean()
-rmse = np.sqrt(mean_squared_error(yr_teste, predito_reg))
-mae = mean_absolute_error(yr_teste, predito_reg)
-r2 = r2_score(yr_teste, predito_reg)
-rmse_base = np.sqrt(mean_squared_error(yr_teste, np.full_like(yr_teste, media_treino)))
-print(f"RMSE modelo: {rmse:.3f}  | RMSE base (media): {rmse_base:.3f}")
-print(f"MAE  modelo: {mae:.3f}")
-print(f"R2   modelo: {r2:.3f}  | R2 base: 0.000")''',
+# linha de base LINEAR: Ridge = regressao linear com freio L2, padronizada num Pipeline.
+# a forca do freio (alpha) e ESCOLHIDA por validacao cruzada (RidgeCV) - crucial aqui:
+# com freio fraco, o modelo linear estoura nos ~2000 bits esparsos e fica pior que a media.
+alphas_testados = np.logspace(-1, 4, 20)
+ridge = Pipeline([("escala", StandardScaler()), ("reg", RidgeCV(alphas=alphas_testados))])
+ridge.fit(Xr_treino, yr_treino)
+predito_ridge = ridge.predict(Xr_teste)
+print("alpha escolhido pelo RidgeCV:", round(ridge.named_steps["reg"].alpha_, 2))
+
+# linha de base TRIVIAL: prever sempre a media do treino
+predito_media = np.full_like(yr_teste, yr_treino.mean())
+
+# compara os tres com um laco (RMSE/MAE menores sao melhores; R2 maior e melhor)
+print(f"{'modelo':20s} {'RMSE':>7s} {'MAE':>7s} {'R2':>7s}")
+for nome_modelo, predito in [("Floresta (RF)", predito_reg),
+                             ("Ridge (linear)", predito_ridge),
+                             ("base (media)", predito_media)]:
+    rmse = np.sqrt(mean_squared_error(yr_teste, predito))
+    mae = mean_absolute_error(yr_teste, predito)
+    r2 = r2_score(yr_teste, predito)
+    print(f"{nome_modelo:20s} {rmse:7.3f} {mae:7.3f} {r2:7.3f}")
+
+# R2 da floresta (o modelo desenhado no grafico predito x observado abaixo)
+r2 = r2_score(yr_teste, predito_reg)''',
 """Monte os dados de regressão excluindo as moléculas que só têm medida '>'
-(sem_medida_exata — elas não têm pIC50 pontual). Treine um RandomForestRegressor
-no pIC50 contínuo, avalie no teste e imprima RMSE, MAE e R2 — sempre ao lado da
-linha de base (prever a média do treino).""")
+(sem_medida_exata — elas não têm pIC50 pontual). Treine um RandomForestRegressor e,
+como linha de base linear, um RidgeCV (dentro de um Pipeline com StandardScaler, que
+escolhe o alpha por validação cruzada). Compare os dois com a base trivial (prever a
+média) imprimindo RMSE, MAE e R2 lado a lado.""")
 
 md("""O gráfico de predito × observado mostra o ajuste. As linhas tracejadas
 marcam o limiar de potência: os pontos se dividem em quatro quadrantes que são,
