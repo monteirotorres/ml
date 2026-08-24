@@ -444,19 +444,12 @@ for id_molecula, bloco in grupos:
         pic50_mediana = pic50_exatas.median()
         dispersao = pic50_exatas.max() - pic50_exatas.min()
     smiles = bloco["canonical_smiles"].iloc[0]
-    # documento de origem mais frequente (usado no diagnostico de efeito de lote)
-    documentos = bloco["document_chembl_id"].dropna()
-    if len(documentos) > 0:
-        documento_principal = documentos.mode().iloc[0]
-    else:
-        documento_principal = "desconhecido"
     linhas_agregadas.append({
         "molecule_chembl_id": id_molecula,
         "canonical_smiles": smiles,
         "pic50": pic50_mediana,
         "dispersao_log": dispersao,
         "sem_medida_exata": sem_medida_exata,
-        "documento": documento_principal,
         "n_medidas": len(bloco),
     })
 agregados = pd.DataFrame(linhas_agregadas)
@@ -691,8 +684,8 @@ Um esclarecimento que confunde muita gente: **não há aqui um conjunto de
 "validação" no sentido usual.** Um conjunto de validação separado serve para
 **escolher hiperparâmetros** ou comparar modelos durante o desenvolvimento —
 e nesta aula não fazemos busca de hiperparâmetros. Quando precisamos comparar de
-forma robusta, usamos **validação cruzada** (o segundo diagrama abaixo e a Seção
-4.4), que valida *sem* reservar um bloco fixo. Duas ressalvas: a rede neural cria
+forma robusta, usamos **validação cruzada** (o segundo diagrama abaixo), que
+valida *sem* reservar um bloco fixo. Duas ressalvas: a rede neural cria
 internamente uma fração de validação **a partir do próprio treino** para decidir
 quando parar (early stopping) — não é um quarto bloco; e o terceiro bloco aqui, a
 **calibração**, tem um papel específico e diferente — a predição conformal da
@@ -944,176 +937,6 @@ sua similaridade média mais baixa. Preferimos a estimativa mais baixa e mais
 honesta.""")
 
 
-md("""### 4.4 — Efeito de lote (batch effect): dois problemas diferentes
-
-Cada medida saiu de um **documento** (um artigo, uma patente) com seu próprio
-laboratório, protocolo e condições de ensaio. Isso é o **efeito de lote** (batch
-effect) — o análogo, em quimioinformática, do batch effect entre plataformas em
-expressão gênica. Mas ele nos ameaça de **duas formas distintas**, que é fácil
-confundir (e vale separar bem):
-
-- **(A) Vazamento na partição.** Moléculas parecidas da mesma fonte caem no treino
-  e no teste ao mesmo tempo; o modelo "reconhece os primos" e a avaliação infla.
-  A cura é *como se divide os dados* — e já a aplicamos: a divisão por esqueleto
-  (4.3) e a validação por grupo (mais abaixo). **Não mexe nas medidas.**
-- **(B) Viés sistemático na própria medida.** O laboratório X calibra o ensaio de
-  um jeito e lê o pIC50 sistematicamente mais alto (ou mais baixo) que o Y para a
-  *mesma* potência real. Aí o **rótulo** está enviesado pela fonte, não pela
-  química: perto do limiar, moléculas do lab X viram FORTE e as do Y viram FRACO
-  só por causa do offset do lote. A cura seria *mexer nos valores* (normalizar por
-  lote). É o análogo direto do ComBat em transcriptoma.
-
-Esta seção **diagnostica** os dois. Primeiro o lado (A) — o quanto fonte e química
-andam juntas —, depois o lado (B), o viés da medida em si, com um teste limpo.""")
-code(r'''# quantas fontes, e quantas moleculas por fonte
-contagem_por_documento = agregados["documento"].value_counts()
-print("documentos distintos:", len(contagem_por_documento))
-print("moleculas na maior fonte:", int(contagem_por_documento.iloc[0]))
-print("mediana de moleculas por fonte:", int(contagem_por_documento.median()))
-
-# distribuicao de pIC50 nas maiores fontes.
-# ATENCAO: caixas em alturas diferentes misturam DOIS efeitos - vies de lote (B) E
-# diferenca real de potencia (cada fonte estuda uma serie quimica propria). Sozinho,
-# este grafico NAO separa os dois; e so uma suspeita inicial.
-maiores_documentos = contagem_por_documento.head(8).index.tolist()
-subconjunto = agregados[agregados["documento"].isin(maiores_documentos)]
-figura_lote = px.box(subconjunto, x="documento", y="pic50",
-                     title="pIC50 por fonte (8 maiores) - suspeita, mas confundida com a serie")
-figura_lote.update_layout(height=400, xaxis_tickangle=45)
-figura_lote.show()''')
-
-md("""**Lado (A) — fonte e química andam juntas?** Um teste direto: **conseguimos
-prever a fonte a partir só da estrutura da molécula?** Rotulamos as moléculas da
-maior fonte como 1 e as demais como 0, e tentamos prever esse rótulo pelo
-fingerprint. Se a AUC ficar bem acima de 0,5, as moléculas se **agrupam por fonte**
-no espaço químico — cada laboratório publicou sua própria série. É esse
-entrelaçamento que a divisão aleatória vaza (problema A).""")
-code(r'''from sklearn.model_selection import cross_val_score, StratifiedKFold, GroupKFold
-
-# rotulo auxiliar: pertence a maior fonte?
-maior_fonte = contagem_por_documento.index[0]
-y_fonte = (agregados["documento"] == maior_fonte).astype(int).values
-print("moleculas na maior fonte:", int(y_fonte.sum()), "de", len(y_fonte))
-
-sonda = LogisticRegression(max_iter=1000, random_state=SEMENTE)
-auc_fonte = cross_val_score(sonda, matriz_fingerprint.astype(float), y_fonte,
-                            cv=5, scoring="roc_auc")
-print("AUC ao prever a fonte pela estrutura:", round(auc_fonte.mean(), 3),
-      "(0.5 = fonte indistinguivel; alto = ha efeito de lote estrutural)")''')
-
-md("""**Lado (B) — o viés da medida em si, com um teste limpo.** O box plot acima
-não serve para isolar o viés de lote, porque mistura viés com potência real. Para
-separar os dois, precisamos manter a **química constante** e ver se a *medida*
-muda. É o que fazem os **compostos-ponte**: moléculas medidas em **mais de uma
-fonte**. Como é a mesma molécula, qualquer diferença de pIC50 entre as fontes é
-**viés de medida puro** (não pode ser diferença de estrutura). É o análogo das
-amostras-controle que se espalham entre lotes num experimento de ômica.
-
-Medimos, para cada composto-ponte, o **desacordo** entre fontes (maior pIC50 menos
-menor) e — o que mais importa para o rótulo — quantos deles **mudariam de classe**
-(FORTE ↔ FRACO) só por trocar a fonte em que confiamos.""")
-code(r'''# medidas EXATAS (com pIC50), antes da agregacao por molecula
-exatas = curados[curados["pic50"].notna()].copy()
-
-# pIC50 tipico de cada par (molecula, documento): media por (molecula, fonte)
-pic50_por_fonte = exatas.groupby(["molecule_chembl_id", "document_chembl_id"])["pic50"].median()
-
-# para cada molecula medida em >=2 fontes: desacordo entre fontes e se muda de classe
-desacordos = []
-mudam_de_classe = 0
-n_pontes = 0
-for id_molecula, valores_por_fonte in pic50_por_fonte.groupby(level=0):
-    if len(valores_por_fonte) < 2:
-        continue                              # nao e ponte: uma fonte so
-    n_pontes = n_pontes + 1
-    desacordos.append(float(valores_por_fonte.max() - valores_por_fonte.min()))
-    classes = valores_por_fonte >= LIMIAR_POTENCIA
-    if classes.nunique() > 1:                 # FORTE por uma fonte, FRACO por outra
-        mudam_de_classe = mudam_de_classe + 1
-desacordos = np.array(desacordos)
-
-print("compostos-ponte (mesma molecula, >=2 fontes):", n_pontes)
-print("desacordo de pIC50 entre fontes (mesma molecula):")
-print("  mediana   :", round(float(np.median(desacordos)), 2), "log")
-print("  quartil 75:", round(float(np.percentile(desacordos, 75)), 2), "log")
-print("  fracao com desacordo > 1 log (>10x em IC50):",
-      round(float((desacordos > 1).mean()), 3))
-print("moleculas-ponte que MUDAM de classe conforme a fonte:",
-      mudam_de_classe, "de", n_pontes,
-      "(" + str(round(100 * mudam_de_classe / n_pontes, 1)) + "%)")
-
-figura_ponte = px.histogram(x=desacordos, nbins=30,
-    labels={"x": "desacordo de pIC50 entre fontes (log)"},
-    title="Vies de medida puro: mesma molecula, fontes diferentes")
-figura_ponte.add_vline(x=1.0, line_dash="dash", line_color="#c0392b",
-                       annotation_text="1 log = 10x")
-figura_ponte.update_traces(marker_color="#7e9603")
-figura_ponte.show()''')
-
-md("""### 4.4b — E o pyComBat, resolveria?
-
-Resposta curta: **aqui, não** — e é instrutivo entender por quê. O ComBat (e o
-`pyComBat`) foi feito para uma **matriz** de muitas medidas por amostra (genes ×
-amostras): ele empresta força **entre milhares de features** para estimar, por
-Bayes empírico, o deslocamento e a escala de cada lote. Três coisas quebram esse
-encaixe no nosso caso:
-
-1. **O viés está num rótulo escalar, não numa matriz.** A grandeza contaminada é
-   *um único número por molécula* (o pIC50). Com uma feature só, o ComBat degenera
-   em "centrar e escalar por lote" — não há milhares de features para o empréstimo
-   de força que o torna poderoso.
-2. **Aplicá-lo aos descritores/fingerprint seria um erro de categoria.** Esses sim
-   são de alta dimensão, mas **não têm viés de lote**: um anel benzênico é o mesmo
-   em qualquer laboratório. "Corrigi-los" na direção da fonte destruiria química
-   real.
-3. **Fonte e biologia estão confundidas.** O ComBat protege a variável biológica
-   se você a informar (`mod`), mas aqui a variável que importa — a potência real —
-   é justamente a que está confundida com a fonte. Sem controle, centrar por lote
-   apaga sinal real; com controle, é quase circular.
-
-O caminho **honesto** de correção, se fôssemos corrigir, não é o ComBat: é usar os
-**compostos-ponte** para estimar o offset de cada fonte (mantendo a química fixa) e
-descontá-lo. Como acima vimos que a base de pontes é fina (poucas centenas), aqui
-**paramos no diagnóstico** — que já mostra o tamanho do problema — em vez de
-arriscar uma correção que remove mais sinal do que viés. Diagnosticar e declarar a
-incerteza é mais honesto do que "limpar" os dados no braço.""")
-
-md("""A mitigação do lado **(A)**, essa sim aplicamos: validar com **GroupKFold por
-documento**. Em vez de sortear moléculas para as dobras, mantemos cada documento
-inteiro em uma única dobra — assim o teste nunca contém moléculas da mesma fonte
-que o treino. Comparamos a estimativa da validação cruzada comum (que embaralha)
-com a por grupo. Se a por grupo for **mais baixa**, a diferença era vazamento por
-fonte que a comum não enxergava.""")
-code(r'''grupos_documento = agregados["documento"].values
-
-modelo_cv = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=SEMENTE)
-
-# validacao cruzada comum: embaralha moleculas (pode vazar por fonte)
-cv_comum = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEMENTE)
-mcc_comum = cross_val_score(modelo_cv, X, y, cv=cv_comum, scoring="matthews_corrcoef")
-
-# validacao cruzada por grupo: cada documento fica inteiro em uma dobra
-cv_grupo = GroupKFold(n_splits=5)
-mcc_grupo = cross_val_score(modelo_cv, X, y, cv=cv_grupo, groups=grupos_documento,
-                            scoring="matthews_corrcoef")
-
-print("MCC validacao comum (embaralhada):", round(mcc_comum.mean(), 3),
-      "+/-", round(mcc_comum.std(), 3))
-print("MCC validacao por documento (GroupKFold):", round(mcc_grupo.mean(), 3),
-      "+/-", round(mcc_grupo.std(), 3))
-print("queda ao respeitar a fonte:", round(mcc_comum.mean() - mcc_grupo.mean(), 3))''')
-
-mdq("""**Pergunta.** Se a validação por documento dá um MCC mais baixo que a
-validação embaralhada, qual das duas você reporta — e o que a diferença mede?""",
-"""**Resposta.** Reporta-se a **por documento** (GroupKFold). Ela é a estimativa
-honesta de como o modelo se sai em moléculas de uma **fonte nova**, que é a
-situação real de uso. A diferença entre as duas mede exatamente o **vazamento por
-fonte**: o quanto a validação embaralhada estava inflando o desempenho ao deixar
-o modelo reencontrar, no teste, moléculas da mesma fonte (mesmo laboratório,
-mesma série química) que ele viu no treino. É o mesmo fenômeno da divisão por
-esqueleto da Seção 4.1, agora visto pela lente da origem experimental.""")
-
-
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 5 — MODELOS
 # ══════════════════════════════════════════════════════════════════════════
@@ -1126,6 +949,21 @@ calibrar todos eles com o **mesmo** código, sem "adaptadores" que o aluno teria
 de decifrar.
 
 A partir daqui usamos a **divisão por esqueleto** como padrão (a honesta).""")
+
+md("""**A célula abaixo prepara o material dos modelos.** Até aqui a divisão por
+esqueleto (Seção 4.1) nos deu três listas de **rótulos de linha** —
+`idx_treino_esq`, `idx_calib_esq`, `idx_teste_esq` —, que são os índices do
+DataFrame `agregados`. Mas `X` e `y` são **arrays NumPy**, indexados por
+**posição** (0, 1, 2, …), não por esses rótulos. Então o primeiro passo é
+**traduzir cada rótulo na sua posição** com `agregados.index.get_loc(...)`, e só
+então fatiar `X` e `y` nos três conjuntos. É pura logística de indexação — nenhum
+modelo ainda.
+
+Aproveitamos a mesma célula para duas coisas que todo o resto da seção vai usar:
+a **linha de base** do teste (a acurácia de quem chuta sempre a classe
+maioritária — o piso que qualquer modelo precisa superar) e dois **dicionários
+vazios**, `modelos_treinados` e `tempos_treino`, onde cada modelo vai se guardar
+para a comparação única da Seção 5.5.""")
 code(r'''# recorta X e y para treino/calibracao/teste (divisao por esqueleto).
 # X e y estao na ordem de agregados.index; convertemos cada indice na sua posicao.
 pos_treino = [agregados.index.get_loc(indice) for indice in idx_treino_esq]
@@ -1157,18 +995,62 @@ deixa enganar por classes desbalanceadas (base = 0; perfeito = 1).""")
 md("""### 5.1 — Regressão logística
 
 O modelo mais simples que ainda é um modelo — e a referência contra a qual os
-outros são julgados. Ele soma as features com pesos e passa o resultado por uma
-sigmoide, produzindo uma **probabilidade**. Seus coeficientes são interpretáveis:
-o sinal diz se a feature empurra para FORTE ou para FRACO. Padronizamos as
-features num `Pipeline`, porque a regressão logística é sensível à escala.
+outros são julgados. Ele faz duas coisas: (1) calcula uma **soma ponderada** das
+features, $z = w_1 x_1 + w_2 x_2 + \\dots + b$ (cada peso $w$ diz o quanto aquela
+feature conta, e o sinal, para que lado); (2) passa esse $z$ por uma **sigmoide**,
+que espreme qualquer número real para o intervalo $[0, 1]$ — virando a
+**probabilidade** de a molécula ser FORTE. Se a probabilidade passa de 0,5, a
+predição é FORTE; senão, FRACO. Os pesos são **interpretáveis**: o sinal diz se a
+feature empurra para FORTE ou para FRACO, algo que retomaremos na Seção 6.
 
-**Por que dentro de um `Pipeline`, e não antes?** Para evitar **vazamento de dados
-(data leakage)**. Se ajustássemos o `StandardScaler` no conjunto todo antes de
-dividir, a média e o desvio usados carregariam informação do teste para dentro do
-treino, e a estimativa de desempenho sairia otimista. Dentro do `Pipeline`, o
-scaler é ajustado **só no treino** de cada divisão. Vazamento é o erro mais comum
-e mais silencioso da área — já o vimos por fonte na Seção 4.4, e o testaremos de
-frente na Seção 6.5.""")
+O gráfico abaixo mostra exatamente essa conversão — a soma ponderada no eixo x, a
+probabilidade no eixo y, e o limiar de 0,5 que separa as duas decisões.""")
+code(r'''# figura didatica: como a regressao logistica transforma a soma ponderada
+# (z) numa probabilidade, via sigmoide. NAO usa os dados; ilustra o mecanismo.
+z = np.linspace(-6, 6, 300)
+probabilidade = 1.0 / (1.0 + np.exp(-z))          # a funcao sigmoide
+
+figura_logistica, eixo_log = plt.subplots(figsize=(6.4, 4.0))
+eixo_log.plot(z, probabilidade, color="#3266ad", linewidth=2.5)
+eixo_log.axhline(0.5, color="gray", linestyle="--", linewidth=1)
+eixo_log.axvline(0.0, color="gray", linestyle=":", linewidth=1)
+eixo_log.fill_between(z, 0.5, probabilidade, where=(probabilidade >= 0.5),
+                      color="#3266ad", alpha=0.12)
+eixo_log.fill_between(z, probabilidade, 0.5, where=(probabilidade < 0.5),
+                      color="#c0392b", alpha=0.12)
+eixo_log.text(3.1, 0.14, "preve FORTE\n(prob > 0.5)", color="#3266ad",
+              ha="center", fontsize=9)
+eixo_log.text(-3.1, 0.86, "preve FRACO\n(prob < 0.5)", color="#c0392b",
+              ha="center", fontsize=9)
+eixo_log.set_xlabel("z = soma ponderada das features  (w . x + b)")
+eixo_log.set_ylabel("probabilidade de FORTE = sigmoide(z)")
+eixo_log.set_title("Regressao logistica: da soma ponderada a probabilidade")
+eixo_log.set_ylim(-0.02, 1.02)
+plt.tight_layout()
+plt.show()''')
+
+md("""**Como funciona o `Pipeline` do scikit-learn.** A célula de treino não chama
+a regressão logística sozinha — ela a embrulha num `Pipeline`, que **encadeia
+etapas e as trata como um único modelo**. Aqui são duas etapas nomeadas:
+`("escala", StandardScaler())`, que padroniza cada feature (subtrai a média,
+divide pelo desvio, deixando tudo na mesma escala — a regressão logística é
+sensível a isso), e `("clf", LogisticRegression(...))`, o classificador em si. O
+`Pipeline` expõe a mesma interface de qualquer modelo (`fit`, `predict`,
+`predict_proba`) e roteia os dados pelos passos na ordem:
+
+- no **`fit`**: o scaler **aprende** a média e o desvio *do treino* e transforma o
+  treino; a regressão logística treina sobre esse treino já padronizado;
+- no **`predict`**: o scaler **reaplica ao teste os mesmos números que aprendeu no
+  treino** (não recalcula) e a regressão logística prediz.
+
+**Por que embrulhar, em vez de padronizar antes?** Para não vazar. Se ajustássemos
+o `StandardScaler` no conjunto **todo** antes de dividir, a média e o desvio
+carregariam informação do teste para dentro do treino, e a estimativa de
+desempenho sairia otimista. Dentro do `Pipeline`, como o `fit` só enxerga
+`X_treino`, o scaler nunca "vê" o teste. É o mesmo vazamento da partição (Seção
+4.3), agora no nível da transformação das features — e o testaremos de frente na
+Seção 6.5. Os modelos sensíveis à escala (5.1 e a SVM da 5.2) usam esse padrão; a
+floresta (5.3) dispensa o scaler.""")
 codex(r'''inicio = time.time()
 modelo_logistico = Pipeline([
     ("escala", StandardScaler()),
@@ -1250,11 +1132,22 @@ imprima o MCC no teste.""")
 
 md("""### 5.3 — Floresta aleatória
 
-Antes da floresta, a **árvore**. Uma árvore de decisão faz perguntas sucessivas
-("TPSA > 60?", "tem o bit 512?") e particiona os dados em regiões. Desenhamos uma
-árvore rasa (profundidade 3), legível, para ver o mecanismo. Depois, a
-**floresta**: muitas árvores treinadas em reamostras diferentes, cujo voto médio
-reduz a variância de uma árvore isolada.""")
+Antes da floresta, a **árvore**. Uma árvore de decisão classifica por uma sequência
+de perguntas de sim/não sobre uma feature de cada vez ("TPSA > 60?", "tem o bit
+512?"). Como ela **escolhe** cada pergunta? Testa todas as features e todos os
+cortes possíveis e fica com o que **melhor separa as classes** — o que deixa os
+dois lados mais "puros" (mais perto de conter uma classe só, medido pela impureza
+de Gini). Feito o corte, repete o processo em cada lado, recursivamente, até os
+grupos ficarem puros ou até bater um limite de profundidade. Cada caixa no fim do
+caminho é uma **folha**, rotulada pela classe majoritária das moléculas de treino
+que ali caíram. Para **prever**, uma molécula nova desce a árvore respondendo às
+perguntas e recebe o rótulo da folha onde parar.
+
+Uma árvore fundo demais decora o treino (sobreajuste). Desenhamos uma árvore rasa
+(profundidade 3), legível, só para ver o mecanismo. Depois, a **floresta**: muitas
+árvores treinadas em reamostras diferentes dos dados e das features, cujo **voto
+médio** reduz a variância de uma árvore isolada — o todo generaliza melhor que
+qualquer árvore sozinha.""")
 code(r'''# arvore rasa, so para visualizar o mecanismo (nao entra na comparacao)
 arvore_rasa = DecisionTreeClassifier(max_depth=3, random_state=SEMENTE)
 arvore_rasa.fit(X_treino, y_treino)
@@ -1364,6 +1257,75 @@ otimizador = torch.optim.Adam(rede_torch.parameters(), lr=0.001)
 print("rede criada em", DISPOSITIVO, "| parametros:",
       sum(p.numel() for p in rede_torch.parameters()))''')
 
+md("""**Vamos ver a arquitetura que acabamos de montar.** A rede é uma pilha de
+camadas: a entrada (um vetor com todas as features), duas camadas ocultas
+(`Linear` + `ReLU`) que a comprimem de 2057 → 128 → 64, e a saída `Linear` com 2
+neurônios (um por classe). O diagrama abaixo desenha esse fluxo, e a célula também
+imprime um resumo camada a camada com a contagem de parâmetros.
+
+**Qual o melhor pacote para desenhar redes em Python?** Para modelos PyTorch, o
+mais prático hoje é o **`torchview`** (`draw_graph`), que gera um diagrama limpo
+das camadas *com as formas dos tensores* automaticamente. Alternativas: o
+**`torchinfo`** (`summary`) dá uma tabela textual no estilo do `model.summary()`
+do Keras (camadas, formas de saída, parâmetros), e o **`torchviz`** (`make_dot`)
+desenha o **grafo de autograd** — as operações da retropropagação, útil para
+depurar, não a arquitetura em si. Como esses pacotes precisam ser instalados (e o
+`torchview`/`torchviz` dependem do Graphviz), deixamos o diagrama automático como
+trecho **comentado** para você rodar no Colab, e desenhamos aqui uma versão à mão
+com `matplotlib`, que roda em qualquer lugar e fica salva no arquivo.""")
+code(r'''import matplotlib.patches as mpatches
+
+# --- diagrama da arquitetura, desenhado a mao (sempre disponivel no arquivo) ---
+camadas = [
+    ("Entrada\n" + str(X_treino.shape[1]) + " features", X_treino.shape[1], "#8a8f98"),
+    ("Oculta 1\n128 + ReLU", 128, "#3266ad"),
+    ("Oculta 2\n64 + ReLU", 64, "#3266ad"),
+    ("Saida\n2 (FRACO/FORTE)", 2, "#c0392b"),
+]
+nomes_transformacao = ["Linear\n2057->128", "Linear\n128->64", "Linear\n64->2"]
+
+figura_arq, eixo_arq = plt.subplots(figsize=(8.6, 3.8))
+posicoes_x = [0, 1, 2, 3]
+largura = 0.44
+tamanho_entrada = camadas[0][1]
+for (rotulo, tamanho, cor), centro_x in zip(camadas, posicoes_x):
+    # altura so simbolica (escala log, para a entrada gigante caber ao lado da saida)
+    altura = 0.25 + 0.75 * (np.log10(tamanho) / np.log10(tamanho_entrada))
+    base_y = (1.0 - altura) / 2.0
+    caixa = mpatches.FancyBboxPatch((centro_x - largura / 2, base_y), largura, altura,
+        boxstyle="round,pad=0.02", facecolor=cor, edgecolor="black", alpha=0.85)
+    eixo_arq.add_patch(caixa)
+    eixo_arq.text(centro_x, base_y + altura + 0.07, rotulo, ha="center", va="bottom",
+                  fontsize=8)
+for indice in range(len(nomes_transformacao)):
+    eixo_arq.annotate("", xy=(posicoes_x[indice + 1] - largura / 2, 0.5),
+        xytext=(posicoes_x[indice] + largura / 2, 0.5),
+        arrowprops=dict(arrowstyle="->", color="black"))
+    meio_x = (posicoes_x[indice] + posicoes_x[indice + 1]) / 2.0
+    eixo_arq.text(meio_x, 0.53, nomes_transformacao[indice], ha="center", va="bottom",
+                  fontsize=7.5, color="#333333")
+eixo_arq.set_xlim(-0.6, 3.6)
+eixo_arq.set_ylim(0, 1.7)
+eixo_arq.axis("off")
+eixo_arq.set_title("Arquitetura da RedeMLP: 2057 -> 128 -> 64 -> 2")
+plt.tight_layout()
+plt.show()
+
+# --- resumo textual camada a camada, so com PyTorch (roda offline) ---
+print("camada a camada:")
+for nome_camada, modulo in rede_torch.named_children():
+    n_parametros = sum(p.numel() for p in modulo.parameters())
+    print("  ", nome_camada, "->", modulo, "| parametros:", n_parametros)
+print("total de parametros:", sum(p.numel() for p in rede_torch.parameters()))
+
+# --- opcional (Colab): diagrama automatico com torchview ---
+# !pip -q install torchview torchinfo
+# from torchview import draw_graph
+# grafo = draw_graph(rede_torch, input_size=(1, X_treino.shape[1]), device=DISPOSITIVO)
+# grafo.visual_graph        # mostra o diagrama com as formas dos tensores
+# from torchinfo import summary
+# summary(rede_torch, input_size=(1, X_treino.shape[1]))   # tabela estilo Keras''')
+
 md("""O laço de treino, comentado passo a passo, instrumentado com o
 `SummaryWriter` do TensorBoard (registra a perda por época) e com uma barra
 `tqdm`. Registramos também, ao lado, a `loss_curve_` do `MLPClassifier` da parte
@@ -1446,10 +1408,12 @@ figura_perdas.update_layout(title="Mesma rede, duas implementacoes: perda por ep
                             xaxis_title="epoca", yaxis_title="perda", height=380)
 figura_perdas.show()''')
 
-md("""**Comparação de execuções no TensorBoard (célula de Colab).** Onde o
-TensorBoard ganha da curva estática é comparar execuções. Treinamos a mesma rede
-três vezes com taxas de aprendizado diferentes, cada uma em sua subpasta, e as
-três curvas aparecem no mesmo painel. Replicamos em Plotly logo abaixo.""")
+md("""**Comparação de execuções no TensorBoard.** Onde o TensorBoard ganha da
+curva estática é comparar execuções. Treinamos a mesma rede três vezes com taxas
+de aprendizado diferentes, cada uma gravada em sua **subpasta** de `logs_tb`. A
+célula abaixo treina e grava as três; a seguinte **abre o painel do TensorBoard**,
+onde as três curvas aparecem sobrepostas; e o Plotly na sequência é o registro
+permanente.""")
 code(r'''taxas = [0.0001, 0.001, 0.05]   # baixa, boa, alta demais
 curvas_por_taxa = {}
 
@@ -1477,8 +1441,21 @@ for taxa in taxas:
         escritor_taxa.add_scalar("perda/treino", media, epoca)
     escritor_taxa.close()
     curvas_por_taxa[taxa] = curva
+print("tres execucoes gravadas em", PASTA_LOGS, "(subpastas lr_*)")''')
 
-figura_taxas = go.Figure()
+md("""O painel do TensorBoard com as três execuções. No Colab, as curvas das três
+taxas aparecem sobrepostas no mesmo gráfico (uma cor por subpasta `lr_*`) e você
+pode ligar/desligar cada uma. É aqui que ele supera a figura estática: comparar
+execuções lado a lado sem redesenhar nada.""")
+code(r'''# reabre o painel do TensorBoard, agora com as tres execucoes de taxa
+try:
+    get_ipython().run_line_magic("tensorboard", "--logdir " + PASTA_LOGS)
+except Exception as erro:
+    print("TensorBoard so aparece no Colab/Jupyter:", type(erro).__name__)
+    print("As tres curvas estao replicadas no grafico Plotly abaixo.")''')
+
+md("""Registro permanente em Plotly das mesmas três curvas.""")
+code(r'''figura_taxas = go.Figure()
 for taxa in taxas:
     figura_taxas.add_trace(go.Scatter(
         x=list(range(1, N_EPOCAS + 1)), y=curvas_por_taxa[taxa],
@@ -1502,7 +1479,8 @@ ser a perda de uma rede. A rigor, os modelos do scikit-learn que não treinam po
 registrar; mas dá para registrar **qualquer progressão** que faça sentido. Para a
 floresta, a progressão natural é o desempenho **conforme se adicionam árvores**.
 Usamos `warm_start=True` para crescer a floresta em etapas e registramos o MCC no
-teste a cada etapa — no TensorBoard e, como sempre, replicado em Plotly.""")
+teste a cada etapa — primeiro gravamos no TensorBoard, depois abrimos o painel e,
+como sempre, replicamos em Plotly.""")
 code(r'''escritor_floresta = SummaryWriter(os.path.join(PASTA_LOGS, "floresta_arvores"))
 floresta_incremental = RandomForestClassifier(
     n_estimators=10, warm_start=True, n_jobs=-1, random_state=SEMENTE)
@@ -1516,8 +1494,19 @@ for n_arvores in n_arvores_etapas:
     curva_floresta.append(mcc)
     escritor_floresta.add_scalar("mcc/teste", mcc, n_arvores)
 escritor_floresta.close()
+print("curva MCC x n_arvores gravada em", PASTA_LOGS, "(subpasta floresta_arvores)")''')
 
-figura_floresta = go.Figure(go.Scatter(
+md("""O painel do TensorBoard com a curva da floresta — o mesmo `%tensorboard`,
+agora mostrando um escalar (`mcc/teste`) que **não** é a perda de uma rede.""")
+code(r'''# reabre o painel; a subpasta floresta_arvores aparece junto das curvas de rede
+try:
+    get_ipython().run_line_magic("tensorboard", "--logdir " + PASTA_LOGS)
+except Exception as erro:
+    print("TensorBoard so aparece no Colab/Jupyter:", type(erro).__name__)
+    print("A curva esta replicada no grafico Plotly abaixo.")''')
+
+md("""Registro permanente em Plotly da mesma curva.""")
+code(r'''figura_floresta = go.Figure(go.Scatter(
     x=n_arvores_etapas, y=curva_floresta, mode="lines+markers", line=dict(color="#1a7a4a")))
 figura_floresta.update_layout(
     title="Floresta aleatoria: MCC no teste conforme se adicionam arvores",
@@ -2247,7 +2236,7 @@ except Exception as erro:
 md("""---
 
 Fim da aula. Você extraiu dados reais, curou-os com prestação de contas,
-diagnosticou o efeito de lote entre fontes, treinou e comparou quatro modelos sob
+comparou partições honestas e desonestas, treinou e comparou quatro modelos sob
 a mesma interface (e ainda previu o pIC50 contínuo por regressão), abriu a caixa
 preta de uma rede em PyTorch, investigou se o modelo aprende química ou tamanho,
 controlou o vazamento de dados de frente, delimitou onde o modelo pode opinar e o
