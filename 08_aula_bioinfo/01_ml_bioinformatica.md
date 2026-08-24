@@ -51,7 +51,7 @@ que vale muito além da quimioinformática.
 | 2 | Curadoria dos dados com tabela de proveniência e gráfico de funil |
 | 3 | Descritores moleculares e fingerprint de Morgan, explicados um a um |
 | 4 | Partição (aleatória × esqueleto de Bemis-Murcko), projeção 2D do espaço químico dos esqueletos e prova quantitativa da separação por similaridade de Tanimoto |
-| 5 | Cinco modelos de classificação (com XGBoost) + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo |
+| 5 | Quatro modelos de classificação + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo |
 | 6 | Interpretabilidade (importância por permutação, SHAP), confundimento por tamanho e controle de vazamento (data leakage) |
 | 7 | Domínio de aplicabilidade por similaridade de Tanimoto |
 | 8 | Predição conformal (opcional) |
