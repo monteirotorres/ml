@@ -924,40 +924,50 @@ sua similaridade média mais baixa. Preferimos a estimativa mais baixa e mais
 honesta.""")
 
 
-md("""### 4.4 — Efeito de lote (batch effect) e vazamento por fonte
+md("""### 4.4 — Efeito de lote (batch effect): dois problemas diferentes
 
-Os dados não vieram de um experimento só: cada medida saiu de um **documento**
-(um artigo, uma patente) com seu próprio laboratório, protocolo e condições de
-ensaio. Diferenças sistemáticas entre essas fontes são um **efeito de lote**
-(batch effect) — o análogo, em quimioinformática, do efeito de lote entre
-plataformas em dados de expressão gênica.
+Cada medida saiu de um **documento** (um artigo, uma patente) com seu próprio
+laboratório, protocolo e condições de ensaio. Isso é o **efeito de lote** (batch
+effect) — o análogo, em quimioinformática, do batch effect entre plataformas em
+expressão gênica. Mas ele nos ameaça de **duas formas distintas**, que é fácil
+confundir (e vale separar bem):
 
-Isso ameaça o modelo de duas formas. Primeiro, ele pode aprender "de qual
-laboratório veio a molécula" em vez de química. Segundo, e mais perigoso: se
-moléculas do mesmo documento caírem dos dois lados de uma divisão aleatória, o
-modelo vê no teste primos vindos da mesma fonte que treinou — **vazamento de
-dados (data leakage) por fonte**, que infla o desempenho. Vamos primeiro
-diagnosticar e depois mitigar.""")
+- **(A) Vazamento na partição.** Moléculas parecidas da mesma fonte caem no treino
+  e no teste ao mesmo tempo; o modelo "reconhece os primos" e a avaliação infla.
+  A cura é *como se divide os dados* — e já a aplicamos: a divisão por esqueleto
+  (4.3) e a validação por grupo (mais abaixo). **Não mexe nas medidas.**
+- **(B) Viés sistemático na própria medida.** O laboratório X calibra o ensaio de
+  um jeito e lê o pIC50 sistematicamente mais alto (ou mais baixo) que o Y para a
+  *mesma* potência real. Aí o **rótulo** está enviesado pela fonte, não pela
+  química: perto do limiar, moléculas do lab X viram FORTE e as do Y viram FRACO
+  só por causa do offset do lote. A cura seria *mexer nos valores* (normalizar por
+  lote). É o análogo direto do ComBat em transcriptoma.
+
+Esta seção **diagnostica** os dois. Primeiro o lado (A) — o quanto fonte e química
+andam juntas —, depois o lado (B), o viés da medida em si, com um teste limpo.""")
 code(r'''# quantas fontes, e quantas moleculas por fonte
 contagem_por_documento = agregados["documento"].value_counts()
 print("documentos distintos:", len(contagem_por_documento))
 print("moleculas na maior fonte:", int(contagem_por_documento.iloc[0]))
 print("mediana de moleculas por fonte:", int(contagem_por_documento.median()))
 
-# distribuicao de pIC50 nas maiores fontes: se diferem muito, ha efeito de lote
+# distribuicao de pIC50 nas maiores fontes.
+# ATENCAO: caixas em alturas diferentes misturam DOIS efeitos - vies de lote (B) E
+# diferenca real de potencia (cada fonte estuda uma serie quimica propria). Sozinho,
+# este grafico NAO separa os dois; e so uma suspeita inicial.
 maiores_documentos = contagem_por_documento.head(8).index.tolist()
 subconjunto = agregados[agregados["documento"].isin(maiores_documentos)]
 figura_lote = px.box(subconjunto, x="documento", y="pic50",
-                     title="Distribuicao de pIC50 por fonte (8 maiores documentos)")
+                     title="pIC50 por fonte (8 maiores) - suspeita, mas confundida com a serie")
 figura_lote.update_layout(height=400, xaxis_tickangle=45)
 figura_lote.show()''')
 
-md("""As caixas em alturas diferentes já sugerem que a potência típica varia de
-fonte para fonte. Um teste mais direto: **conseguimos prever a fonte a partir só
-da estrutura da molécula?** Rotulamos as moléculas da maior fonte como 1 e as
-demais como 0, e tentamos prever esse rótulo pelo fingerprint. Se a AUC ficar bem
-acima de 0,5, as moléculas se agrupam por fonte no espaço químico — o efeito de
-lote está entrelaçado com a química, e é isso que a divisão aleatória vaza.""")
+md("""**Lado (A) — fonte e química andam juntas?** Um teste direto: **conseguimos
+prever a fonte a partir só da estrutura da molécula?** Rotulamos as moléculas da
+maior fonte como 1 e as demais como 0, e tentamos prever esse rótulo pelo
+fingerprint. Se a AUC ficar bem acima de 0,5, as moléculas se **agrupam por fonte**
+no espaço químico — cada laboratório publicou sua própria série. É esse
+entrelaçamento que a divisão aleatória vaza (problema A).""")
 code(r'''from sklearn.model_selection import cross_val_score, StratifiedKFold, GroupKFold
 
 # rotulo auxiliar: pertence a maior fonte?
@@ -971,12 +981,89 @@ auc_fonte = cross_val_score(sonda, matriz_fingerprint.astype(float), y_fonte,
 print("AUC ao prever a fonte pela estrutura:", round(auc_fonte.mean(), 3),
       "(0.5 = fonte indistinguivel; alto = ha efeito de lote estrutural)")''')
 
-md("""A mitigação: validar com **GroupKFold por documento**. Em vez de sortear
-moléculas para as dobras, mantemos cada documento inteiro em uma única dobra —
-assim o teste nunca contém moléculas da mesma fonte que o treino. Comparamos a
-estimativa da validação cruzada comum (que embaralha) com a por grupo. Se a por
-grupo for **mais baixa**, a diferença era vazamento por fonte que a comum não
-enxergava.""")
+md("""**Lado (B) — o viés da medida em si, com um teste limpo.** O box plot acima
+não serve para isolar o viés de lote, porque mistura viés com potência real. Para
+separar os dois, precisamos manter a **química constante** e ver se a *medida*
+muda. É o que fazem os **compostos-ponte**: moléculas medidas em **mais de uma
+fonte**. Como é a mesma molécula, qualquer diferença de pIC50 entre as fontes é
+**viés de medida puro** (não pode ser diferença de estrutura). É o análogo das
+amostras-controle que se espalham entre lotes num experimento de ômica.
+
+Medimos, para cada composto-ponte, o **desacordo** entre fontes (maior pIC50 menos
+menor) e — o que mais importa para o rótulo — quantos deles **mudariam de classe**
+(FORTE ↔ FRACO) só por trocar a fonte em que confiamos.""")
+code(r'''# medidas EXATAS (com pIC50), antes da agregacao por molecula
+exatas = curados[curados["pic50"].notna()].copy()
+
+# pIC50 tipico de cada par (molecula, documento): media por (molecula, fonte)
+pic50_por_fonte = exatas.groupby(["molecule_chembl_id", "document_chembl_id"])["pic50"].median()
+
+# para cada molecula medida em >=2 fontes: desacordo entre fontes e se muda de classe
+desacordos = []
+mudam_de_classe = 0
+n_pontes = 0
+for id_molecula, valores_por_fonte in pic50_por_fonte.groupby(level=0):
+    if len(valores_por_fonte) < 2:
+        continue                              # nao e ponte: uma fonte so
+    n_pontes = n_pontes + 1
+    desacordos.append(float(valores_por_fonte.max() - valores_por_fonte.min()))
+    classes = valores_por_fonte >= LIMIAR_POTENCIA
+    if classes.nunique() > 1:                 # FORTE por uma fonte, FRACO por outra
+        mudam_de_classe = mudam_de_classe + 1
+desacordos = np.array(desacordos)
+
+print("compostos-ponte (mesma molecula, >=2 fontes):", n_pontes)
+print("desacordo de pIC50 entre fontes (mesma molecula):")
+print("  mediana   :", round(float(np.median(desacordos)), 2), "log")
+print("  quartil 75:", round(float(np.percentile(desacordos, 75)), 2), "log")
+print("  fracao com desacordo > 1 log (>10x em IC50):",
+      round(float((desacordos > 1).mean()), 3))
+print("moleculas-ponte que MUDAM de classe conforme a fonte:",
+      mudam_de_classe, "de", n_pontes,
+      "(" + str(round(100 * mudam_de_classe / n_pontes, 1)) + "%)")
+
+figura_ponte = px.histogram(x=desacordos, nbins=30,
+    labels={"x": "desacordo de pIC50 entre fontes (log)"},
+    title="Vies de medida puro: mesma molecula, fontes diferentes")
+figura_ponte.add_vline(x=1.0, line_dash="dash", line_color="#c0392b",
+                       annotation_text="1 log = 10x")
+figura_ponte.update_traces(marker_color="#7e9603")
+figura_ponte.show()''')
+
+md("""### 4.4b — E o pyComBat, resolveria?
+
+Resposta curta: **aqui, não** — e é instrutivo entender por quê. O ComBat (e o
+`pyComBat`) foi feito para uma **matriz** de muitas medidas por amostra (genes ×
+amostras): ele empresta força **entre milhares de features** para estimar, por
+Bayes empírico, o deslocamento e a escala de cada lote. Três coisas quebram esse
+encaixe no nosso caso:
+
+1. **O viés está num rótulo escalar, não numa matriz.** A grandeza contaminada é
+   *um único número por molécula* (o pIC50). Com uma feature só, o ComBat degenera
+   em "centrar e escalar por lote" — não há milhares de features para o empréstimo
+   de força que o torna poderoso.
+2. **Aplicá-lo aos descritores/fingerprint seria um erro de categoria.** Esses sim
+   são de alta dimensão, mas **não têm viés de lote**: um anel benzênico é o mesmo
+   em qualquer laboratório. "Corrigi-los" na direção da fonte destruiria química
+   real.
+3. **Fonte e biologia estão confundidas.** O ComBat protege a variável biológica
+   se você a informar (`mod`), mas aqui a variável que importa — a potência real —
+   é justamente a que está confundida com a fonte. Sem controle, centrar por lote
+   apaga sinal real; com controle, é quase circular.
+
+O caminho **honesto** de correção, se fôssemos corrigir, não é o ComBat: é usar os
+**compostos-ponte** para estimar o offset de cada fonte (mantendo a química fixa) e
+descontá-lo. Como acima vimos que a base de pontes é fina (poucas centenas), aqui
+**paramos no diagnóstico** — que já mostra o tamanho do problema — em vez de
+arriscar uma correção que remove mais sinal do que viés. Diagnosticar e declarar a
+incerteza é mais honesto do que "limpar" os dados no braço.""")
+
+md("""A mitigação do lado **(A)**, essa sim aplicamos: validar com **GroupKFold por
+documento**. Em vez de sortear moléculas para as dobras, mantemos cada documento
+inteiro em uma única dobra — assim o teste nunca contém moléculas da mesma fonte
+que o treino. Comparamos a estimativa da validação cruzada comum (que embaralha)
+com a por grupo. Se a por grupo for **mais baixa**, a diferença era vazamento por
+fonte que a comum não enxergava.""")
 code(r'''grupos_documento = agregados["documento"].values
 
 modelo_cv = RandomForestClassifier(n_estimators=150, n_jobs=-1, random_state=SEMENTE)
