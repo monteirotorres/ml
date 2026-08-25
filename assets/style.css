@@ -28,21 +28,21 @@
 }
 
 [data-theme="dark"] {
-  --bg: #17180f;
-  --paper: #1e1f16;
-  --ink: #ebedd8;
-  --muted: #9aa07e;
-  --line: #383a2a;
-  --line-soft: #2a2c1e;
-  --accent: #ebedd8;
-  --sidebar-bg: #1a1b11;
-  --sidebar-hover: #26281a;
-  --sidebar-active: #30341d;
-  --nav-text: #c7cdac;
-  --prose-soft: #c3c9a6;
-  --code-bg: #24261a;
-  --th-bg: #26281a;
-  --range-track: #4a5030;
+  --bg: #161719;           /* página: grafite escuro neutro */
+  --paper: #1e2022;        /* conteúdo/cards: grafite */
+  --ink: #e8eaec;
+  --muted: #989ba1;
+  --line: #3a3d42;
+  --line-soft: #2a2d31;
+  --accent: #e8eaec;
+  --sidebar-bg: #191b1d;
+  --sidebar-hover: #26282c;
+  --sidebar-active: #303338;
+  --nav-text: #c5c8ce;
+  --prose-soft: #c0c3c9;
+  --code-bg: #23262a;
+  --th-bg: #26282c;
+  --range-track: #494d53;
   --link: #aecb1f;         /* links: lima sobre escuro */
   --brand: #c6db25;        /* acento de marca no escuro (lima) */
   --brand-ink: #1d1d1d;
@@ -350,7 +350,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 [data-theme="dark"] .theme-icon::before { content: "☀\FE0E"; }
 
 [data-theme="dark"] .topic details > summary:hover { color: #cfe06a; }
-[data-theme="dark"] .topic pre { background: #12130b; }
+[data-theme="dark"] .topic pre { background: #101113; }
 
 /* logo do IBCCF (texto escuro) precisa de um fundo claro no tema escuro */
 [data-theme="dark"] .footer-logo {
