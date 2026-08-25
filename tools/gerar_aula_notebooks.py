@@ -2124,9 +2124,12 @@ Morgan; um é a representação, o outro é a régua que compara duas representa
 Aqui a régua serve para o domínio de aplicabilidade, não para treinar.
 
 O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios dados —
-o **percentil 5** das similaridades internas do treino — e não arbitrado. Uma
-molécula menos conectada ao espaço químico do que 95% do treino é considerada
-fora do domínio.""")
+um **percentil baixo** das similaridades internas do treino — e não arbitrado.
+Usamos o **percentil 2**: uma molécula menos conectada ao espaço químico do que
+98% do treino é considerada fora do domínio. É uma escolha deliberadamente **um
+pouco permissiva** (o comum seria o percentil 5, mais estrito), para o modelo
+opinar sobre mais moléculas — ao custo de arriscar palpite em casos um pouco mais
+atípicos. É um botão explícito: `PERCENTIL_DOMINIO`.""")
 code(r'''# fingerprints de Morgan (objetos do RDKit) do treino e do teste, para o Tanimoto
 fp_treino_rdkit = []
 for indice in idx_treino_esq:
@@ -2144,14 +2147,15 @@ for fp in fp_teste_rdkit:
     similaridade_teste.append(max(similaridades))
 similaridade_teste = np.array(similaridade_teste)
 
-# limiar = percentil 5 das similaridades treino-treino (auto-similaridade excluida)
+# limiar = percentil baixo das similaridades treino-treino (auto-similaridade excluida)
 similaridade_treino_interna = []
 for i in range(len(fp_treino_rdkit)):
     sims = DataStructs.BulkTanimotoSimilarity(fp_treino_rdkit[i], fp_treino_rdkit)
     sims[i] = -1.0                 # ignora a similaridade da molecula consigo mesma
     similaridade_treino_interna.append(max(sims))
-LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, 5))
-print("limiar de dominio (percentil 5 do treino):", round(LIMIAR_DOMINIO, 3))''')
+PERCENTIL_DOMINIO = 2              # menor = dominio mais amplo (mais moleculas 'dentro')
+LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, PERCENTIL_DOMINIO))
+print("limiar de dominio (percentil", PERCENTIL_DOMINIO, "do treino):", round(LIMIAR_DOMINIO, 3))''')
 code(r'''figura_dominio = px.histogram(
     x=similaridade_teste, nbins=40,
     labels={"x": "Tanimoto maxima ao treino"},
