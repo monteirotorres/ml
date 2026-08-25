@@ -2886,17 +2886,6 @@ code(r'''try:
 except Exception as erro:
     print("ipywidgets so e interativo no Colab/Jupyter:", type(erro).__name__)''')
 
-md("""---
-
-Fim da aula. Você extraiu dados reais, curou-os com prestação de contas,
-comparou partições honestas e desonestas, treinou e comparou quatro modelos sob
-a mesma interface (e ainda previu o pIC50 contínuo por regressão), abriu a caixa
-preta de uma rede em PyTorch, investigou se o modelo aprende química ou tamanho,
-controlou o vazamento de dados de frente, delimitou onde o modelo pode opinar e o
-empacotou em uma função honesta que sabe **se abster**. O mais importante que
-fica: um modelo bom não é o que sempre responde, é o que sabe quando não deveria
-responder.""")
-
 
 # ══════════════════════════════════════════════════════════════════════════
 # CONSTRUÇÃO DOS DOIS NOTEBOOKS
@@ -2905,6 +2894,7 @@ def construir(versao):
     """versao='gabarito' (completo) ou 'aluno' (modelagem 5-7 e respostas removidas)."""
     nb = nbf.v4.new_notebook()
     celulas = []
+    numero_codigo = 0                     # numera as celulas de codigo (consistente entre versoes)
     for item in CELULAS:
         tipo = item[0]
         if tipo == "md":
@@ -2917,16 +2907,18 @@ def construir(versao):
                 celulas.append(nbf.v4.new_markdown_cell(
                     pergunta + "\n\n> _Escreva sua interpretacao aqui antes de conferir o gabarito._"))
         elif tipo == "code":
-            celulas.append(nbf.v4.new_code_cell(item[1]))
+            numero_codigo += 1
+            celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, item[1])))
         elif tipo == "codex":
             src, instrucao = item[1], item[2]
+            numero_codigo += 1
             if versao == "gabarito":
-                celulas.append(nbf.v4.new_code_cell(src))
+                celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, src)))
             else:
                 stub = ("# COMPLETE ESTA CELULA\n# " +
                         instrucao.strip().replace("\n", "\n# ") +
                         "\n\n# seu codigo aqui\n")
-                celulas.append(nbf.v4.new_code_cell(stub))
+                celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, stub)))
     nb.cells = celulas
     nb.metadata["language_info"] = {"name": "python"}
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
