@@ -576,11 +576,77 @@ imagem_bits = Draw.DrawMorganBits(
     legends=["bit " + str(bit) for bit in bits_para_mostrar])
 imagem_bits''')
 
-md("""**Raio, número de bits e colisão.** O raio (2) controla o tamanho das
-vizinhanças consideradas; mais bits (2048) reduzem, mas não eliminam, a
-**colisão** — duas subestruturas diferentes podem cair no mesmo bit, porque o
-número de subestruturas possíveis é maior que o número de bits. É uma perda de
-informação que aceitamos em troca de um vetor de tamanho fixo.""")
+md("""**Raio, número de bits e a compressão (*folding*).** O raio (2) controla o
+tamanho das vizinhanças. Já os `N_BITS` merecem cuidado, porque aqui há uma
+**compressão** que costuma ser mal explicada. O algoritmo (Morgan, 1965;
+formalizado como ECFP por *Rogers & Hahn, 2010*) primeiro gera, para cada
+subestrutura, um **identificador inteiro** num espaço enorme (bilhões de valores).
+Para virar um vetor de tamanho fixo, cada identificador é **dobrado** num bit por
+uma conta simples:
+
+$$\\text{bit} = \\text{identificador} \\bmod N\\_BITS$$
+
+Duas propriedades importam, e a célula abaixo **demonstra** as duas nos próprios
+dados (não é para acreditar, é para verificar):
+
+1. **O mapa é global e determinístico.** O identificador de uma subestrutura
+   depende só da vizinhança local do átomo, não do resto da molécula — então a
+   **mesma** subestrutura cai **sempre no mesmo bit**, em qualquer molécula. É isso
+   que torna dois fingerprints comparáveis (e a Tanimoto significativa).
+2. **Colisão.** Como há mais subestruturas possíveis que bits, subestruturas
+   **diferentes** podem cair no mesmo bit — e, por (1), colidem **em toda**
+   molécula, não numa só. É uma perda de informação sistemática que aceitamos em
+   troca do tamanho fixo. Dentro de uma molécula, porém, a colisão é rara (poucas
+   dezenas de subestruturas em 2048 bits).
+
+Uma distinção que confunde: o **espaço de identificadores é praticamente
+ilimitado** — o algoritmo dá a cada subestrutura um hash de 32 bits (~4 bilhões de
+valores possíveis), e o número de subestruturas quimicamente realizáveis cresce
+sem teto conforme se veem moléculas mais diversas. Por isso o folding é
+*necessário*. A contagem que a célula imprime abaixo (item 4) é **quantas
+subestruturas distintas existem neste dataset** — não "quantas o método tem": uma
+biblioteca maior revelaria mais. O ponto é só que já são **muito mais que 2048**,
+o que torna a colisão inevitável.""")
+code(r'''# (1) o folding e exatamente  bit = identificador % N_BITS
+fp_naodobrado = AllChem.GetMorganFingerprint(molecula_exemplo, RAIO_MORGAN)
+identificadores = list(fp_naodobrado.GetNonzeroElements().keys())
+confere = True
+for identificador in identificadores:
+    if (identificador % N_BITS) not in info_bits:      # info_bits: bits acesos (Secao 3.1)
+        confere = False
+print("subestruturas nesta molecula:", len(identificadores),
+      "| para todas, (id % N_BITS) e um bit aceso?", confere)
+for identificador in identificadores[:3]:
+    print("   id", identificador, "-> bit", identificador % N_BITS)
+
+# (2) o mapa e GLOBAL: a mesma subestrutura cai no mesmo bit em moleculas diferentes
+mol_a = Chem.MolFromSmiles("c1ccccc1CCN")       # feniletilamina
+mol_b = Chem.MolFromSmiles("c1ccccc1C(=O)O")    # acido benzoico
+ids_a = set(AllChem.GetMorganFingerprint(mol_a, RAIO_MORGAN).GetNonzeroElements().keys())
+ids_b = set(AllChem.GetMorganFingerprint(mol_b, RAIO_MORGAN).GetNonzeroElements().keys())
+comuns = sorted(ids_a & ids_b)
+print("\nsubestruturas identicas nas duas moleculas:", len(comuns))
+for identificador in comuns[:3]:
+    print("   subestrutura", identificador, "-> bit", identificador % N_BITS, "(igual em A e B)")
+
+# (3) uma colisao concreta: com poucos bits, duas subestruturas DIFERENTES no mesmo bit
+POUCOS_BITS = 256
+baldes = {}
+for identificador in (ids_a | ids_b):
+    posicao = identificador % POUCOS_BITS
+    baldes.setdefault(posicao, []).append(identificador)
+colisoes = [ids for ids in baldes.values() if len(ids) > 1]
+print("\ncom", POUCOS_BITS, "bits, bits que recebem >1 subestrutura (colisao):", len(colisoes))
+if colisoes:
+    print("   exemplo:", colisoes[0], "-> mesmo bit; colidem em QUALQUER molecula")
+
+# (4) por que existe colisao: subestruturas distintas no dataset inteiro x N_BITS
+todas_subestruturas = set()
+for molecula in agregados["molecula"]:
+    todas_subestruturas.update(AllChem.GetMorganFingerprint(molecula, RAIO_MORGAN).GetNonzeroElements().keys())
+print("\nsubestruturas distintas em TODO o dataset:", len(todas_subestruturas),
+      "| bits:", N_BITS,
+      "->", round(len(todas_subestruturas) / N_BITS, 1), "subestruturas por bit (no dataset)")''')
 
 md("""### 3.2 — A tabela onde o treino realmente acontece
 
