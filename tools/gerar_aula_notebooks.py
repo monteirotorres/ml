@@ -2108,7 +2108,242 @@ else:
 # ══════════════════════════════════════════════════════════════════════════
 # SEÇÃO 7 — DOMÍNIO DE APLICABILIDADE
 # ══════════════════════════════════════════════════════════════════════════
-md("""## Seção 7 — Domínio de aplicabilidade, revisitado
+md("""## Seção 7 — Ampliando os dados e o domínio de aplicabilidade
+
+Nas seções anteriores esgotamos o que dava para extrair de **um modelo** sobre **um
+conjunto**. Sobra uma alavanca que ainda não puxamos: **mais dados**. Fazemos isso
+com honestidade, em três passos. Primeiro reforçamos a classe **FRACO** — que o
+viés de publicação torna escassa — com **inativos de ensaios de triagem**. Depois
+testamos com rigor se o reforço ajuda ou apenas engana, incluindo um controle de
+**efeito de lote**. Por fim revisitamos o **domínio de aplicabilidade**, agora
+construído sobre o treino ampliado.
+
+A ideia de fundo vale para qualquer projeto: **quantidade** de dados e
+**qualidade/diversidade** de dados são eixos diferentes. Vamos ver os dois em ação.""")
+
+md("""### 7.1 — Reforçando a classe FRACO com inativos de triagem
+
+A classe FRACO é escassa por um motivo sociológico, não químico: **artigos publicam
+o que funciona**. Moléculas que *não* inibem raramente viram um IC50 na literatura.
+Mas elas existem em outro formato: ensaios de **porcentagem de inibição** a uma
+concentração fixa (uma leitura típica de triagem). Uma molécula que inibe **pouco**
+(digamos, ≤ 20%) é um **inativo confirmado** — exatamente um FRACO.
+
+Baixamos um segundo dump do ChEMBL para o **mesmo alvo** (AChE), agora do tipo
+`Inhibition`, e rotulamos FRACO as moléculas de baixa inibição. Duas ressalvas que
+vamos levar a sério adiante: (1) é **outra fonte** de medida — risco de efeito de
+lote; (2) esses dados trazem **uma só** classe (inativos), então servem para dizer
+"onde não confiar", não para ensinar novos FORTE.""")
+code(r'''URL_INIBICAO = ("https://raw.githubusercontent.com/monteirotorres/ml/"
+                "main/data/dados_inibicao_bruto.csv")
+try:
+    inibicao_bruta = pd.read_csv(URL_INIBICAO)
+    print("dump de % inibicao lido da URL:", len(inibicao_bruta), "medidas")
+except Exception as erro:
+    print("URL indisponivel (", type(erro).__name__, "); tentando arquivo local")
+    inibicao_bruta = pd.read_csv("../data/dados_inibicao_bruto.csv")
+    print("dump de % inibicao lido do arquivo local:", len(inibicao_bruta), "medidas")
+
+TETO_INIBICAO = 20.0    # <= 20% de inibicao a concentracao fixa = inativo (FRACO)
+valor_inibicao = pd.to_numeric(inibicao_bruta["standard_value"], errors="coerce")
+comentario = inibicao_bruta["activity_comment"].astype(str).str.lower()
+eh_percentual = inibicao_bruta["standard_units"] == "%"
+inativo_por_valor = eh_percentual & valor_inibicao.notna() & (valor_inibicao <= TETO_INIBICAO)
+inativo_por_comentario = comentario.isin(["not active", "inactive"])
+inibicao_bruta["eh_inativo"] = inativo_por_valor | inativo_por_comentario
+print("medidas de baixa inibicao (candidatas a FRACO):", int(inibicao_bruta["eh_inativo"].sum()))
+
+# uma linha por molecula: o primeiro SMILES de cada molecula marcada inativa
+smiles_inativos = []
+for id_molecula, bloco in inibicao_bruta[inibicao_bruta["eh_inativo"]].groupby("molecule_chembl_id"):
+    smiles_inativos.append(bloco["canonical_smiles"].iloc[0])
+print("moleculas inativas unicas:", len(smiles_inativos))''')
+
+md("""Nem todo inativo serve. Descartamos dois grupos, com a contagem impressa: (1)
+moléculas que **já estão** no conjunto de afinidade (não são novidade); (2)
+moléculas cujo **esqueleto** aparece no **teste** — deixá-las no treino vazaria o
+teste (a regra de ouro da Seção 4). O que sobra é featurizado com **o mesmo** vetor
+do treino (9 descritores na ordem das colunas + fingerprint) e entra **só no
+treino**.""")
+code(r'''smiles_ja_vistos = set(agregados["canonical_smiles"])
+esqueletos_do_teste = set(agregados.loc[idx_teste_esq, "esqueleto"])
+
+X_inativos_linhas = []
+fp_inativos_novos = []
+esqueleto_inativos = []
+n_ja_conhecido = 0
+n_vaza_teste = 0
+n_ilegivel = 0
+for smiles in smiles_inativos:
+    if smiles in smiles_ja_vistos:
+        n_ja_conhecido += 1
+        continue
+    molecula = Chem.MolFromSmiles(smiles)
+    if molecula is None:
+        n_ilegivel += 1
+        continue
+    esqueleto = Chem.MolToSmiles(MurckoScaffold.GetScaffoldForMol(molecula))
+    if esqueleto in esqueletos_do_teste:
+        n_vaza_teste += 1
+        continue
+    # mesmo vetor de features do treino: 9 descritores (ordem das colunas) + fingerprint
+    vetor_desc = np.array([
+        Descriptors.MolWt(molecula), Descriptors.MolLogP(molecula),
+        Descriptors.TPSA(molecula), Descriptors.NumHDonors(molecula),
+        Descriptors.NumHAcceptors(molecula), Descriptors.NumRotatableBonds(molecula),
+        Descriptors.NumAromaticRings(molecula), Descriptors.FractionCSP3(molecula),
+        molecula.GetNumHeavyAtoms()], dtype=float)
+    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
+    vetor_fp = np.zeros((N_BITS,), dtype=float)
+    DataStructs.ConvertToNumpyArray(fp, vetor_fp)
+    X_inativos_linhas.append(np.hstack([vetor_desc, vetor_fp]))
+    fp_inativos_novos.append(fp)
+    esqueleto_inativos.append(esqueleto)
+
+X_inativos = np.array(X_inativos_linhas)
+y_inativos = np.zeros(len(X_inativos), dtype=int)   # todos FRACO (0)
+print("descartados -> ja conhecidos:", n_ja_conhecido, "| vazariam o teste:", n_vaza_teste,
+      "| ilegiveis:", n_ilegivel)
+print("inativos NOVOS usaveis (entram so no treino):", len(X_inativos))''')
+
+md("""### 7.2 — O reforço ajuda ou só engana?
+
+O teste tem de ser justo: os inativos entram **apenas no treino**; o conjunto de
+**teste continua o mesmo** (as moléculas de afinidade da Seção 4). Assim medimos a
+única coisa que importa — *treinar com mais FRACO melhora a previsão no mesmo
+teste?* — sem confundir com uma troca de teste. Comparamos a floresta **sem** e
+**com** o reforço olhando MCC, AUC e, sobretudo, a **revocação de FORTE**: a classe
+que interessa não pode piorar. Calculamos a revocação **na mão** (FORTE corretos /
+FORTE verdadeiros), sem esconder nada numa função.""")
+code(r'''X_treino_ampliado = np.vstack([X_treino, X_inativos])
+y_treino_ampliado = np.concatenate([y_treino, y_inativos])
+print("treino: literatura", len(y_treino), "-> ampliado", len(y_treino_ampliado),
+      "( +", len(y_inativos), "inativos )")
+print("balanco do treino ampliado -> FORTE", int((y_treino_ampliado == 1).sum()),
+      "| FRACO", int((y_treino_ampliado == 0).sum()))
+
+print("\n%-16s  MCC    AUC   revoc.FORTE" % "treino")
+for nome_treino, Xt, yt in [("so literatura", X_treino, y_treino),
+                            ("com inativos", X_treino_ampliado, y_treino_ampliado)]:
+    lista_mcc, lista_auc, lista_rev = [], [], []
+    for semente in (0, 1, 2):
+        floresta = RandomForestClassifier(n_estimators=300, n_jobs=-1,
+                                          class_weight="balanced", random_state=semente).fit(Xt, yt)
+        predito = floresta.predict(X_teste)
+        proba = floresta.predict_proba(X_teste)[:, 1]
+        lista_mcc.append(matthews_corrcoef(y_teste, predito))
+        lista_auc.append(roc_auc_score(y_teste, proba))
+        # revocacao de FORTE, explicita: FORTE previstos corretamente / FORTE verdadeiros
+        forte_verdadeiro = (y_teste == 1)
+        lista_rev.append(((predito == 1) & forte_verdadeiro).sum() / max(1, forte_verdadeiro.sum()))
+    print("%-16s  %.3f  %.3f   %.3f" % (nome_treino, np.mean(lista_mcc),
+                                        np.mean(lista_auc), np.mean(lista_rev)))''')
+md("""Leia com a régua de variância da Seção 6: diferenças menores que ~0,05 são
+**ruído de partição**, não melhora. MCC e AUC sobem um tico, a **revocação de
+FORTE** se move de leve — os três **dentro do ruído**. A leitura honesta: entupir o
+treino de FRACO **não sabota** a classe que interessa, mas também **não entrega
+ganho robusto**. O reforço é, no máximo, **seguro** — e "seguro" ainda não é motivo
+para implantar. O próximo controle mostra por quê ter cautela.""")
+
+md("""### 7.3 — Controle de efeito de lote: dá para adivinhar a *fonte*?
+
+Aqui está a armadilha que levantamos ao discutir vazamento e lote. Se as duas
+fontes (afinidade da literatura × inibição de triagem) ocuparem regiões químicas
+distintas, um modelo pode "melhorar" aprendendo a reconhecer **a fonte**, não a
+biologia — efeito de lote disfarçado de ganho. O diagnóstico é direto: treinar um
+classificador para prever a **fonte** (0 = literatura, 1 = inibição) a partir do
+fingerprint, com split por esqueleto. AUC perto de 0,5 = fontes indistinguíveis
+(seguro); perto de 1,0 = separáveis (o ganho seria suspeito).""")
+code(r'''X_fonte = np.vstack([X_treino, X_inativos])
+y_fonte = np.concatenate([np.zeros(len(X_treino), dtype=int),
+                          np.ones(len(X_inativos), dtype=int)])
+esqueleto_fonte = list(agregados.loc[idx_treino_esq, "esqueleto"]) + esqueleto_inativos
+
+# split por esqueleto tambem aqui: o mesmo nucleo nao pode ficar dos dois lados
+esqueletos_unicos = sorted(set(esqueleto_fonte))
+np.random.RandomState(SEMENTE).shuffle(esqueletos_unicos)
+corte = int(0.7 * len(esqueletos_unicos))
+esqueletos_treino_fonte = set(esqueletos_unicos[:corte])
+em_treino_fonte = np.array([e in esqueletos_treino_fonte for e in esqueleto_fonte])
+
+detector_fonte = RandomForestClassifier(n_estimators=300, n_jobs=-1, class_weight="balanced",
+                                        random_state=SEMENTE).fit(X_fonte[em_treino_fonte], y_fonte[em_treino_fonte])
+proba_fonte = detector_fonte.predict_proba(X_fonte[~em_treino_fonte])[:, 1]
+auc_fonte = roc_auc_score(y_fonte[~em_treino_fonte], proba_fonte)
+print("AUC para prever a FONTE pelo fingerprint:", round(auc_fonte, 3))
+print("(0.5 = fontes indistinguiveis; 1.0 = triviais de separar)")''')
+md("""A AUC fica **alta** (bem acima de 0,5): as fontes *são* separáveis pelo
+fingerprint — os inativos de triagem formam uma nuvem de quimiotipos distinta da
+literatura. Esse é o motivo de termos feito o teste da 7.2 com o **teste 100%
+literatura**: ali o modelo não tem como "trapacear pela fonte", então a revocação e
+a precisão que medimos são honestas — e disseram que o reforço é **seguro**. Mas
+"seguro" não é "melhor". A fonte separável é um aviso: antes de implantar esse
+reforço, ele tem de **provar que ajuda o objetivo real** — recuperar inibidores que
+o modelo nunca viu. Guardaremos essa prova para a Seção 9.""")
+md("""### 7.4 — Curva de aprendizado: mais dados ainda ajudariam?
+
+Antes de sair coletando dados, todo projeto deveria perguntar: **já saturamos?**
+Treinamos com frações crescentes do treino (ampliado) e medimos MCC e AUC no mesmo
+teste. Subamostramos **por esqueleto** (coerente com o split): se a curva ainda
+**sobe** em 100%, mais dados ajudariam; se achatou, o teto está em outro lugar.""")
+code(r'''esqueletos_treino_amp = np.array(list(agregados.loc[idx_treino_esq, "esqueleto"]) + esqueleto_inativos)
+esqueletos_distintos_amp = np.array(sorted(set(esqueletos_treino_amp)))
+sorteador = np.random.RandomState(SEMENTE)
+
+fracoes_treino = [0.1, 0.25, 0.5, 1.0]
+mcc_por_fracao = []
+auc_por_fracao = []
+print("fracao  n_treino    MCC    AUC")
+for fracao in fracoes_treino:
+    k = max(2, int(len(esqueletos_distintos_amp) * fracao))
+    escolhidos = set(sorteador.choice(esqueletos_distintos_amp, k, replace=False))
+    dentro = np.array([e in escolhidos for e in esqueletos_treino_amp])
+    floresta = RandomForestClassifier(n_estimators=300, n_jobs=-1, class_weight="balanced",
+                                      random_state=SEMENTE).fit(X_treino_ampliado[dentro], y_treino_ampliado[dentro])
+    proba = floresta.predict_proba(X_teste)[:, 1]
+    mcc = matthews_corrcoef(y_teste, (proba >= 0.5).astype(int))
+    auc = roc_auc_score(y_teste, proba)
+    mcc_por_fracao.append(mcc); auc_por_fracao.append(auc)
+    print("%5.2f  %8d  %.3f  %.3f" % (fracao, int(dentro.sum()), mcc, auc))''')
+code(r'''figura_curva, eixo_mcc = plt.subplots(figsize=(5.4, 3.4))
+eixo_x = [f * 100 for f in fracoes_treino]
+eixo_mcc.plot(eixo_x, mcc_por_fracao, "o-", color="#3266ad")
+eixo_mcc.set_xlabel("fracao do treino usada (%)")
+eixo_mcc.set_ylabel("MCC", color="#3266ad"); eixo_mcc.tick_params(axis="y", labelcolor="#3266ad")
+eixo_auc = eixo_mcc.twinx()
+eixo_auc.plot(eixo_x, auc_por_fracao, "s--", color="#c0392b")
+eixo_auc.set_ylabel("AUC", color="#c0392b"); eixo_auc.tick_params(axis="y", labelcolor="#c0392b")
+eixo_mcc.set_title("Curva de aprendizado (subamostragem do treino)")
+plt.tight_layout(); plt.show()''')
+md("""Se as duas curvas ainda **sobem** em 100%, o modelo **não** está saturado por
+dados — mais dados ajudariam. Mas some isso ao que a 7.3 mostrou: o dado barato
+extra (inativos) é de uma classe só e separável por fonte. "Mais dados", aqui, quer
+dizer mais dados **diversos e bem rotulados**, não só volume — a mesma lição
+quantidade × qualidade do começo da seção.""")
+
+md("""### 7.4b — Veredito: reforçar FRACO ajuda a ferramenta?
+
+Hora de fechar a investigação com honestidade — inclusive quando o resultado é
+"não". Juntando as evidências que **medimos**:
+
+- **7.2:** no teste de literatura, o reforço é **seguro** — MCC, AUC e revocação de
+  FORTE se movem todos dentro do ruído de partição. Nenhum ganho robusto, mas também
+  nada que sabote a classe FORTE. Seguro, porém, não é melhor.
+- **7.3:** as fontes são **separáveis** (AUC alta). O reforço não é um dado "limpo"
+  a mais; é outra distribuição.
+- **Seção 9 (adiante):** o gargalo real da ferramenta é **generalizar para
+  esqueletos inéditos** — e ali veremos que o modelo recupera **zero** dos
+  inibidores conhecidos de esqueleto novo. Mais exemplos de FRACO **não** ensinam a
+  reconhecer um FORTE de núcleo nunca visto: é o tipo errado de dado para o gargalo.
+
+**Conclusão honesta:** o reforço não melhora o objetivo que importa. Por isso a
+ferramenta implantada (Seção 9) continua treinada e delimitada **nos dados de
+afinidade curados** — o `modelo_floresta` da Seção 5, sem alteração. Os inativos
+ficam como o que realmente são aqui: um **exercício de testar uma ideia até o fim** e
+aceitar um resultado nulo, em vez de adotá-la porque "mais dados soa bem". É a mesma
+disciplina que aplicamos a cada sugestão ao longo da aula.""")
+
+md("""### 7.5 — Domínio de aplicabilidade, revisitado
 
 Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Medimos,
 para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
@@ -2165,7 +2400,51 @@ figura_dominio.add_vline(x=LIMIAR_DOMINIO, line_dash="dash", line_color="#c0392b
 figura_dominio.update_traces(marker_color="#3266ad")
 figura_dominio.show()''')
 
-md("""### 7.1 — Desempenho dentro e fora do domínio, com cuidado
+md("""### 7.6 — O botão do domínio: cobertura × acerto
+
+`PERCENTIL_DOMINIO` é um botão com um trade-off claro. Baixá-lo **alarga** o domínio
+(o modelo opina sobre mais moléculas — maior **cobertura**), mas passa a arriscar
+palpite em casos mais atípicos (o **acerto** ali pode cair). Em vez de escolher no
+escuro, **varremos** o percentil e vemos as duas curvas. A cobertura é a fração de
+moléculas de teste dentro do domínio; o acerto é a acurácia da floresta (Seção 5)
+**apenas nessas** moléculas. A linha verde marca a nossa escolha (2).""")
+code(r'''percentis = [1, 2, 5, 10, 20, 30]
+cobertura_por_percentil = []
+acerto_por_percentil = []
+predito_teste_floresta = modelo_floresta.predict(X_teste)
+print("percentil  limiar  cobertura  acerto(dentro)")
+for percentil in percentis:
+    limiar = float(np.percentile(similaridade_treino_interna, percentil))
+    dentro = similaridade_teste >= limiar
+    cobertura = float(dentro.mean())
+    if int(dentro.sum()) > 0:
+        acerto = float((predito_teste_floresta[dentro] == y_teste[dentro]).mean())
+    else:
+        acerto = float("nan")
+    cobertura_por_percentil.append(cobertura)
+    acerto_por_percentil.append(acerto)
+    print("%8d   %.3f    %.3f      %.3f" % (percentil, limiar, cobertura, acerto))''')
+code(r'''figura_botao, eixo_cob = plt.subplots(figsize=(5.4, 3.4))
+eixo_cob.plot(percentis, [100 * c for c in cobertura_por_percentil], "o-", color="#3266ad")
+eixo_cob.set_xlabel("PERCENTIL_DOMINIO (maior = dominio mais estrito)")
+eixo_cob.set_ylabel("cobertura do teste (%)", color="#3266ad")
+eixo_cob.tick_params(axis="y", labelcolor="#3266ad")
+eixo_ac = eixo_cob.twinx()
+eixo_ac.plot(percentis, [100 * a for a in acerto_por_percentil], "s--", color="#c0392b")
+eixo_ac.set_ylabel("acerto nas moleculas dentro (%)", color="#c0392b")
+eixo_ac.tick_params(axis="y", labelcolor="#c0392b")
+eixo_cob.axvline(PERCENTIL_DOMINIO, color="#7e9603", linestyle=":", linewidth=2)
+eixo_cob.set_title("Dominio: cobertura x acerto ao variar o percentil")
+plt.tight_layout(); plt.show()''')
+md("""Leia a **tendência**, não um ponto: à medida que o percentil sobe (domínio
+mais estrito), a cobertura cai e o acerto entre as moléculas de dentro tende a
+subir — o modelo passa a opinar só onde está mais seguro. O acerto pode oscilar
+porque o grupo "dentro" muda de tamanho e composição a cada passo (poucas moléculas
+atípicas pesam muito). A escolha do percentil 2 privilegia **cobertura**: opinar
+sobre mais, assumindo o risco em troca — coerente com uma triagem, onde a abstenção
+excessiva desperdiça candidatos.""")
+
+md("""### 7.7 — Desempenho dentro e fora do domínio, com cuidado
 
 Comparamos o desempenho nas moléculas **dentro** e **fora** do domínio — mas com
 uma advertência: comparar acurácias entre grupos de tamanhos e composições de
@@ -2364,7 +2643,7 @@ para um biólogo" e "fora do domínio do modelo"?""",
 diferente do treino que o modelo, corretamente, se abstém. A **cafeína**, porém,
 fica **dentro do domínio**: seu anel purínico/xantínico se parece com esqueletos
 presentes no conjunto (xantinas já foram estudadas contra a acetilcolinesterase),
-então o modelo tem base para opinar — e responde FRACO com alta confiança (~0,06
+então o modelo tem base para opinar — e responde FRACO com alta confiança (~0,08
 de probabilidade de FORTE), o que é **quimicamente correto**: cafeína não é um
 inibidor potente. A lição: "irrelevante" é uma intuição biológica; "fora do
 domínio" é uma medida estrutural. Elas nem sempre coincidem — e um FRACO confiante
@@ -2375,8 +2654,8 @@ olhos.""")
 md("""### 9.2 — Triagem virtual: procurar inibidores entre fármacos aprovados
 
 Agora o pagamento de verdade da aula. Pegamos uma **biblioteca real** de fármacos
-aprovados no mundo (o conjunto `world` do ZINC15, 512 moléculas) e passamos **cada
-uma** pelo `classificar`. A pergunta prática: **existe, entre remédios que já são
+aprovados no mundo (o conjunto `world` do ZINC15, cerca de 5,9 mil moléculas) e
+passamos **cada uma** pelo `classificar`. A pergunta prática: **existe, entre remédios que já são
 usados para outras coisas, algum candidato a inibidor da acetilcolinesterase?** É
 exatamente o raciocínio do **reposicionamento de fármacos** — e é para isso que a
 `classificar` foi feita.
