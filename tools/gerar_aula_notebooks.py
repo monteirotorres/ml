@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Gera os notebooks da aula prática de ML em bioinformática.
+"""Gera o notebook da aula prática de ML em bioinformática.
 
-Fonte única para as duas versões:
-  - aula_gabarito.ipynb  — completo (perguntas com resposta; células de modelagem preenchidas)
-  - aula_aluno.ipynb     — seções 5-7 de modelagem esvaziadas; respostas removidas
+Saída única:
+  - aula.ipynb  — completo (perguntas com resposta; células de código preenchidas,
+    cada uma prefixada por "# Célula NN")
 
 Modelo de célula (lista CELULAS):
-  ("md",   texto)                     célula de texto, igual nas duas versões
-  ("mdq",  pergunta, resposta)        pergunta dirigida; no aluno some a resposta
-  ("code", src)                       código igual nas duas versões
-  ("codex", src, instrucao)           código de modelagem; no aluno vira um stub com a instrução
+  ("md",   texto)                     célula de texto
+  ("mdq",  pergunta, resposta)        pergunta dirigida com a resposta
+  ("code", src)                       célula de código
+  ("codex", src, instrucao)           célula de código (a instrução é ignorada hoje;
+                                       resquício de quando havia versão do aluno)
 
 Uso:
     python tools/gerar_aula_notebooks.py
@@ -2890,45 +2891,32 @@ except Exception as erro:
 # ══════════════════════════════════════════════════════════════════════════
 # CONSTRUÇÃO DOS DOIS NOTEBOOKS
 # ══════════════════════════════════════════════════════════════════════════
-def construir(versao):
-    """versao='gabarito' (completo) ou 'aluno' (modelagem 5-7 e respostas removidas)."""
+def construir():
+    """Gera o unico notebook da aula (completo): perguntas com resposta e celulas de
+    codigo preenchidas. Cada celula de codigo recebe o comentario '# Celula NN'."""
     nb = nbf.v4.new_notebook()
     celulas = []
-    numero_codigo = 0                     # numera as celulas de codigo (consistente entre versoes)
+    numero_codigo = 0                     # numera as celulas de codigo
     for item in CELULAS:
         tipo = item[0]
         if tipo == "md":
             celulas.append(nbf.v4.new_markdown_cell(item[1]))
         elif tipo == "mdq":
             pergunta, resposta = item[1], item[2]
-            if versao == "gabarito":
-                celulas.append(nbf.v4.new_markdown_cell(pergunta + "\n\n" + resposta))
-            else:
-                celulas.append(nbf.v4.new_markdown_cell(
-                    pergunta + "\n\n> _Escreva sua interpretacao aqui antes de conferir o gabarito._"))
-        elif tipo == "code":
+            celulas.append(nbf.v4.new_markdown_cell(pergunta + "\n\n" + resposta))
+        elif tipo in ("code", "codex"):
+            # codex tras (codigo, instrucao); aqui usamos so o codigo preenchido
+            fonte = item[1]
             numero_codigo += 1
-            celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, item[1])))
-        elif tipo == "codex":
-            src, instrucao = item[1], item[2]
-            numero_codigo += 1
-            if versao == "gabarito":
-                celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, src)))
-            else:
-                stub = ("# COMPLETE ESTA CELULA\n# " +
-                        instrucao.strip().replace("\n", "\n# ") +
-                        "\n\n# seu codigo aqui\n")
-                celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, stub)))
+            celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, fonte)))
     nb.cells = celulas
     nb.metadata["language_info"] = {"name": "python"}
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
-    nome = "aula_gabarito.ipynb" if versao == "gabarito" else "aula_aluno.ipynb"
-    (PASTA / nome).write_text(nbf.writes(nb), encoding="utf-8")
-    print("gerado:", nome, "|", len(celulas), "celulas")
+    (PASTA / "aula.ipynb").write_text(nbf.writes(nb), encoding="utf-8")
+    print("gerado: aula.ipynb |", len(celulas), "celulas")
 
 
 if __name__ == "__main__":
-    construir("gabarito")
-    construir("aluno")
+    construir()
     print("total de itens de celula na fonte:", len(CELULAS))
 

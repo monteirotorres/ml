@@ -14,15 +14,14 @@ Colab, em CPU.
 
 | Arquivo | O que é |
 | --- | --- |
-| `aula_gabarito.ipynb` | Versão completa: perguntas com resposta e todas as células de modelagem preenchidas. |
-| `aula_aluno.ipynb` | Mesma estrutura, com as células de modelagem das Seções 5–7 esvaziadas (instruções em comentário) e as respostas das perguntas removidas. |
+| `aula.ipynb` | O notebook completo da aula: perguntas com resposta e todas as células de código preenchidas (cada uma prefixada por `# Célula NN`). |
 | `../data/dados_alvo_bruto.csv` | Extração pré-feita do ChEMBL (10.079 medidas de IC50), na pasta **`data/`** do repositório. O notebook lê direto do link público; este é o caminho alternativo quando a API do EBI não está acessível em sala. |
 | `../data/dados_inibicao_bruto.csv` | Segundo dump do ChEMBL para o mesmo alvo (medidas de % de inibição), usado na Seção 7 para reforçar a classe FRACO com inativos de triagem. |
 | `01_ml_bioinformatica.md` | Página de apresentação da aula no site do curso. |
 
 ## Antes da aula
 
-1. Abra o `aula_aluno.ipynb` no Colab (`File → Upload notebook` ou via GitHub).
+1. Abra o `aula.ipynb` no Colab (`File → Upload notebook` ou via GitHub).
 2. Nada a subir: a célula 1.1 lê o `dados_alvo_bruto.csv` direto do link público
    do repositório. (Se preferir trabalhar offline, baixe o CSV da pasta `data/`
    do repositório e suba-o para a sessão do Colab — a célula cai no arquivo local

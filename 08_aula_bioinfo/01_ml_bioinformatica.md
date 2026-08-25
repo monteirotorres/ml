@@ -12,10 +12,7 @@ biomédicas que já conhecem Python básico, `numpy`, `pandas` e `matplotlib`, m
 **nunca treinaram um modelo**. Roda inteiro no Google Colab, em CPU.
 
 **Abra no Colab:**
-[![Gabarito](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula_gabarito.ipynb)
-&nbsp; (gabarito completo) &nbsp;·&nbsp;
-[![Aluno](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula_aluno.ipynb)
-&nbsp; (versão do aluno)
+[![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula.ipynb)
 
 ## O alvo
 
@@ -60,9 +57,9 @@ que vale muito além da quimioinformática.
 
 ## Como usar
 
-O notebook acompanha o material em duas versões: um **gabarito** completo e
-executado, e uma versão **do aluno** com as células de modelagem esvaziadas para
-preencher em sala. Consulte o `README.md` da pasta para o roteiro do docente
+O material é um único notebook completo e executado, com as células de código
+prontas (cada uma marcada com `# Célula NN` para referência em sala). Consulte o
+`README.md` da pasta para o roteiro do docente
 (o que rodar antes da aula, o que pode ser cortado se o tempo apertar, e o tempo
 estimado por seção).
 
