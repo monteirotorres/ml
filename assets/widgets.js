@@ -550,6 +550,201 @@ function wLogistic(id) {
 }
 
 // ============================================================
+// Widget: k-NN — o k molda a fronteira de decisão
+// ============================================================
+function wKnn(id) {
+  const cv = $(id + '-cv'); let pts = [], semente = 11;
+  function gerar() {
+    const rng = makeRng(semente); pts = [];
+    for (let i = 0; i < 40; i++) {
+      const c = i < 20 ? 0 : 1, cx = c ? 1.1 : -1.1, cy = c ? 0.6 : -0.4;
+      pts.push([cx + rngNormal(rng) * 0.9, cy + rngNormal(rng) * 0.9, c]);
+    }
+  }
+  function voto(x, y, k, excl) {
+    const ds = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (i === excl) continue;
+      const dx = x - pts[i][0], dy = y - pts[i][1];
+      ds.push([dx * dx + dy * dy, pts[i][2]]);
+    }
+    ds.sort((a, b) => a[0] - b[0]);
+    let v = 0; for (let i = 0; i < k && i < ds.length; i++) v += ds[i][1] ? 1 : -1;
+    return v >= 0 ? 1 : 0;
+  }
+  function draw() {
+    const p = pal(), k = +$(id + '-k').value, W = 640, H = 360, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 10, padR = 10, padT = 10, padB = 10, xmin = -4, xmax = 4, ymin = -3, ymax = 3;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    const nx = 48, ny = 28;
+    for (let gx = 0; gx < nx; gx++) for (let gy = 0; gy < ny; gy++) {
+      const x0 = xmin + (xmax - xmin) * gx / nx, x1 = xmin + (xmax - xmin) * (gx + 1) / nx;
+      const y0 = ymin + (ymax - ymin) * gy / ny, y1 = ymin + (ymax - ymin) * (gy + 1) / ny;
+      ctx.fillStyle = voto((x0 + x1) / 2, (y0 + y1) / 2, k, -1) ? p.redF : p.blueF;
+      ctx.fillRect(X(x0), Y(y1), X(x1) - X(x0) + 1, Y(y0) - Y(y1) + 1);
+    }
+    pts.forEach(pt => {
+      ctx.fillStyle = pt[2] ? p.red : p.blue; ctx.strokeStyle = p.paper; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 5, 0, 7); ctx.fill(); ctx.stroke();
+    });
+    let ok = 0;
+    for (let i = 0; i < pts.length; i++) if (voto(pts[i][0], pts[i][1], k, i) === pts[i][2]) ok++;
+    $(id + '-acc').textContent = (100 * ok / pts.length).toFixed(0) + '%';
+    $(id + '-reg').textContent = k <= 3 ? 'fronteira recortada (variância alta)'
+      : k >= 15 ? 'fronteira suave (viés alto)' : 'equilíbrio';
+  }
+  $(id + '-k').addEventListener('input', () => { $(id + '-k-v').textContent = $(id + '-k').value; draw(); });
+  $(id + '-nova').addEventListener('click', () => { semente = (semente * 1664525 + 1013904223) >>> 0; gerar(); draw(); });
+  window.addEventListener('resize', draw);
+  gerar(); $(id + '-k-v').textContent = '1'; draw();
+}
+
+// ============================================================
+// Widget: árvore rasa — dois cortes particionam o plano
+// ============================================================
+function wTree(id) {
+  const cv = $(id + '-cv'); let pts = [];
+  (function () {
+    const rng = makeRng(3);
+    for (let i = 0; i < 60; i++) {
+      const x = rngNormal(rng) * 1.3, y = rngNormal(rng) * 1.3;
+      const c = ((x > 0) === (y > 0)) ? 1 : 0;
+      pts.push([x, y, rng() < 0.1 ? 1 - c : c]);
+    }
+  })();
+  const regiao = (x, y, tx, ty) => (x > tx ? 1 : 0) * 2 + (y > ty ? 1 : 0);
+  function draw() {
+    const p = pal(), tx = +$(id + '-tx').value, ty = +$(id + '-ty').value;
+    const W = 640, H = 360, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 10, padR = 10, padT = 10, padB = 10, xmin = -4, xmax = 4, ymin = -4, ymax = 4;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    const cnt = [[0, 0], [0, 0], [0, 0], [0, 0]];
+    pts.forEach(pt => cnt[regiao(pt[0], pt[1], tx, ty)][pt[2]]++);
+    const maj = cnt.map(c => c[1] >= c[0] ? 1 : 0);
+    const paint = (x0, x1, y0, y1, ri) => { ctx.fillStyle = maj[ri] ? p.redF : p.blueF; ctx.fillRect(X(x0), Y(y1), X(x1) - X(x0), Y(y0) - Y(y1)); };
+    paint(xmin, tx, ymin, ty, 0); paint(xmin, tx, ty, ymax, 1);
+    paint(tx, xmax, ymin, ty, 2); paint(tx, xmax, ty, ymax, 3);
+    ctx.strokeStyle = p.ink; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(X(tx), Y(ymin)); ctx.lineTo(X(tx), Y(ymax));
+    ctx.moveTo(X(xmin), Y(ty)); ctx.lineTo(X(xmax), Y(ty)); ctx.stroke();
+    pts.forEach(pt => {
+      ctx.fillStyle = pt[2] ? p.red : p.blue; ctx.strokeStyle = p.paper; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 4.5, 0, 7); ctx.fill(); ctx.stroke();
+    });
+    let gsum = 0, acc = 0, ntot = pts.length;
+    for (let r = 0; r < 4; r++) {
+      const n = cnt[r][0] + cnt[r][1]; if (!n) continue;
+      const p1 = cnt[r][1] / n; gsum += (1 - (p1 * p1 + (1 - p1) * (1 - p1))) * n / ntot;
+      acc += Math.max(cnt[r][0], cnt[r][1]);
+    }
+    $(id + '-gini').textContent = gsum.toFixed(3);
+    $(id + '-acc').textContent = (100 * acc / ntot).toFixed(0) + '%';
+  }
+  ['tx', 'ty'].forEach(k => $(id + '-' + k).addEventListener('input', () => { $(id + '-' + k + '-v').textContent = (+$(id + '-' + k).value).toFixed(1); draw(); }));
+  window.addEventListener('resize', draw);
+  $(id + '-tx-v').textContent = '0.0'; $(id + '-ty-v').textContent = '0.0'; draw();
+}
+
+// ============================================================
+// Widget: Naive Bayes gaussiano — densidades e fronteira
+// ============================================================
+function wBayes(id) {
+  const cv = $(id + '-cv');
+  const dens = (x, m) => Math.exp(-0.5 * (x - m) * (x - m));   // normal (std=1), sem a constante
+  function draw() {
+    const p = pal(), m0 = +$(id + '-m0').value, m1 = +$(id + '-m1').value, pa = +$(id + '-pa').value;
+    $(id + '-m0-v').textContent = m0.toFixed(1); $(id + '-m1-v').textContent = m1.toFixed(1); $(id + '-pa-v').textContent = pa.toFixed(2);
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 24, padR = 14, padT = 16, padB = 26, xmin = -6, xmax = 6;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const top = padT, bot = H - padB, hgt = bot - top, N = 200;
+    for (let i = 0; i < N; i++) {
+      const x = xmin + (xmax - xmin) * i / N;
+      ctx.fillStyle = (pa * dens(x, m0) >= (1 - pa) * dens(x, m1)) ? p.blueF : p.redF;
+      ctx.fillRect(X(x), top, (W - padL - padR) / N + 1, hgt);
+    }
+    const escala = hgt * 0.9; ctx.lineWidth = 2.5;
+    [[m0, pa, p.blue], [m1, 1 - pa, p.red]].forEach(g => {
+      ctx.strokeStyle = g[2]; ctx.beginPath();
+      for (let k = 0; k <= 180; k++) {
+        const x = xmin + (xmax - xmin) * k / 180, d = g[1] * dens(x, g[0]);
+        k ? ctx.lineTo(X(x), bot - d * escala) : ctx.moveTo(X(x), bot - d * escala);
+      }
+      ctx.stroke();
+    });
+    let xb = null;
+    if (Math.abs(m1 - m0) > 1e-6) xb = (Math.log(pa / (1 - pa)) - 0.5 * (m0 * m0 - m1 * m1)) / (m1 - m0);
+    if (xb !== null && xb > xmin && xb < xmax) {
+      ctx.strokeStyle = p.ink; ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(X(xb), top); ctx.lineTo(X(xb), bot); ctx.stroke(); ctx.setLineDash([]);
+    }
+    $(id + '-fron').textContent = xb === null ? 'indefinida' : ('x = ' + xb.toFixed(2));
+  }
+  ['m0', 'm1', 'pa'].forEach(k => $(id + '-' + k).addEventListener('input', draw));
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: SVM — margem máxima encontrada à mão
+// ============================================================
+function wSvm(id) {
+  const cv = $(id + '-cv'); let pts = [];
+  (function () {
+    const rng = makeRng(8);
+    for (let i = 0; i < 24; i++) {
+      const c = i < 12 ? 0 : 1, cx = c ? 1.6 : -1.6, cy = c ? 1.0 : -1.0;
+      pts.push([cx + rngNormal(rng) * 0.6, cy + rngNormal(rng) * 0.6, c]);
+    }
+  })();
+  function draw() {
+    const p = pal(), a = (+$(id + '-ang').value) * Math.PI / 180, off = +$(id + '-desl').value;
+    $(id + '-ang-v').textContent = $(id + '-ang').value; $(id + '-desl-v').textContent = off.toFixed(1);
+    const nx = Math.cos(a), ny = Math.sin(a);
+    const W = 640, H = 360, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 10, padR = 10, padT = 10, padB = 10, xmin = -4, xmax = 4, ymin = -3, ymax = 3;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    let margem = 1e9, ok = true;
+    pts.forEach(pt => {
+      const s = nx * pt[0] + ny * pt[1] - off;
+      if (Math.abs(s) < margem) margem = Math.abs(s);
+      if ((s >= 0 ? 1 : 0) !== pt[2]) ok = false;
+    });
+    const px = off * nx, py = off * ny, dx = -ny, dy = nx, t = 7;
+    ctx.strokeStyle = p.ink; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(X(px - dx * t), Y(py - dy * t)); ctx.lineTo(X(px + dx * t), Y(py + dy * t)); ctx.stroke();
+    if (ok) {
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = p.green;
+      [margem, -margem].forEach(mm => {
+        const qx = (off + mm) * nx, qy = (off + mm) * ny;
+        ctx.beginPath(); ctx.moveTo(X(qx - dx * t), Y(qy - dy * t)); ctx.lineTo(X(qx + dx * t), Y(qy + dy * t)); ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
+    pts.forEach(pt => {
+      ctx.fillStyle = pt[2] ? p.red : p.blue; ctx.strokeStyle = p.paper; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 5, 0, 7); ctx.fill(); ctx.stroke();
+    });
+    $(id + '-margem').textContent = ok ? margem.toFixed(2) : '—';
+    $(id + '-sep').textContent = ok ? 'sim' : 'não (há pontos do lado errado)';
+  }
+  $(id + '-otimo').addEventListener('click', () => {
+    let m0 = [0, 0], m1 = [0, 0], n0 = 0, n1 = 0;
+    pts.forEach(pt => { if (pt[2]) { m1[0] += pt[0]; m1[1] += pt[1]; n1++; } else { m0[0] += pt[0]; m0[1] += pt[1]; n0++; } });
+    m0 = [m0[0] / n0, m0[1] / n0]; m1 = [m1[0] / n1, m1[1] / n1];
+    let a = Math.atan2(m1[1] - m0[1], m1[0] - m0[0]) * 180 / Math.PI;
+    const nx = Math.cos(a * Math.PI / 180), ny = Math.sin(a * Math.PI / 180);
+    const off = nx * (m0[0] + m1[0]) / 2 + ny * (m0[1] + m1[1]) / 2;
+    $(id + '-ang').value = Math.round(a); $(id + '-desl').value = off.toFixed(1); draw();
+  });
+  ['ang', 'desl'].forEach(k => $(id + '-' + k).addEventListener('input', draw));
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {

@@ -36,6 +36,10 @@ WIDGETS = {
     "02_regressao/03_regressao_polinomial.md": ("polyreg", "wOverfit"),
     "02_regressao/04_regularizacao.md": ("regul", "wRidgeLasso"),
     "02_regressao/05_regressao_logistica.md": ("logi", "wLogistic"),
+    "03_classificacao/01_knn.md": ("knn", "wKnn"),
+    "03_classificacao/02_arvores_decisao.md": ("tree", "wTree"),
+    "03_classificacao/03_naive_bayes.md": ("bayes", "wBayes"),
+    "03_classificacao/04_svm.md": ("svm", "wSvm"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -102,6 +106,63 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wKnn":
+        return f"""<div class="widget">
+  <div class="widget-title">k-NN — como o k molda a fronteira</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "k", "Número de vizinhos (k)", 1, 25, 2, 1)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "acc", "Acurácia no treino", "fração classificada certa", PAL_BLUE)}
+    {_card(wid, "reg", "Regime", "efeito do k")}
+  </div>
+</div>"""
+    if fn == "wTree":
+        return f"""<div class="widget">
+  <div class="widget-title">Árvore rasa — dois cortes que particionam o plano</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "tx", "Corte vertical (x₁)", -3, 3, 0.1, 0)}
+    {_slider(wid, "ty", "Corte horizontal (x₂)", -3, 3, 0.1, 0)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "gini", "Impureza de Gini média", "0 = regiões puras", PAL_RED)}
+    {_card(wid, "acc", "Acurácia", "no limiar dos cortes", PAL_BLUE)}
+  </div>
+</div>"""
+    if fn == "wBayes":
+        return f"""<div class="widget">
+  <div class="widget-title">Naive Bayes gaussiano — verossimilhança e posteriori</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "m0", "Média da classe A", -4, 0, 0.1, -1.5)}
+    {_slider(wid, "m1", "Média da classe B", 0, 4, 0.1, 1.5)}
+    {_slider(wid, "pa", "Priori da classe A", 0.1, 0.9, 0.05, 0.5)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "fron", "Fronteira de decisão", "onde as posterioris se cruzam", PAL_GREEN)}
+  </div>
+</div>"""
+    if fn == "wSvm":
+        return f"""<div class="widget">
+  <div class="widget-title">Margem máxima — encontre o melhor separador</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "ang", "Ângulo do separador (°)", -90, 90, 1, 60)}
+    {_slider(wid, "desl", "Deslocamento", -3, 3, 0.1, 0)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-otimo">Aproximar da margem máxima</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "margem", "Margem", "faixa até o ponto mais próximo", PAL_GREEN)}
+    {_card(wid, "sep", "Separa as classes?", "sem pontos do lado errado")}
   </div>
 </div>"""
     if fn == "wLinReg":

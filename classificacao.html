@@ -93,118 +93,402 @@
 <article id="03-classificacao-01-knn-md" class="topic">
 <div class="topic-num">3.1</div>
 <h1 class="topic-title">k-Vizinhos mais próximos (k-NN)</h1>
-<p>O k-NN é o classificador mais intuitivo que existe: para prever a classe de um ponto, olhamos seus $k$ vizinhos mais próximos e votamos. Não há treino propriamente dito — o modelo simplesmente memoriza os dados (aprendizagem preguiçosa).</p>
-<p>Sua simplicidade esconde decisões importantes: qual $k$ usar, qual métrica de distância e por que a padronização das variáveis é obrigatória. Também é a porta de entrada para entender a maldição da dimensionalidade.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Efeito de $k$ na fronteira</td>
-<td>de irregular (k=1) a suave (k grande)</td>
-</tr>
-<tr>
-<td>Importância da escala</td>
-<td>distâncias com e sem padronização</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/03_classificacao/01_knn.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O k-NN é o classificador mais intuitivo que existe: para prever a classe de um
+ponto novo, olhamos seus $k$ vizinhos mais próximos entre os dados de treino e
+deixamos que eles <strong>votem</strong>. Não há treino propriamente dito — o modelo apenas
+memoriza os exemplos e adia todo o trabalho para a hora da predição. Por isso é
+chamado de aprendizagem <strong>preguiçosa</strong> (lazy learning).</p>
+<h2>A regra, em uma frase</h2>
+<p>Para classificar um ponto $\mathbf{x}$:</p>
+<ol>
+<li>calcule a distância de $\mathbf{x}$ a <strong>todos</strong> os pontos de treino;</li>
+<li>selecione os $k$ mais próximos;</li>
+<li>atribua a $\mathbf{x}$ a classe <strong>majoritária</strong> entre esses $k$.</li>
+</ol>
+<p>A distância padrão é a <strong>euclidiana</strong>:</p>
+<div class="math-display">$$
+d(\mathbf{x}, \mathbf{x}') = \sqrt{\sum_{j=1}^{p} (x_j - x'_j)^2}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\mathbf{x}$ e $\mathbf{x}'$ são dois pontos (o novo e um de treino);</li>
+<li>$x_j$ é o valor da <strong>$j$-ésima característica</strong>;</li>
+<li>$p$ é o <strong>número de características</strong>;</li>
+<li>a soma percorre todas as dimensões — cada característica contribui com o
+  quadrado da diferença.</li>
+</ul>
+<h2>O papel do $k$</h2>
+<p>O único hiperparâmetro importante é $k$, e ele controla o compromisso
+viés–variância de forma muito visual:</p>
+<ul>
+<li>$k = 1$ → a fronteira de decisão gruda em cada ponto, criando ilhas ao redor de
+  exemplos isolados (inclusive ruído). Variância alta, propenso a overfitting.</li>
+<li>$k$ grande → a votação envolve muitos vizinhos, a fronteira fica suave e o modelo
+  ignora detalhes locais. Viés alto; no extremo $k = n$, prevê sempre a classe mais
+  comum.</li>
+</ul>
+<p>O widget abaixo deixa isso concreto: mova o slider de $k$ e veja a fronteira sair
+de recortada (baixo $k$) a suave (alto $k$), sobre dois grupos de pontos.</p>
+<h2>Por que padronizar é obrigatório</h2>
+<p>A distância euclidiana soma diferenças ao quadrado <strong>nas unidades de cada
+característica</strong>. Se uma variável está em milhares (colesterol) e outra entre 0 e 1
+(uma proporção), a primeira domina a distância e a segunda é ignorada. A solução é
+<strong>padronizar</strong> todas as características (média 0, desvio 1) antes de medir
+distâncias. No k-NN isso não é um detalhe — é o que decide quais variáveis pesam.</p>
+<h2>A maldição da dimensionalidade</h2>
+<p>Em muitas dimensões, algo contraintuitivo acontece: <strong>todos os pontos ficam
+aproximadamente à mesma distância uns dos outros</strong>. O conceito de "vizinho
+próximo" perde sentido, e o k-NN degrada. É a <strong>maldição da dimensionalidade</strong>, e
+é uma das razões para reduzir dimensões (PCA, capítulo 5) antes de aplicar métodos
+baseados em distância.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_knn.ipynb</code> classifica o conjunto <strong>Iris</strong> com <code>KNeighborsClassifier</code>
+dentro de um <code>Pipeline</code> com padronização, varre vários valores de $k$ medindo a
+acurácia de validação (a curva que revela o $k$ ótimo) e desenha a fronteira de
+decisão em 2D com Plotly para dois valores de $k$ contrastantes.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que é comum escolher um $k$ <strong>ímpar</strong> em problemas de duas classes?</p>
+<details><summary>Ver solução</summary>
 
+Com duas classes e $k$ par, a votação pode **empatar** (por exemplo, 2 a 2 com
+$k=4$), exigindo um critério de desempate arbitrário. Um $k$ ímpar garante sempre
+uma maioria, eliminando o empate. (Com mais de duas classes o empate pode ocorrer
+mesmo com $k$ ímpar, e aí se recorre a desempate por distância.)
+
+</details>
+
+<p><strong>2.</strong> Um colega treinou k-NN sem padronizar, com uma variável em mg/dL (ordem de
+centenas) e outra em proporção (0 a 1). O que provavelmente aconteceu?</p>
+<details><summary>Ver solução</summary>
+
+A variável em mg/dL, por ter valores muito maiores, **dominou** a distância
+euclidiana: as diferenças nela abafaram completamente as diferenças na proporção.
+Na prática, o modelo classificou quase só com base nessa variável, ignorando a
+outra. Padronizar (ou normalizar) antes teria dado peso comparável às duas.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Cover, T. &amp; Hart, P. (1967). <em>Nearest Neighbor Pattern Classification</em>. IEEE Transactions on Information Theory, 13(1), 21–27 — o artigo seminal.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 2 e 4. Livro aberto: https://www.statlearning.com/</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 13.</li>
+</ul>
+<div class="widget" data-widget="wKnn" data-id="knn_3_1">
+  <div class="widget-title">k-NN — como o k molda a fronteira</div>
+  <canvas id="knn_3_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de vizinhos (k)</span><input type="range" min="1" max="25" step="2" value="1" id="knn_3_1-k"><span class="ctrl-val" id="knn_3_1-k-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="knn_3_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia no treino</div><div class="sval" id="knn_3_1-acc" style="color:#3266ad;">—</div><div class="sdesc">fração classificada certa</div></div>
+    <div class="stat-card"><div class="slabel">Regime</div><div class="sval" id="knn_3_1-reg">—</div><div class="sdesc">efeito do k</div></div>
+  </div>
+</div>
 </article>
 <article id="03-classificacao-02-arvores-decisao-md" class="topic">
 <div class="topic-num">3.2</div>
 <h1 class="topic-title">Árvores de decisão</h1>
-<p>Uma árvore de decisão classifica fazendo uma sequência de perguntas do tipo "a variável X é maior que t?", particionando o espaço em regiões. O resultado é um modelo altamente interpretável, que se lê como um fluxograma clínico.</p>
-<p>Estudaremos os critérios de divisão (impureza de Gini e entropia), como a profundidade controla a complexidade e por que árvores isoladas tendem a overfittar — motivação direta para os ensembles do capítulo seguinte.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Impureza de Gini</td>
-<td>como a árvore escolhe cada divisão</td>
-</tr>
-<tr>
-<td>Profundidade × overfitting</td>
-<td>poda e <code>max_depth</code></td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/03_classificacao/02_arvores_decisao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Uma árvore de decisão classifica fazendo uma sequência de perguntas simples do
+tipo <em>"a característica $x_j$ é maior que um limiar $t$?"</em>, partindo o espaço em
+regiões retangulares. O resultado se lê como um <strong>fluxograma clínico</strong> — o modelo
+mais interpretável do curso, que qualquer especialista consegue inspecionar.</p>
+<h2>Como a árvore decide onde cortar</h2>
+<p>A cada nó, a árvore escolhe a divisão (a característica e o limiar) que deixa os
+grupos resultantes o mais <strong>puros</strong> possível — idealmente, cada lado só com uma
+classe. A pureza é medida pela <strong>impureza de Gini</strong>:</p>
+<div class="math-display">$$
+G = 1 - \sum_{c=1}^{C} p_c^2
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$C$ é o <strong>número de classes</strong>;</li>
+<li>$p_c$ é a <strong>proporção de exemplos da classe $c$</strong> no nó;</li>
+<li>$G = 0$ significa nó <strong>puro</strong> (uma só classe); $G$ é máximo quando as classes
+  estão igualmente misturadas.</li>
+</ul>
+<p>A alternativa clássica é a <strong>entropia</strong>, $H = -\sum_c p_c \log_2 p_c$, com a mesma
+ideia: medir a "bagunça" de classes no nó. A árvore testa todos os cortes
+possíveis e fica com o que <strong>mais reduz</strong> a impureza (o maior <em>ganho</em>), e repete
+recursivamente em cada lado.</p>
+<p>O widget abaixo mostra o mecanismo com uma árvore rasa feita à mão: mova dois
+limiares (um vertical, um horizontal) que particionam o plano em quatro regiões,
+cada uma pintada pela classe majoritária. O cartão mostra a impureza de Gini e a
+acurácia — tente encontrar os cortes que melhor separam as classes.</p>
+<h2>Profundidade: o botão do overfitting</h2>
+<p>A <strong>profundidade</strong> da árvore controla sua complexidade:</p>
+<ul>
+<li>rasa demais → não captura a estrutura (subajuste);</li>
+<li>profunda demais → cria uma folha para quase cada exemplo, memorizando o ruído
+  (sobreajuste). Uma árvore sem limite de profundidade chega a <strong>100% de acerto no
+  treino</strong> e generaliza mal.</li>
+</ul>
+<p>Controla-se isso com hiperparâmetros como <code>max_depth</code> (profundidade máxima) e
+<code>min_samples_leaf</code> (mínimo de exemplos por folha), ou <strong>podando</strong> a árvore depois
+de crescida. Justamente porque uma árvore isolada tende a overfittar, elas brilham
+mesmo é <strong>em conjunto</strong> — a motivação direta dos ensembles do próximo capítulo.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>02_arvores_decisao.ipynb</code> treina uma <code>DecisionTreeClassifier</code> no Iris,
+<strong>desenha a árvore</strong> aprendida (as perguntas em cada nó), mostra a curva de
+acurácia de treino e de validação em função de <code>max_depth</code> — o U do overfitting —
+e visualiza a fronteira de decisão retangular com Plotly.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Calcule a impureza de Gini de um nó com 8 exemplos da classe A e 2 da
+classe B.</p>
+<details><summary>Ver solução</summary>
 
+$p_A = 0{,}8$, $p_B = 0{,}2$. Então
+$G = 1 - (0{,}8^2 + 0{,}2^2) = 1 - (0{,}64 + 0{,}04) = 0{,}32$.
+Um nó bem impuro (50/50) daria $G = 0{,}5$; um nó puro daria $G = 0$. Este está
+razoavelmente puro, mais perto de zero.
+
+</details>
+
+<p><strong>2.</strong> Por que uma árvore muito profunda quase sempre atinge 100% de acurácia no
+treino, e por que isso não é motivo de comemoração?</p>
+<details><summary>Ver solução</summary>
+
+Sem limite de profundidade, a árvore continua dividindo até **isolar cada exemplo**
+em sua própria folha — aí acerta todos os pontos de treino por construção. Mas
+essas divisões finais respondem ao ruído específico do treino, que não se repete
+em dados novos; a acurácia de teste despenca. É overfitting clássico: memorizou,
+não generalizou.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Breiman, L., Friedman, J., Olshen, R. &amp; Stone, C. (1984). <em>Classification and Regression Trees</em> (CART). Wadsworth — a referência fundadora.</li>
+<li>Quinlan, J. R. (1986). <em>Induction of Decision Trees</em>. Machine Learning, 1, 81–106 (algoritmo ID3).</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 8. Livro aberto: https://www.statlearning.com/</li>
+</ul>
+<div class="widget" data-widget="wTree" data-id="tree_3_2">
+  <div class="widget-title">Árvore rasa — dois cortes que particionam o plano</div>
+  <canvas id="tree_3_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Corte vertical (x₁)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-tx"><span class="ctrl-val" id="tree_3_2-tx-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Corte horizontal (x₂)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-ty"><span class="ctrl-val" id="tree_3_2-ty-v">0</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Impureza de Gini média</div><div class="sval" id="tree_3_2-gini" style="color:#c0392b;">—</div><div class="sdesc">0 = regiões puras</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="tree_3_2-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar dos cortes</div></div>
+  </div>
+</div>
 </article>
 <article id="03-classificacao-03-naive-bayes-md" class="topic">
 <div class="topic-num">3.3</div>
 <h1 class="topic-title">Naive Bayes</h1>
-<p>O Naive Bayes aplica o teorema de Bayes assumindo, de forma "ingênua", que os preditores são independentes dada a classe. Essa suposição raramente é verdadeira, mas o modelo funciona surpreendentemente bem e é extremamente rápido.</p>
-<p>É o clássico para classificação de texto (spam, triagem de laudos) e um ótimo veículo para revisar probabilidade condicional. Veremos as variantes Gaussiana, Multinomial e Bernoulli e quando cada uma se aplica.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Teorema de Bayes na prática</td>
-<td>priori, verossimilhança e posteriori</td>
-</tr>
-<tr>
-<td>Variantes do modelo</td>
-<td>Gaussiano, Multinomial, Bernoulli</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/03_classificacao/03_naive_bayes.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O Naive Bayes é um classificador probabilístico que aplica o <strong>teorema de Bayes</strong>
+com uma suposição deliberadamente ingênua: a de que os preditores são
+<strong>independentes entre si, dada a classe</strong>. Essa hipótese quase nunca é literalmente
+verdadeira, mas o modelo funciona surpreendentemente bem, treina em tempo
+recorde e continua sendo um dos melhores pontos de partida para classificação de
+texto.</p>
+<h2>O teorema de Bayes, aplicado à classificação</h2>
+<p>Queremos a probabilidade de a classe ser $c$ dado o vetor de características
+$\mathbf{x}$. Bayes a reescreve em termos que conseguimos estimar:</p>
+<div class="math-display">$$
+P(c \mid \mathbf{x}) = \frac{P(\mathbf{x} \mid c)\, P(c)}{P(\mathbf{x})}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$P(c \mid \mathbf{x})$ é a <strong>probabilidade a posteriori</strong> — o que queremos: a
+  chance da classe $c$ depois de ver os dados $\mathbf{x}$;</li>
+<li>$P(\mathbf{x} \mid c)$ é a <strong>verossimilhança</strong> — quão típico é ver $\mathbf{x}$
+  dentro da classe $c$;</li>
+<li>$P(c)$ é a <strong>probabilidade a priori</strong> — quão comum é a classe $c$ antes de olhar
+  as características (a proporção dela nos dados);</li>
+<li>$P(\mathbf{x})$ é a <strong>evidência</strong>, um fator de normalização igual para todas as
+  classes — por isso pode ser ignorado na hora de escolher a classe vencedora.</li>
+</ul>
+<h2>Onde entra a "ingenuidade"</h2>
+<p>Estimar $P(\mathbf{x} \mid c)$ para um vetor inteiro de características é inviável.
+A suposição <em>naive</em> de independência quebra isso num <strong>produto</strong> de termos
+simples, um por característica:</p>
+<div class="math-display">$$
+P(\mathbf{x} \mid c) = \prod_{j=1}^{p} P(x_j \mid c)
+$$</div>
+<p>Onde $P(x_j \mid c)$ é a distribuição de <strong>uma única característica</strong> dentro da
+classe — muito fácil de estimar. A classe escolhida é a que maximiza o produto da
+priori pela verossimilhança:</p>
+<div class="math-display">$$
+\hat{y} = \arg\max_{c} \; P(c) \prod_{j=1}^{p} P(x_j \mid c)
+$$</div>
+<p>Na prática somam-se <strong>logaritmos</strong> em vez de multiplicar probabilidades minúsculas,
+para evitar que o produto vá a zero por limite numérico.</p>
+<h2>As três variantes</h2>
+<p>A forma de $P(x_j \mid c)$ define o sabor do modelo:</p>
+<ul>
+<li><strong>Gaussiano</strong> — características <strong>contínuas</strong>; supõe que cada uma segue uma normal
+  dentro da classe (estima média e desvio por classe). É o usado para dados como o
+  Iris.</li>
+<li><strong>Multinomial</strong> — <strong>contagens</strong> (quantas vezes cada palavra aparece); o padrão
+  para classificação de texto por frequência de termos.</li>
+<li><strong>Bernoulli</strong> — características <strong>binárias</strong> (a palavra apareceu ou não).</li>
+</ul>
+<p>O widget abaixo ilustra o caso Gaussiano de uma característica: duas classes, cada
+uma com sua curva normal. Mova as médias e veja a <strong>probabilidade a posteriori</strong> e
+a fronteira de decisão (onde as duas curvas, ponderadas pela priori, se cruzam)
+se deslocarem.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_naive_bayes.ipynb</code> usa o <code>GaussianNB</code> no Iris — mostrando as curvas
+normais estimadas por classe — e depois um <code>MultinomialNB</code> em um problema de texto
+(classificar mensagens), comparando a velocidade e a acurácia com a de um modelo
+mais pesado. Tudo com probabilidade condicional explícita, sem caixa-preta.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Numa triagem, 1% dos laudos são "urgentes" ($P(\text{urgente}) = 0{,}01$).
+Por que a priori importa tanto quando uma classe é rara?</p>
+<details><summary>Ver solução</summary>
 
+Porque a posteriori é proporcional a $P(c)\,P(\mathbf{x}\mid c)$: um $P(c)$ muito
+baixo puxa fortemente a decisão para a classe comum, a menos que a verossimilhança
+$P(\mathbf{x}\mid \text{urgente})$ seja muito maior. Ignorar a priori (assumir
+classes iguais) faria o modelo superestimar a classe rara. É a mesma lógica dos
+falsos positivos em testes de doenças raras.
+
+</details>
+
+<p><strong>2.</strong> A suposição de independência é quase sempre falsa (em texto, "vetores" e
+"suporte" aparecem juntos). Por que o modelo ainda classifica bem?</p>
+<details><summary>Ver solução</summary>
+
+Para **classificar**, não precisamos das probabilidades exatas — basta que a classe
+correta receba a **maior** pontuação. Mesmo com estimativas de probabilidade
+distorcidas pela independência falsa, a **ordem** entre as classes costuma se
+preservar, então a decisão final acerta. O Naive Bayes é um bom *classificador*
+mesmo sendo um estimador de probabilidade medíocre.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Maron, M. E. (1961). <em>Automatic Indexing: An Experimental Inquiry</em>. Journal of the ACM, 8(3), 404–417.</li>
+<li>Domingos, P. &amp; Pazzani, M. (1997). <em>On the Optimality of the Simple Bayesian Classifier under Zero-One Loss</em>. Machine Learning, 29, 103–130.</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 6.6.</li>
+</ul>
+<div class="widget" data-widget="wBayes" data-id="bayes_3_3">
+  <div class="widget-title">Naive Bayes gaussiano — verossimilhança e posteriori</div>
+  <canvas id="bayes_3_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Média da classe A</span><input type="range" min="-4" max="0" step="0.1" value="-1.5" id="bayes_3_3-m0"><span class="ctrl-val" id="bayes_3_3-m0-v">-1.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Média da classe B</span><input type="range" min="0" max="4" step="0.1" value="1.5" id="bayes_3_3-m1"><span class="ctrl-val" id="bayes_3_3-m1-v">1.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Priori da classe A</span><input type="range" min="0.1" max="0.9" step="0.05" value="0.5" id="bayes_3_3-pa"><span class="ctrl-val" id="bayes_3_3-pa-v">0.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Fronteira de decisão</div><div class="sval" id="bayes_3_3-fron" style="color:#1a7a4a;">—</div><div class="sdesc">onde as posterioris se cruzam</div></div>
+  </div>
+</div>
 </article>
 <article id="03-classificacao-04-svm-md" class="topic">
 <div class="topic-num">3.4</div>
 <h1 class="topic-title">Máquinas de vetores de suporte (SVM)</h1>
-<p>A SVM procura o hiperplano que separa as classes com a <strong>maior margem</strong> possível, apoiando-se apenas nos pontos mais difíceis — os vetores de suporte. É um dos modelos mais poderosos para dados de dimensão moderada.</p>
-<p>O truque do kernel permite fronteiras não lineares sem calcular explicitamente as coordenadas em alta dimensão. Discutiremos os hiperparâmetros $C$ e $\gamma$ e a intuição geométrica por trás da margem máxima.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Margem e vetores de suporte</td>
-<td>por que só alguns pontos importam</td>
-</tr>
-<tr>
-<td>Kernel RBF</td>
-<td>fronteiras não lineares e o papel de $\gamma$</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/03_classificacao/04_svm.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>A máquina de vetores de suporte (SVM) parte de uma pergunta geométrica elegante:
+entre as infinitas retas que separam duas classes, qual é a <strong>melhor</strong>? A resposta
+da SVM é a que deixa a <strong>maior margem</strong> — a maior faixa vazia possível entre as
+classes. Essa ideia de margem máxima dá à SVM uma excelente capacidade de
+generalização em dados de dimensão moderada.</p>
+<h2>A margem máxima</h2>
+<p>Um separador linear é definido por $\boldsymbol\theta^\top\mathbf{x} + b = 0$. A
+SVM escolhe $\boldsymbol\theta$ e $b$ que <strong>maximizam a margem</strong> $M$ — a distância
+do separador ao ponto mais próximo de cada classe:</p>
+<div class="math-display">$$
+M = \frac{2}{\lVert \boldsymbol\theta \rVert}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\boldsymbol\theta$ é o <strong>vetor de pesos</strong> que define a orientação do separador;</li>
+<li>$\lVert \boldsymbol\theta \rVert$ é a <strong>norma</strong> (o "tamanho") desse vetor —
+  maximizar a margem equivale a <strong>minimizar</strong> essa norma;</li>
+<li>$b$ é o <strong>deslocamento</strong> (bias) que posiciona o separador;</li>
+<li>$M$ é a <strong>largura da margem</strong>.</li>
+</ul>
+<p>O detalhe crucial: a margem é definida apenas pelos pontos que ficam na sua borda
+— os <strong>vetores de suporte</strong>. Todos os outros pontos poderiam ser removidos sem
+mudar o separador. O modelo depende só dos exemplos mais difíceis, o que o torna
+compacto e robusto.</p>
+<p>O widget abaixo torna isso tangível: gire e desloque um separador sobre duas
+classes e observe a margem (a faixa até o ponto mais próximo de cada lado). Procure
+a orientação que <strong>maximiza</strong> essa faixa — é o que a SVM faz automaticamente.</p>
+<h2>Margem suave: o hiperparâmetro $C$</h2>
+<p>Dados reais raramente são perfeitamente separáveis. A <strong>margem suave</strong> permite
+algumas violações (pontos dentro da margem ou do lado errado), controladas por $C$:</p>
+<ul>
+<li>$C$ <strong>grande</strong> → pune muito as violações; margem estreita, ajuste apertado aos
+  dados (mais risco de overfitting);</li>
+<li>$C$ <strong>pequeno</strong> → tolera violações em troca de uma margem larga e mais suave
+  (mais regularização).</li>
+</ul>
+<p>$C$ é, portanto, o botão viés–variância da SVM.</p>
+<h2>O truque do kernel</h2>
+<p>E quando a fronteira não é uma reta? O <strong>truque do kernel</strong> projeta os dados,
+implicitamente, num espaço de dimensão muito mais alta onde eles <strong>passam a ser
+separáveis por um hiperplano</strong> — sem nunca calcular essas coordenadas
+explicitamente. O kernel mais usado é o <strong>RBF</strong> (base radial):</p>
+<div class="math-display">$$
+K(\mathbf{x}, \mathbf{x}') = \exp\!\bigl(-\gamma\,\lVert \mathbf{x} - \mathbf{x}' \rVert^2\bigr)
+$$</div>
+<p>Onde $\gamma$ controla o <strong>alcance</strong> de cada ponto: $\gamma$ grande gera fronteiras
+muito onduladas e locais (risco de overfitting); $\gamma$ pequeno, fronteiras
+suaves. Junto com $C$, é o par de hiperparâmetros que se ajusta por validação
+cruzada.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_svm.ipynb</code> treina uma SVM linear e uma com kernel RBF, visualiza
+as fronteiras e destaca os vetores de suporte com Plotly, e mostra o efeito de $C$
+e $\gamma$ numa varredura — inclusive o caso clássico dos dados "em círculos", onde
+o kernel resolve o que nenhuma reta consegue.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Se você remover um ponto que <strong>não</strong> é vetor de suporte e retreinar, o que
+acontece com o separador?</p>
+<details><summary>Ver solução</summary>
 
+**Nada.** O separador de margem máxima é determinado exclusivamente pelos vetores
+de suporte (os pontos na borda da margem). Pontos fora da margem não participam da
+definição do hiperplano, então removê-los deixa a solução idêntica. É por isso que
+a SVM é "econômica": a decisão depende de poucos exemplos.
+
+</details>
+
+<p><strong>2.</strong> Aumentar muito $\gamma$ no kernel RBF costuma dar 100% de acerto no treino e
+péssimo desempenho no teste. Por quê?</p>
+<details><summary>Ver solução</summary>
+
+Com $\gamma$ muito grande, a influência de cada ponto fica **muito local** — cada
+exemplo de treino cria uma pequena "bolha" da sua classe ao redor de si. A
+fronteira envolve ponto a ponto, memorizando o treino (acerto ~100%), mas essas
+bolhas não correspondem a nenhuma estrutura real, então o teste vai mal. É
+overfitting controlado por $\gamma$, e se corrige reduzindo-o (com validação
+cruzada).
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Cortes, C. &amp; Vapnik, V. (1995). <em>Support-Vector Networks</em>. Machine Learning, 20, 273–297 — o artigo seminal.</li>
+<li>Boser, B., Guyon, I. &amp; Vapnik, V. (1992). <em>A Training Algorithm for Optimal Margin Classifiers</em>. COLT.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 9. Livro aberto: https://www.statlearning.com/</li>
+</ul>
+<div class="widget" data-widget="wSvm" data-id="svm_3_4">
+  <div class="widget-title">Margem máxima — encontre o melhor separador</div>
+  <canvas id="svm_3_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Ângulo do separador (°)</span><input type="range" min="-90" max="90" step="1" value="60" id="svm_3_4-ang"><span class="ctrl-val" id="svm_3_4-ang-v">60</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Deslocamento</span><input type="range" min="-3" max="3" step="0.1" value="0" id="svm_3_4-desl"><span class="ctrl-val" id="svm_3_4-desl-v">0</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="svm_3_4-otimo">Aproximar da margem máxima</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Margem</div><div class="sval" id="svm_3_4-margem" style="color:#1a7a4a;">—</div><div class="sdesc">faixa até o ponto mais próximo</div></div>
+    <div class="stat-card"><div class="slabel">Separa as classes?</div><div class="sval" id="svm_3_4-sep">—</div><div class="sdesc">sem pontos do lado errado</div></div>
+  </div>
+</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

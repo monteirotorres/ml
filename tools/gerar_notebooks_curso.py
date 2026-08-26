@@ -674,6 +674,327 @@ def nb_reg_logistica():
     escrever(nb, "02_regressao/05_regressao_logistica.ipynb")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+def nb_knn():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# k-Vizinhos mais próximos (k-NN)\n\n"
+           "**Objetivo:** classificar o Iris com k-NN, ver como o número de vizinhos "
+           "$k$ controla o compromisso viés–variância (a curva de acurácia por $k$) e "
+           "desenhar a fronteira de decisão para dois valores de $k$."),
+        code(PREAMBULO),
+        md("## 1. Dados e a importância de padronizar\n\n"
+           "O k-NN mede **distâncias**, então padronizamos as características (dentro "
+           "de um `Pipeline`, para não vazar o teste). Usamos o Iris completo."),
+        code('from sklearn.datasets import load_iris\n'
+             'from sklearn.model_selection import cross_val_score\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.neighbors import KNeighborsClassifier\n'
+             'from sklearn.pipeline import make_pipeline\n\n'
+             'iris = load_iris()\n'
+             'X, y = iris.data, iris.target\n'
+             'print("X:", X.shape, "| classes:", list(iris.target_names))'),
+        md("## 2. A curva de acurácia por k\n\n"
+           "Para cada $k$ (ímpar, para evitar empates), medimos a acurácia por "
+           "validação cruzada de 5 dobras. Um laço explícito, um $k$ por vez."),
+        code('ks = list(range(1, 40, 2))\n'
+             'acuracias = []\n'
+             'for k in ks:\n'
+             '    modelo = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k))\n'
+             '    ac = cross_val_score(modelo, X, y, cv=5).mean()\n'
+             '    acuracias.append(ac)\n'
+             '    print("k =", str(k).rjust(2), "-> acuracia CV =", round(ac, 3))\n'
+             'melhor_k = ks[int(np.argmax(acuracias))]\n'
+             'print("melhor k:", melhor_k)'),
+        code('figura = go.Figure(go.Scatter(x=ks, y=acuracias, mode="lines+markers",\n'
+             '                              line=dict(color=AZUL)))\n'
+             'figura.add_vline(x=melhor_k, line_dash="dash", line_color=VERDE,\n'
+             '                 annotation_text=f"melhor k = {melhor_k}")\n'
+             'figura.update_layout(title="Acuracia (validacao cruzada) vs numero de vizinhos",\n'
+             '                     xaxis_title="k", yaxis_title="acuracia", height=360,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. A fronteira de decisão muda com k\n\n"
+           "Usando dois preditores (comprimento e largura da pétala), pintamos a "
+           "região prevista para $k=1$ (recortada) e $k=25$ (suave)."),
+        code('X2 = X[:, 2:4]   # petala: comprimento e largura\n'
+             'passo = 0.02\n'
+             'gx, gy = np.meshgrid(np.arange(X2[:, 0].min()-0.5, X2[:, 0].max()+0.5, passo),\n'
+             '                     np.arange(X2[:, 1].min()-0.5, X2[:, 1].max()+0.5, passo))\n'
+             'grade = np.c_[gx.ravel(), gy.ravel()]\n\n'
+             'from plotly.subplots import make_subplots\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("k = 1", "k = 25"))\n'
+             'coluna = 1\n'
+             'for k in [1, 25]:\n'
+             '    modelo = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=k)).fit(X2, y)\n'
+             '    zz = modelo.predict(grade).reshape(gx.shape)\n'
+             '    figura.add_trace(go.Heatmap(x=gx[0], y=gy[:, 0], z=zz, showscale=False,\n'
+             '                                colorscale="Blugrn", opacity=0.35), row=1, col=coluna)\n'
+             '    figura.add_trace(go.Scatter(x=X2[:, 0], y=X2[:, 1], mode="markers",\n'
+             '                                marker=dict(color=y, colorscale="Blugrn", size=6,\n'
+             '                                            line=dict(width=0.5, color="white")),\n'
+             '                                showlegend=False), row=1, col=coluna)\n'
+             '    coluna += 1\n'
+             'figura.update_layout(title="Fronteira de decisao: k=1 recortada, k=25 suave",\n'
+             '                     height=380, margin=dict(l=10, r=10, t=60, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Refaça a curva de acurácia **sem** o `StandardScaler` (troque o pipeline por "
+           "um `KNeighborsClassifier` puro). No Iris o efeito é pequeno porque as escalas "
+           "são parecidas — mas em que tipo de dado a padronização seria decisiva?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Seria decisiva quando os preditores têm **escalas muito diferentes** — por "
+           "exemplo, colesterol em mg/dL (centenas) misturado com uma proporção (0 a 1). "
+           "Sem padronizar, a variável de valores grandes domina a distância euclidiana e "
+           "as outras são praticamente ignoradas. No Iris, as quatro medidas estão todas "
+           "em centímetros, então o impacto é pequeno.\n\n</details>"),
+    ]
+    escrever(nb, "03_classificacao/01_knn.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_arvores():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Árvores de decisão\n\n"
+           "**Objetivo:** treinar uma árvore no Iris, ler as perguntas que ela aprendeu, "
+           "ver a profundidade controlar o overfitting (a curva treino × validação) e "
+           "desenhar a fronteira retangular."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_iris\n'
+             'from sklearn.tree import DecisionTreeClassifier, export_text\n'
+             'from sklearn.model_selection import train_test_split, cross_val_score\n\n'
+             'iris = load_iris()\n'
+             'X, y = iris.data, iris.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             'print("treino:", X_tr.shape[0], "| teste:", X_te.shape[0])'),
+        md("## 1. As perguntas que a árvore aprendeu\n\n"
+           "Uma árvore rasa (profundidade 3) já classifica bem o Iris. O `export_text` "
+           "imprime a árvore como um fluxograma de perguntas — leitura direta, sem "
+           "caixa-preta."),
+        code('arvore = DecisionTreeClassifier(max_depth=3, random_state=SEMENTE)\n'
+             'arvore.fit(X_tr, y_tr)\n'
+             'print("acuracia no teste:", round(arvore.score(X_te, y_te), 3))\n'
+             'print()\n'
+             'print(export_text(arvore, feature_names=list(iris.feature_names)))'),
+        md("## 2. Profundidade × overfitting\n\n"
+           "Para cada profundidade, comparamos a acurácia no **treino** com a de "
+           "**validação cruzada**. O treino sobe sempre em direção a 100%; a validação "
+           "faz um U — sinal de que árvores fundas memorizam."),
+        code('profundidades = list(range(1, 12))\n'
+             'acc_treino = []\n'
+             'acc_validacao = []\n'
+             'for d in profundidades:\n'
+             '    modelo = DecisionTreeClassifier(max_depth=d, random_state=SEMENTE)\n'
+             '    modelo.fit(X_tr, y_tr)\n'
+             '    acc_treino.append(modelo.score(X_tr, y_tr))\n'
+             '    acc_validacao.append(cross_val_score(modelo, X_tr, y_tr, cv=5).mean())\n'
+             '    print("prof", str(d).rjust(2), "| treino", round(acc_treino[-1], 3),\n'
+             '          "| validacao", round(acc_validacao[-1], 3))'),
+        code('figura = go.Figure()\n'
+             'figura.add_trace(go.Scatter(x=profundidades, y=acc_treino, mode="lines+markers",\n'
+             '                            line=dict(color=AZUL), name="treino"))\n'
+             'figura.add_trace(go.Scatter(x=profundidades, y=acc_validacao, mode="lines+markers",\n'
+             '                            line=dict(color=VERMELHO), name="validacao (CV)"))\n'
+             'figura.update_layout(title="Arvore: profundidade x acuracia",\n'
+             '                     xaxis_title="max_depth", yaxis_title="acuracia", height=360,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. A fronteira retangular\n\n"
+           "Com dois preditores, a fronteira da árvore é feita de **retângulos** (cortes "
+           "paralelos aos eixos) — a assinatura visual do modelo."),
+        code('X2 = X[:, 2:4]\n'
+             'arvore2 = DecisionTreeClassifier(max_depth=4, random_state=SEMENTE).fit(X2, y)\n'
+             'passo = 0.02\n'
+             'gx, gy = np.meshgrid(np.arange(X2[:, 0].min()-0.5, X2[:, 0].max()+0.5, passo),\n'
+             '                     np.arange(X2[:, 1].min()-0.5, X2[:, 1].max()+0.5, passo))\n'
+             'zz = arvore2.predict(np.c_[gx.ravel(), gy.ravel()]).reshape(gx.shape)\n\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Heatmap(x=gx[0], y=gy[:, 0], z=zz, showscale=False,\n'
+             '                            colorscale="Blugrn", opacity=0.35))\n'
+             'figura.add_trace(go.Scatter(x=X2[:, 0], y=X2[:, 1], mode="markers",\n'
+             '                            marker=dict(color=y, colorscale="Blugrn", size=6,\n'
+             '                                        line=dict(width=0.5, color="white"))))\n'
+             'figura.update_layout(title="Fronteira retangular da arvore (2 preditores)",\n'
+             '                     height=400, margin=dict(l=10, r=10, t=50, b=10), showlegend=False)\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Pela curva do item 2, qual `max_depth` você escolheria para este problema? "
+           "Justifique com base na acurácia de validação, não na de treino."),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Escolhe-se a menor profundidade que já atinge o platô da acurácia de "
+           "**validação** — no Iris, tipicamente `max_depth` entre 3 e 4. Ir além disso "
+           "só aumenta a acurácia de treino (rumo a 100%) sem ganho na validação, o que "
+           "é overfitting: mais complexidade sem mais generalização. A regra é preferir o "
+           "modelo mais simples que empata no topo da validação.\n\n</details>"),
+    ]
+    escrever(nb, "03_classificacao/02_arvores_decisao.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_naive_bayes():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Naive Bayes\n\n"
+           "**Objetivo:** usar o Naive Bayes gaussiano no Iris (vendo as curvas normais "
+           "por classe) e o multinomial num pequeno problema de texto, notando a "
+           "velocidade. Probabilidade condicional explícita, sem caixa-preta."),
+        code(PREAMBULO),
+        md("## 1. Naive Bayes gaussiano no Iris\n\n"
+           "O `GaussianNB` estima, para cada classe, a **média** e o **desvio** de cada "
+           "característica — supondo uma normal. Depois combina pela regra de Bayes."),
+        code('from sklearn.datasets import load_iris\n'
+             'from sklearn.naive_bayes import GaussianNB\n'
+             'from sklearn.model_selection import train_test_split\n\n'
+             'iris = load_iris()\n'
+             'X, y = iris.data, iris.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             'modelo = GaussianNB().fit(X_tr, y_tr)\n'
+             'print("acuracia no teste:", round(modelo.score(X_te, y_te), 3))\n'
+             'print("medias por classe (uma linha por classe):")\n'
+             'print(np.round(modelo.theta_, 2))'),
+        md("## 2. As curvas normais estimadas\n\n"
+           "Para uma característica (comprimento da pétala), desenhamos a normal que o "
+           "modelo ajustou a cada classe. Onde as curvas se cruzam fica a zona de "
+           "confusão entre as espécies."),
+        code('caracteristica = 2   # comprimento da petala\n'
+             'grade = np.linspace(X[:, caracteristica].min()-0.5, X[:, caracteristica].max()+0.5, 300)\n\n'
+             'figura = go.Figure()\n'
+             'cores = [AZUL, VERDE, VERMELHO]\n'
+             'for c in range(3):\n'
+             '    media = modelo.theta_[c, caracteristica]\n'
+             '    desvio = np.sqrt(modelo.var_[c, caracteristica])\n'
+             '    densidade = np.exp(-0.5 * ((grade - media) / desvio) ** 2) / (desvio * np.sqrt(2*np.pi))\n'
+             '    figura.add_trace(go.Scatter(x=grade, y=densidade, mode="lines",\n'
+             '                                line=dict(color=cores[c]), name=iris.target_names[c]))\n'
+             'figura.update_layout(title="Curvas normais por classe (comprimento da petala)",\n'
+             '                     xaxis_title="cm", yaxis_title="densidade", height=360,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. Naive Bayes multinomial para texto\n\n"
+           "Em texto, cada documento vira um vetor de **contagens de palavras** "
+           "(`CountVectorizer`) e o `MultinomialNB` classifica. Usamos um mini-corpus "
+           "embutido (frases de esporte × tecnologia) — sem downloads."),
+        code('from sklearn.feature_extraction.text import CountVectorizer\n'
+             'from sklearn.naive_bayes import MultinomialNB\n\n'
+             'textos = [\n'
+             '    "o time venceu o jogo e marcou tres gols",\n'
+             '    "o jogador foi campeao do torneio de futebol",\n'
+             '    "a torcida comemorou a vitoria no estadio",\n'
+             '    "o atacante marcou o gol da vitoria no jogo",\n'
+             '    "o novo processador e a placa de video sao rapidos",\n'
+             '    "o software roda no computador com muita memoria",\n'
+             '    "o aplicativo usa inteligencia artificial e dados",\n'
+             '    "a rede neural treina no processador da maquina",\n'
+             ']\n'
+             'rotulos = ["esporte", "esporte", "esporte", "esporte",\n'
+             '           "tecnologia", "tecnologia", "tecnologia", "tecnologia"]\n\n'
+             'vetorizador = CountVectorizer()\n'
+             'X_texto = vetorizador.fit_transform(textos)\n'
+             'classificador = MultinomialNB().fit(X_texto, rotulos)\n'
+             'print("vocabulario (", len(vetorizador.get_feature_names_out()), "palavras)")\n\n'
+             'novas = ["o time marcou um gol no jogo", "a maquina usa inteligencia artificial"]\n'
+             'previsto = classificador.predict(vetorizador.transform(novas))\n'
+             'for frase, classe in zip(novas, previsto):\n'
+             '    print("->", classe.ljust(11), "|", frase)'),
+        md("## Exercício\n\n"
+           "O modelo classificou as duas frases novas corretamente mesmo sem nunca ter "
+           "visto exatamente essas combinações de palavras. Por que a suposição de "
+           "independência entre palavras não estragou a classificação?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Porque para **decidir a classe** basta que a soma (em log) das evidências de "
+           "cada palavra aponte para o lado certo — não é preciso que a probabilidade "
+           "estimada seja exata. Palavras como \"gol\"/\"jogo\" empurram forte para "
+           "\"esporte\" e \"inteligencia\"/\"maquina\" para \"tecnologia\"; mesmo tratando "
+           "as palavras como independentes (o que ignora que \"inteligencia\" e "
+           "\"artificial\" andam juntas), a **ordem** entre as duas classes se mantém e a "
+           "decisão acerta.\n\n</details>"),
+    ]
+    escrever(nb, "03_classificacao/03_naive_bayes.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_svm():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Máquinas de vetores de suporte (SVM)\n\n"
+           "**Objetivo:** ver a margem e os vetores de suporte de uma SVM linear e, no "
+           "caso clássico dos dados 'em círculos', ver o **truque do kernel** (RBF) "
+           "resolver o que nenhuma reta consegue."),
+        code(PREAMBULO),
+        md("## 1. Dados não separáveis por uma reta\n\n"
+           "O `make_circles` gera um anel de uma classe em volta de um núcleo da outra: "
+           "não há reta que os separe."),
+        code('from sklearn.datasets import make_circles\n'
+             'from sklearn.svm import SVC\n\n'
+             'X, y = make_circles(n_samples=300, factor=0.4, noise=0.12, random_state=SEMENTE)\n'
+             'print("X:", X.shape, "| classes:", np.unique(y))\n\n'
+             'figura = go.Figure(go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers",\n'
+             '                              marker=dict(color=y, colorscale="Bluered", size=6)))\n'
+             'figura.update_layout(title="Dados em circulos: nenhuma reta separa",\n'
+             '                     height=380, margin=dict(l=10, r=10, t=50, b=10), showlegend=False)\n'
+             'figura.show()'),
+        md("## 2. SVM linear × SVM com kernel RBF\n\n"
+           "Treinamos as duas e comparamos a acurácia. A linear fracassa; a RBF, que "
+           "projeta os dados implicitamente para onde eles ficam separáveis, acerta."),
+        code('svm_linear = SVC(kernel="linear").fit(X, y)\n'
+             'svm_rbf = SVC(kernel="rbf", C=1.0, gamma=1.0).fit(X, y)\n'
+             'print("acuracia SVM linear:", round(svm_linear.score(X, y), 3))\n'
+             'print("acuracia SVM RBF:   ", round(svm_rbf.score(X, y), 3))\n'
+             'print("vetores de suporte da RBF:", svm_rbf.support_vectors_.shape[0], "de", len(X))'),
+        md("## 3. As fronteiras lado a lado\n\n"
+           "Pintamos a região prevista por cada modelo. A da SVM linear é um semiplano "
+           "(inútil aqui); a da RBF é um anel que envolve o núcleo. Os pontos maiores são "
+           "os **vetores de suporte** — os únicos que definem a fronteira."),
+        code('from plotly.subplots import make_subplots\n'
+             'passo = 0.03\n'
+             'gx, gy = np.meshgrid(np.arange(X[:, 0].min()-0.3, X[:, 0].max()+0.3, passo),\n'
+             '                     np.arange(X[:, 1].min()-0.3, X[:, 1].max()+0.3, passo))\n'
+             'grade = np.c_[gx.ravel(), gy.ravel()]\n\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("SVM linear", "SVM RBF"))\n'
+             'coluna = 1\n'
+             'for modelo in [svm_linear, svm_rbf]:\n'
+             '    zz = modelo.predict(grade).reshape(gx.shape)\n'
+             '    figura.add_trace(go.Heatmap(x=gx[0], y=gy[:, 0], z=zz, showscale=False,\n'
+             '                                colorscale="Bluered", opacity=0.3), row=1, col=coluna)\n'
+             '    figura.add_trace(go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers",\n'
+             '                                marker=dict(color=y, colorscale="Bluered", size=5),\n'
+             '                                showlegend=False), row=1, col=coluna)\n'
+             '    sv = modelo.support_vectors_\n'
+             '    figura.add_trace(go.Scatter(x=sv[:, 0], y=sv[:, 1], mode="markers",\n'
+             '                                marker=dict(color="rgba(0,0,0,0)", size=11,\n'
+             '                                            line=dict(width=1.5, color=VERDE)),\n'
+             '                                showlegend=False), row=1, col=coluna)\n'
+             '    coluna += 1\n'
+             'figura.update_layout(title="Fronteiras: linear falha, RBF resolve (vetores de suporte em verde)",\n'
+             '                     height=400, margin=dict(l=10, r=10, t=60, b=10))\n'
+             'figura.show()'),
+        md("## 4. O efeito de C e γ\n\n"
+           "Varremos alguns valores de $\\gamma$ (mantendo $C$) e medimos a acurácia de "
+           "validação cruzada. $\\gamma$ grande demais memoriza (overfitting); pequeno "
+           "demais suaviza a ponto de perder o anel."),
+        code('from sklearn.model_selection import cross_val_score\n\n'
+             'for gamma in [0.1, 1.0, 10.0, 100.0]:\n'
+             '    modelo = SVC(kernel="rbf", C=1.0, gamma=gamma)\n'
+             '    ac = cross_val_score(modelo, X, y, cv=5).mean()\n'
+             '    ac_treino = modelo.fit(X, y).score(X, y)\n'
+             '    print("gamma =", str(gamma).rjust(5),\n'
+             '          "| treino", round(ac_treino, 3), "| validacao CV", round(ac, 3))'),
+        md("## Exercício\n\n"
+           "Na varredura acima, para qual $\\gamma$ a acurácia de treino é altíssima mas "
+           "a de validação cai? Como esse padrão se chama e como corrigi-lo?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Para o $\\gamma$ **mais alto** (100): o treino fica quase perfeito enquanto a "
+           "validação cruzada cai. É **overfitting** — cada ponto vira uma bolha da sua "
+           "classe, memorizando o treino sem capturar o anel real. Corrige-se **reduzindo "
+           "$\\gamma$** (e escolhendo $C$ e $\\gamma$ por validação cruzada, por exemplo "
+           "com `GridSearchCV`).\n\n</details>"),
+    ]
+    escrever(nb, "03_classificacao/04_svm.ipynb")
+
+
 CONSTRUTORES = [
     nb_ferramentas,
     nb_reg_linear,
@@ -681,6 +1002,10 @@ CONSTRUTORES = [
     nb_reg_polinomial,
     nb_regularizacao,
     nb_reg_logistica,
+    nb_knn,
+    nb_arvores,
+    nb_naive_bayes,
+    nb_svm,
 ]
 
 if __name__ == "__main__":
