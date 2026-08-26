@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aprendizado de Máquina · XII EMMSB 2026</title>
+<meta name="description" content="Códigos do minicurso Conceitos e Aplicações de Aprendizado de Máquina — XII Escola de Modelagem Molecular em Sistemas Biológicos, 2026.">
+<link rel="icon" type="image/svg+xml" href="assets/emmsb-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal:        #149fb8;
+    --teal-dark:   #0f7e93;
+    --lilac:       #a07dba;
+    --purple:      #8660a0;
+    --purple-dark: #5c406e;
+    --ink:         #2c2440;
+    --muted:       #6d6480;
+    --bg:          #f7f4fb;
+    --bg-soft:     #efe9f6;
+    --paper:       #ffffff;
+    --line:        #e6ddf0;
+    --shadow:      0 1px 2px rgba(44,36,64,.04), 0 8px 24px rgba(92,64,110,.07);
+    --shadow-hover:0 2px 4px rgba(44,36,64,.05), 0 14px 34px rgba(92,64,110,.14);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #ece4f7 0%, transparent 55%),
+      radial-gradient(1000px 520px at 100% 0%, #e2f3f6 0%, transparent 50%),
+      var(--bg);
+    background-attachment: fixed;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- cabeçalho ---- */
+  header { padding: 64px 0 8px; text-align: center; }
+  .logo { max-width: 460px; width: 78%; height: auto; }
+
+  .eyebrow {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.35rem;
+    color: var(--teal);
+    margin-top: 26px;
+    letter-spacing: .3px;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 4.4vw, 2.7rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+    margin: 8px auto 0;
+    max-width: 15ch;
+    background: linear-gradient(92deg, var(--purple-dark), var(--purple) 55%, var(--teal));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lead {
+    max-width: 60ch;
+    margin: 22px auto 0;
+    font-size: 1.09rem;
+    color: var(--muted);
+  }
+
+  .byline {
+    margin: 26px auto 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 18px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.7);
+    border-radius: 999px;
+    font-size: .92rem;
+    color: var(--purple-dark);
+    box-shadow: var(--shadow);
+  }
+  .byline b { font-weight: 600; }
+  .byline .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lilac); }
+
+  .rule {
+    width: 60px; height: 4px; border-radius: 3px;
+    margin: 44px auto 0;
+    background: linear-gradient(90deg, var(--lilac), var(--teal));
+  }
+
+  /* ---- seção de cards ---- */
+  .section-head { text-align: center; margin: 52px 0 4px; }
+  .section-head h2 {
+    font-size: 1.34rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em;
+  }
+  .section-head p { color: var(--muted); font-size: .96rem; margin-top: 4px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-top: 26px;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px 24px 22px;
+    box-shadow: var(--shadow);
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: var(--accent, var(--lilac));
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); border-color: #d8cbe8; }
+
+  .card .icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: var(--accent-soft, #efe7f6);
+    color: var(--accent, var(--purple));
+    margin-bottom: 16px;
+  }
+  .card .icon svg { width: 24px; height: 24px; }
+
+  .card .tag {
+    font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--accent, var(--purple));
+  }
+  .card h3 { font-size: 1.16rem; font-weight: 700; margin: 3px 0 8px; letter-spacing: -.01em; }
+  .card p.desc { font-size: .935rem; color: var(--muted); flex: 1; }
+
+  .colab {
+    display: inline-flex; align-items: center; gap: 9px;
+    margin-top: 18px; align-self: flex-start;
+    padding: 9px 16px; border-radius: 9px;
+    font-size: .86rem; font-weight: 600; text-decoration: none;
+    color: #fff; background: var(--accent, var(--purple));
+    transition: filter .15s ease;
+  }
+  .colab:hover { filter: brightness(1.07); }
+  .colab svg { width: 17px; height: 17px; }
+
+  /* ---- card em destaque (aula ChEMBL) ---- */
+  .featured {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 28px;
+    --accent: var(--teal);
+    --accent-soft: #e0f2f5;
+    padding: 30px 30px;
+  }
+  .featured .icon { width: 58px; height: 58px; flex: none; }
+  .featured .icon svg { width: 30px; height: 30px; }
+  .featured .body { flex: 1; }
+  .featured h3 { font-size: 1.28rem; }
+  .featured .colab { margin-top: 0; flex: none; }
+  .featured .cta-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: .86rem;
+    margin: 64px 0 48px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+  }
+  footer a { color: var(--purple); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    header { padding-top: 44px; }
+    .grid { grid-template-columns: 1fr; }
+    .featured { flex-direction: column; align-items: flex-start; text-align: left; }
+    .featured .cta-col { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img class="logo" src="assets/emmsb-logo.png" alt="XII EMMSB 2026 — Escola de Modelagem Molecular de Sistemas Biológicos">
+    <p class="eyebrow">minicurso · 2026</p>
+    <h1>Conceitos e Aplicações de Aprendizado de Máquina</h1>
+    <p class="lead">
+      Códigos utilizados no minicurso oferecido na <b>XII Escola de Modelagem
+      Molecular em Sistemas Biológicos</b> — 2026.
+    </p>
+    <div class="byline">
+      Material elaborado por <b>Eduardo Krempser</b> <span class="dot"></span> <b>Pedro Torres</b>
+    </div>
+    <div class="rule"></div>
+  </header>
+
+  <section>
+    <div class="section-head">
+      <h2>Notebooks do minicurso</h2>
+      <p>Abra cada um no Google Colab — roda no navegador, sem instalar nada.</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- Polinômio -->
+      <article class="card" style="--accent:#8660a0; --accent-soft:#efe7f6;">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M4 16c3-9 6-11 8-11s2 12 8 3"/></svg>
+        </div>
+        <span class="tag">Regressão</span>
+        <h3>Ajuste polinomial e sobreajuste</h3>
+        <p class="desc">
+          Ajusta polinômios de graus crescentes a poucos pontos e compara o erro
+          de treino com o de teste: a intuição de <i>underfitting</i> × <i>overfitting</i>
+          em um só gráfico.
+        </p>
+        <a class="colab" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/xiiemmsb/Polinomio.ipynb" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 12a3 3 0 0 1 3-3 3 3 0 0 1 2.1.9l2.1 2.1-2.1 2.1a3 3 0 0 1-2.1.9 3 3 0 0 1-3-3zm-2.1 0a5.1 5.1 0 0 0 5.1 5.1 5.1 5.1 0 0 0 3.6-1.5L12 14.1l-1.5-1.5-.9.9a2.9 2.9 0 0 1-2.1.9A2.4 2.4 0 0 1 4.5 12z"/><circle cx="16.5" cy="12" r="4.2"/></svg>
+          Abrir no Colab
+        </a>
+      </article>
+
+      <!-- Árvores de Decisão -->
+      <article class="card" style="--accent:#8660a0; --accent-soft:#efe7f6;">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M12 7.4v3.1M12 10.5 6.6 15.7M12 10.5l5.4 5.2"/></svg>
+        </div>
+        <span class="tag">Classificação</span>
+        <h3>Árvores de Decisão</h3>
+        <p class="desc">
+          Treina uma árvore de decisão para separar as três espécies do conjunto
+          Iris e desenha a árvore aprendida — cada divisão é uma pergunta sobre
+          uma medida da flor.
+        </p>
+        <a class="colab" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/xiiemmsb/Arvores_de_Decisao.ipynb" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 12a3 3 0 0 1 3-3 3 3 0 0 1 2.1.9l2.1 2.1-2.1 2.1a3 3 0 0 1-2.1.9 3 3 0 0 1-3-3zm-2.1 0a5.1 5.1 0 0 0 5.1 5.1 5.1 5.1 0 0 0 3.6-1.5L12 14.1l-1.5-1.5-.9.9a2.9 2.9 0 0 1-2.1.9A2.4 2.4 0 0 1 4.5 12z"/><circle cx="16.5" cy="12" r="4.2"/></svg>
+          Abrir no Colab
+        </a>
+      </article>
+
+      <!-- Random Forest -->
+      <article class="card" style="--accent:#8660a0; --accent-soft:#efe7f6;">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21v-5M6 16l-2.4-2.4M6 16l2.4-2.4M6 12V9M12 21v-7M12 14l-2.6-2.6M12 14l2.6-2.6M18 21v-5M18 16l-2.4-2.4M18 16l2.4-2.4M18 12V9"/></svg>
+        </div>
+        <span class="tag">Ensemble</span>
+        <h3>Random Forest</h3>
+        <p class="desc">
+          Combina cem árvores em uma floresta aleatória sobre o Iris e ranqueia a
+          importância de cada atributo — pétala e sépala, comprimento e largura.
+        </p>
+        <a class="colab" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/xiiemmsb/Random_Forest.ipynb" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 12a3 3 0 0 1 3-3 3 3 0 0 1 2.1.9l2.1 2.1-2.1 2.1a3 3 0 0 1-2.1.9 3 3 0 0 1-3-3zm-2.1 0a5.1 5.1 0 0 0 5.1 5.1 5.1 5.1 0 0 0 3.6-1.5L12 14.1l-1.5-1.5-.9.9a2.9 2.9 0 0 1-2.1.9A2.4 2.4 0 0 1 4.5 12z"/><circle cx="16.5" cy="12" r="4.2"/></svg>
+          Abrir no Colab
+        </a>
+      </article>
+
+      <!-- K-Means -->
+      <article class="card" style="--accent:#8660a0; --accent-soft:#efe7f6;">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="7" r="2"/><circle cx="5" cy="12.5" r="2"/><circle cx="17.5" cy="8" r="2"/><circle cx="18" cy="14" r="2"/><circle cx="11" cy="18" r="2"/><path d="M8.4 7.6 15.6 8M6.7 11.4 16 13.4M7 13.5l3.4 3.4"/></svg>
+        </div>
+        <span class="tag">Não supervisionado</span>
+        <h3>K-Means</h3>
+        <p class="desc">
+          Agrupa as flores <i>sem</i> usar os rótulos, encontra os centroides e usa
+          o método do cotovelo (<i>elbow</i>) para decidir quantos grupos existem.
+        </p>
+        <a class="colab" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/xiiemmsb/KMeans.ipynb" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 12a3 3 0 0 1 3-3 3 3 0 0 1 2.1.9l2.1 2.1-2.1 2.1a3 3 0 0 1-2.1.9 3 3 0 0 1-3-3zm-2.1 0a5.1 5.1 0 0 0 5.1 5.1 5.1 5.1 0 0 0 3.6-1.5L12 14.1l-1.5-1.5-.9.9a2.9 2.9 0 0 1-2.1.9A2.4 2.4 0 0 1 4.5 12z"/><circle cx="16.5" cy="12" r="4.2"/></svg>
+          Abrir no Colab
+        </a>
+      </article>
+
+      <!-- Aula prática ChEMBL (destaque) -->
+      <article class="card featured">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="17" cy="17" r="2"/><path d="M7.7 6.5 16 7M7.4 13.6 6.4 8M10.6 14.2 15.4 16M10.8 15.8 8 6"/></svg>
+        </div>
+        <div class="body">
+          <span class="tag">Material complementar · bioinformática</span>
+          <h3>Aula prática — Inibidores de AChE (ChEMBL)</h3>
+          <p class="desc">
+            Um estudo de caso completo: do dado bruto do ChEMBL a um classificador
+            que rotula moléculas como <b>FORTE</b> ou <b>FRACO</b> — ou se <b>abstém</b> quando
+            não tem base. Curadoria, descritores e fingerprints, partição por
+            esqueleto, comparação de modelos e domínio de aplicabilidade.
+          </p>
+        </div>
+        <div class="cta-col">
+          <a class="colab" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/08_aula_bioinfo/aula.ipynb" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 12a3 3 0 0 1 3-3 3 3 0 0 1 2.1.9l2.1 2.1-2.1 2.1a3 3 0 0 1-2.1.9 3 3 0 0 1-3-3zm-2.1 0a5.1 5.1 0 0 0 5.1 5.1 5.1 5.1 0 0 0 3.6-1.5L12 14.1l-1.5-1.5-.9.9a2.9 2.9 0 0 1-2.1.9A2.4 2.4 0 0 1 4.5 12z"/><circle cx="16.5" cy="12" r="4.2"/></svg>
+            Abrir no Colab
+          </a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <footer>
+    XII Escola de Modelagem Molecular em Sistemas Biológicos · 2026 &nbsp;·&nbsp;
+    <a href="https://www.emmsb.lncc.br/" target="_blank" rel="noopener">emmsb.lncc.br</a>
+  </footer>
+
+</div>
+</body>
+</html>
