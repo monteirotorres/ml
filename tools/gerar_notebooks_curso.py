@@ -995,6 +995,311 @@ def nb_svm():
     escrever(nb, "03_classificacao/04_svm.ipynb")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+def nb_random_forest():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Bagging e Random Forests\n\n"
+           "**Objetivo:** ver a acurácia crescer e estabilizar com o número de árvores, "
+           "comparar a floresta com uma árvore isolada e ler a importância das "
+           "variáveis."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.ensemble import RandomForestClassifier\n'
+             'from sklearn.tree import DecisionTreeClassifier\n\n'
+             'dados = load_breast_cancer()\n'
+             'X, y = dados.data, dados.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             'print("treino:", X_tr.shape, "| preditores:", X.shape[1])'),
+        md("## 1. Uma árvore × uma floresta\n\n"
+           "A árvore isolada tem variância alta; a floresta (bagging + aleatoriedade "
+           "nas variáveis) estabiliza."),
+        code('arvore = DecisionTreeClassifier(random_state=SEMENTE).fit(X_tr, y_tr)\n'
+             'floresta = RandomForestClassifier(n_estimators=300, random_state=SEMENTE).fit(X_tr, y_tr)\n'
+             'print("acuracia da arvore isolada:", round(arvore.score(X_te, y_te), 3))\n'
+             'print("acuracia da floresta (300):", round(floresta.score(X_te, y_te), 3))'),
+        md("## 2. Acurácia × número de árvores\n\n"
+           "A acurácia sobe rápido com as primeiras árvores e depois estabiliza — "
+           "acrescentar árvores **não** causa overfitting (só custa tempo)."),
+        code('numeros = [1, 2, 5, 10, 25, 50, 100, 200, 400]\n'
+             'acuracias = []\n'
+             'for n in numeros:\n'
+             '    modelo = RandomForestClassifier(n_estimators=n, random_state=SEMENTE)\n'
+             '    modelo.fit(X_tr, y_tr)\n'
+             '    acuracias.append(modelo.score(X_te, y_te))\n'
+             '    print("arvores", str(n).rjust(3), "-> acuracia", round(acuracias[-1], 3))\n\n'
+             'figura = go.Figure(go.Scatter(x=numeros, y=acuracias, mode="lines+markers",\n'
+             '                              line=dict(color=AZUL)))\n'
+             'figura.update_layout(title="Acuracia vs numero de arvores (bagging estabiliza)",\n'
+             '                     xaxis_title="n_estimators", yaxis_title="acuracia", height=340,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. Importância das variáveis\n\n"
+           "A floresta entrega, de graça, um ranking de quais preditores mais reduzem "
+           "a impureza. Mostramos os dez maiores."),
+        code('importancias = floresta.feature_importances_\n'
+             'ordem = np.argsort(importancias)[::-1][:10]\n'
+             'nomes_top = [dados.feature_names[j] for j in ordem]\n'
+             'valores_top = importancias[ordem]\n'
+             'for nome, val in zip(nomes_top, valores_top):\n'
+             '    print(nome.ljust(24), round(val, 3))\n\n'
+             'figura = go.Figure(go.Bar(x=valores_top[::-1], y=nomes_top[::-1], orientation="h",\n'
+             '                          marker_color=VERDE))\n'
+             'figura.update_layout(title="Importancia das variaveis (top 10)",\n'
+             '                     xaxis_title="importancia", height=380,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Compare a acurácia da árvore isolada com a da floresta de 300 árvores. O "
+           "ganho vem de reduzir viés ou variância? Justifique."),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Vem de reduzir **variância**. A árvore isolada e a floresta têm o mesmo tipo "
+           "de modelo de base (árvores), com viés parecido; o que a floresta faz é tirar "
+           "a **média** de muitas árvores decorrelacionadas, o que reduz a variância do "
+           "conjunto — daí a acurácia mais alta e estável. Não muda a natureza do viés, "
+           "estabiliza a variância.\n\n</details>"),
+    ]
+    escrever(nb, "04_ensembles/01_random_forest.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_gradient_boosting():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Gradient Boosting\n\n"
+           "**Objetivo:** construir o boosting **à mão** num problema 1D — árvores rasas "
+           "ajustadas aos resíduos, um estágio por vez — e depois ver o efeito da taxa "
+           "de aprendizado e do número de estágios com o `GradientBoostingClassifier`."),
+        code(PREAMBULO),
+        md("## 1. Boosting à mão: ajustar os resíduos\n\n"
+           "Começamos prevendo a média de `y`. A cada estágio, uma árvore rasa (um "
+           "toco, `max_depth=1`) aprende o **resíduo** que sobrou, e somamos uma fração "
+           "`nu` dela ao modelo. Laço explícito, sem caixa-preta."),
+        code('from sklearn.tree import DecisionTreeRegressor\n\n'
+             'x = np.linspace(0, 1, 60)\n'
+             'y = np.sin(2 * np.pi * x) + np.random.normal(0, 0.15, size=x.shape)\n'
+             'X = x.reshape(-1, 1)\n\n'
+             'nu = 0.3\n'
+             'F = np.full_like(y, y.mean())      # previsao inicial: a media\n'
+             'arvores = []\n'
+             'erros = []\n'
+             'for estagio in range(40):\n'
+             '    residuo = y - F                # o que ainda falta\n'
+             '    toco = DecisionTreeRegressor(max_depth=1).fit(X, residuo)\n'
+             '    F = F + nu * toco.predict(X)    # incorpora uma fracao da nova arvore\n'
+             '    arvores.append(toco)\n'
+             '    erros.append(np.mean((y - F) ** 2))\n'
+             'print("erro (MSE) apos 1 estagio: ", round(erros[0], 3))\n'
+             'print("erro (MSE) apos 40 estagios:", round(erros[-1], 3))'),
+        md("## 2. O modelo tomando forma\n\n"
+           "Mostramos a previsão acumulada após 1, 5 e 40 estágios: de quase uma reta a "
+           "uma boa aproximação da curva verdadeira."),
+        code('grade = np.linspace(0, 1, 200).reshape(-1, 1)\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Scatter(x=x, y=y, mode="markers",\n'
+             '                            marker=dict(color=SUAVE, size=5), name="dados"))\n'
+             'figura.add_trace(go.Scatter(x=grade.ravel(), y=np.sin(2*np.pi*grade.ravel()),\n'
+             '                            mode="lines", line=dict(color=TINTA, dash="dash"), name="verdade"))\n'
+             'for n_estagios in [1, 5, 40]:\n'
+             '    pred = np.full(grade.shape[0], y.mean())\n'
+             '    for toco in arvores[:n_estagios]:\n'
+             '        pred = pred + nu * toco.predict(grade)\n'
+             '    figura.add_trace(go.Scatter(x=grade.ravel(), y=pred, mode="lines",\n'
+             '                                name=f"{n_estagios} estagios"))\n'
+             'figura.update_layout(title="Boosting a mao: o modelo se aproxima estagio a estagio",\n'
+             '                     height=400, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. Taxa de aprendizado e número de estágios\n\n"
+           "Agora com o `GradientBoostingClassifier` do scikit-learn, num problema de "
+           "classificação. O `staged_predict` dá a previsão após cada estágio, então "
+           "vemos o erro de treino e de teste em função do número de árvores, para duas "
+           "taxas de aprendizado."),
+        code('from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.ensemble import GradientBoostingClassifier\n\n'
+             'dados = load_breast_cancer()\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(dados.data, dados.target,\n'
+             '                                          test_size=0.3, random_state=SEMENTE, stratify=dados.target)\n\n'
+             'figura = go.Figure()\n'
+             'for taxa, cor in [(0.1, AZUL), (1.0, VERMELHO)]:\n'
+             '    modelo = GradientBoostingClassifier(n_estimators=200, learning_rate=taxa,\n'
+             '                                        max_depth=2, random_state=SEMENTE)\n'
+             '    modelo.fit(X_tr, y_tr)\n'
+             '    erro_teste = []\n'
+             '    for previsto in modelo.staged_predict(X_te):\n'
+             '        erro_teste.append(1 - np.mean(previsto == y_te))\n'
+             '    figura.add_trace(go.Scatter(y=erro_teste, mode="lines",\n'
+             '                                line=dict(color=cor), name=f"taxa {taxa}"))\n'
+             '    print("taxa", taxa, "-> menor erro de teste:", round(min(erro_teste), 3),\n'
+             '          "no estagio", int(np.argmin(erro_teste)) + 1)\n'
+             'figura.update_layout(title="Erro de teste vs numero de estagios, por taxa de aprendizado",\n'
+             '                     xaxis_title="estagios", yaxis_title="erro de teste", height=360,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Na figura do item 3, a taxa 1.0 atinge o menor erro mais cedo, mas costuma "
+           "ficar mais irregular; a taxa 0.1 desce devagar e suave. Qual você usaria em "
+           "produção e por quê?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Em geral a **taxa menor (0,1)**, com mais estágios e *early stopping*. Passos "
+           "pequenos regularizam (o *shrinkage*), dando uma curva de erro mais suave e "
+           "estável e, tipicamente, melhor generalização. A taxa 1,0 chega rápido mas é "
+           "sensível a ruído e pode passar do ponto. Troca-se um pouco de tempo de treino "
+           "por robustez.\n\n</details>"),
+    ]
+    escrever(nb, "04_ensembles/02_gradient_boosting.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_xgboost():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# XGBoost e LightGBM\n\n"
+           "**Objetivo:** usar o `HistGradientBoostingClassifier` do scikit-learn — o "
+           "mesmo estilo de boosting por histogramas do LightGBM, disponível sem instalar "
+           "nada — para ver *early stopping* e regularização, e comparar (opcionalmente) "
+           "com o XGBoost de verdade."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.ensemble import HistGradientBoostingClassifier\n'
+             'import time\n\n'
+             'dados = load_breast_cancer()\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(dados.data, dados.target,\n'
+             '                                          test_size=0.3, random_state=SEMENTE, stratify=dados.target)\n'
+             'print("treino:", X_tr.shape)'),
+        md("## 1. Early stopping: quantas árvores bastam?\n\n"
+           "Com `early_stopping=True`, o modelo separa uma fração de validação e **para "
+           "sozinho** quando o erro de validação deixa de melhorar — em vez de fixar o "
+           "número de árvores no chute."),
+        code('inicio = time.time()\n'
+             'modelo = HistGradientBoostingClassifier(learning_rate=0.1, max_iter=500,\n'
+             '                                        early_stopping=True, validation_fraction=0.2,\n'
+             '                                        n_iter_no_change=15, random_state=SEMENTE)\n'
+             'modelo.fit(X_tr, y_tr)\n'
+             'print("acuracia no teste:", round(modelo.score(X_te, y_te), 3))\n'
+             'print("arvores efetivamente usadas (parou sozinho):", modelo.n_iter_, "de 500 possiveis")\n'
+             'print("tempo de treino:", round(time.time() - inicio, 2), "s")'),
+        md("## 2. Regularização via profundidade das folhas\n\n"
+           "Limitar `max_leaf_nodes` regulariza (árvores menores, menos overfitting). "
+           "Varremos alguns valores e comparamos treino × teste."),
+        code('for folhas in [3, 7, 15, 31, 63]:\n'
+             '    m = HistGradientBoostingClassifier(learning_rate=0.1, max_iter=200,\n'
+             '                                       max_leaf_nodes=folhas, random_state=SEMENTE)\n'
+             '    m.fit(X_tr, y_tr)\n'
+             '    print("max_leaf_nodes", str(folhas).rjust(2),\n'
+             '          "| treino", round(m.score(X_tr, y_tr), 3),\n'
+             '          "| teste", round(m.score(X_te, y_te), 3))'),
+        md("## 3. (Opcional) XGBoost de verdade\n\n"
+           "Se o `xgboost` estiver disponível (no Colab, costuma estar), a célula abaixo "
+           "o treina e compara. Se não estiver, ela avisa e segue — o resto do notebook "
+           "não depende dele."),
+        code('try:\n'
+             '    from xgboost import XGBClassifier\n'
+             '    xgb = XGBClassifier(n_estimators=200, learning_rate=0.1, max_depth=3,\n'
+             '                        reg_lambda=1.0, eval_metric="logloss", random_state=SEMENTE)\n'
+             '    xgb.fit(X_tr, y_tr)\n'
+             '    print("acuracia XGBoost:", round(xgb.score(X_te, y_te), 3))\n'
+             'except Exception as erro:\n'
+             '    print("xgboost nao disponivel neste ambiente — pulando.")\n'
+             '    print("para instalar no Colab: !pip install xgboost")\n'
+             '    print("detalhe:", type(erro).__name__)'),
+        md("## Exercício\n\n"
+           "Na varredura do item 2, o que acontece com a diferença entre acurácia de "
+           "treino e de teste conforme `max_leaf_nodes` aumenta? Como isso se relaciona "
+           "com a regularização?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Neste conjunto a acurácia de **treino** já satura em ~100% mesmo com poucas "
+           "folhas; o que muda é o **teste**, melhor com folhas intermediárias (7–15) e "
+           "que **cai um pouco** para árvores maiores. Ou seja, capacidade extra não "
+           "ajuda o teste e pode piorá-lo (overfitting): o *gap* entre treino e teste só "
+           "aumenta. Limitar as folhas é **regularizar** — árvores menores generalizam "
+           "melhor, exatamente o papel do termo de penalidade do XGBoost.\n\n</details>"),
+    ]
+    escrever(nb, "04_ensembles/03_xgboost.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_stacking():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Stacking e combinação de modelos\n\n"
+           "**Objetivo:** combinar três modelos diferentes por soft voting e por "
+           "stacking, e comparar a acurácia da combinação com a de cada modelo isolado."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.model_selection import train_test_split, cross_val_score\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.svm import SVC\n'
+             'from sklearn.ensemble import RandomForestClassifier\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.pipeline import make_pipeline\n\n'
+             'dados = load_breast_cancer()\n'
+             'X, y = dados.data, dados.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)'),
+        md("## 1. Três modelos de base diferentes\n\n"
+           "Uma regressão logística, uma SVM (com probabilidade) e uma floresta. São "
+           "modelos de naturezas distintas — a diversidade é o que faz a combinação "
+           "valer a pena."),
+        code('base = {\n'
+             '    "Regressao logistica": make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000)),\n'
+             '    "SVM (RBF)":           make_pipeline(StandardScaler(), SVC(probability=True, random_state=SEMENTE)),\n'
+             '    "Floresta":            RandomForestClassifier(n_estimators=200, random_state=SEMENTE),\n'
+             '}\n'
+             'for nome, m in base.items():\n'
+             '    m.fit(X_tr, y_tr)\n'
+             '    print(nome.ljust(22), "acuracia:", round(m.score(X_te, y_te), 3))'),
+        md("## 2. Soft voting e stacking\n\n"
+           "O `VotingClassifier` (soft) faz a **média das probabilidades**. O "
+           "`StackingClassifier` treina um **meta-modelo** (uma regressão logística) "
+           "sobre as previsões dos três — usando previsões out-of-fold para não vazar."),
+        code('from sklearn.ensemble import VotingClassifier, StackingClassifier\n\n'
+             'estimadores = [\n'
+             '    ("lr", make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000))),\n'
+             '    ("svm", make_pipeline(StandardScaler(), SVC(probability=True, random_state=SEMENTE))),\n'
+             '    ("rf", RandomForestClassifier(n_estimators=200, random_state=SEMENTE)),\n'
+             ']\n\n'
+             'votacao = VotingClassifier(estimators=estimadores, voting="soft")\n'
+             'votacao.fit(X_tr, y_tr)\n'
+             'print("soft voting  -> acuracia:", round(votacao.score(X_te, y_te), 3))\n\n'
+             'empilhado = StackingClassifier(estimators=estimadores,\n'
+             '                               final_estimator=LogisticRegression(max_iter=5000), cv=5)\n'
+             'empilhado.fit(X_tr, y_tr)\n'
+             'print("stacking     -> acuracia:", round(empilhado.score(X_te, y_te), 3))'),
+        md("## 3. Comparação final\n\n"
+           "Colocamos tudo lado a lado — e o resultado é honesto: quando um modelo de "
+           "base já é muito forte (aqui, a regressão logística), a combinação fica "
+           "**competitiva, mas pode não superá-lo**. O ganho do stacking aparece quando "
+           "**nenhum** modelo domina sozinho; misturar não é mágica."),
+        code('nomes = []\n'
+             'valores = []\n'
+             'for nome, m in base.items():\n'
+             '    nomes.append(nome); valores.append(m.score(X_te, y_te))\n'
+             'nomes += ["Soft voting", "Stacking"]\n'
+             'valores += [votacao.score(X_te, y_te), empilhado.score(X_te, y_te)]\n\n'
+             'cores = [SUAVE, SUAVE, SUAVE, AZUL, VERDE]\n'
+             'figura = go.Figure(go.Bar(x=valores, y=nomes, orientation="h", marker_color=cores,\n'
+             '                          text=[round(v, 3) for v in valores], textposition="outside"))\n'
+             'figura.update_layout(title="Modelos de base x combinacoes",\n'
+             '                     xaxis_title="acuracia no teste", xaxis_range=[0.9, 1.0],\n'
+             '                     height=360, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Se os três modelos de base tivessem exatamente a mesma acurácia **e** "
+           "errassem sempre nos mesmos exemplos, o que aconteceria com o soft voting?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "O soft voting **não ganharia nada**: a média de probabilidades de modelos que "
+           "erram nos mesmos casos continua errando nesses casos. O benefício da "
+           "combinação vem da **diversidade** — modelos que falham em exemplos diferentes, "
+           "de modo que a média cancela erros individuais. Sem diversidade, votar apenas "
+           "reproduz os mesmos acertos e erros.\n\n</details>"),
+    ]
+    escrever(nb, "04_ensembles/04_stacking.ipynb")
+
+
 CONSTRUTORES = [
     nb_ferramentas,
     nb_reg_linear,
@@ -1006,6 +1311,10 @@ CONSTRUTORES = [
     nb_arvores,
     nb_naive_bayes,
     nb_svm,
+    nb_random_forest,
+    nb_gradient_boosting,
+    nb_xgboost,
+    nb_stacking,
 ]
 
 if __name__ == "__main__":

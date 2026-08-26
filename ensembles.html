@@ -93,118 +93,418 @@
 <article id="04-ensembles-01-random-forest-md" class="topic">
 <div class="topic-num">4.1</div>
 <h1 class="topic-title">Bagging e Random Forests</h1>
-<p>Bagging (bootstrap aggregating) treina muitos modelos em reamostras dos dados e combina suas previsões, reduzindo a variância. A Random Forest aplica bagging a árvores de decisão, acrescentando aleatoriedade na escolha das variáveis de cada divisão.</p>
-<p>O resultado é um dos algoritmos mais robustos e usados na prática: pouca necessidade de ajuste, resistência a overfitting e uma medida natural de importância das variáveis. Aplicaremos a um problema de diagnóstico com muitos preditores.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Bootstrap e agregação</td>
-<td>por que a média reduz a variância</td>
-</tr>
-<tr>
-<td>Importância de variáveis</td>
-<td>ranqueamento de preditores</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/01_random_forest.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Uma árvore de decisão sozinha é instável: muda bastante se os dados mudam um
+pouco (variância alta). A ideia central deste capítulo é que <strong>muitos modelos
+instáveis, combinados, formam um modelo estável</strong>. O <em>bagging</em> e a <em>random forest</em>
+são a forma mais direta e robusta de fazer isso.</p>
+<h2>Bagging: a média conserta a variância</h2>
+<p><em>Bagging</em> é a sigla de <strong>bootstrap aggregating</strong>. A receita:</p>
+<ol>
+<li>gere $B$ <strong>reamostras bootstrap</strong> do conjunto de treino (amostragem com
+   reposição, cada uma do mesmo tamanho do original);</li>
+<li>treine uma árvore em cada reamostra;</li>
+<li><strong>combine</strong> as previsões — voto majoritário (classificação) ou média
+   (regressão).</li>
+</ol>
+<p>Por que funciona? A média de $B$ estimativas com variância $\sigma^2$ tem variância</p>
+<div class="math-display">$$
+\operatorname{Var}(\bar{f}) = \rho\,\sigma^2 + \frac{1-\rho}{B}\,\sigma^2
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\sigma^2$ é a <strong>variância de uma única árvore</strong>;</li>
+<li>$B$ é o <strong>número de árvores</strong>;</li>
+<li>$\rho$ é a <strong>correlação média entre as árvores</strong>;</li>
+<li>o segundo termo encolhe conforme $B$ cresce — mais árvores reduzem a variância.
+  Mas o primeiro termo, $\rho\sigma^2$, <strong>não</strong> depende de $B$: se as árvores forem
+  muito parecidas ($\rho$ alto), a média ajuda pouco. A lição: para o conjunto
+  ganhar, as árvores precisam ser <strong>diferentes</strong> umas das outras.</li>
+</ul>
+<h2>Random forest: forçando a diferença</h2>
+<p>A <strong>random forest</strong> é bagging de árvores com um tempero a mais para <strong>reduzir
+$\rho$</strong>: em cada divisão, a árvore só pode escolher entre um <strong>subconjunto
+aleatório</strong> das características (tipicamente $\sqrt{p}$ delas, onde $p$ é o número
+total de preditores). Isso impede que todas as árvores usem sempre a mesma
+variável dominante, tornando-as menos correlacionadas — e, pela fórmula acima, o
+conjunto fica ainda melhor.</p>
+<p>O widget abaixo ilustra a redução de variância: cada árvore individual (linhas
+finas) é um ajuste ruidoso; a média delas (linha grossa) é suave e estável. Aumente
+o número de árvores e veja a média se firmar.</p>
+<h2>Dois brindes da random forest</h2>
+<ul>
+<li><strong>Erro out-of-bag (OOB):</strong> cada árvore é treinada sem cerca de 1/3 dos exemplos
+  (os que ficaram de fora do seu bootstrap). Esses exemplos servem de validação
+  <strong>gratuita</strong> — dá para estimar o erro sem separar um conjunto de teste.</li>
+<li><strong>Importância das variáveis:</strong> medindo quanto cada variável reduz a impureza (ou
+  quanto o erro piora ao embaralhá-la), a floresta entrega um ranking natural de
+  quais preditores importam.</li>
+</ul>
+<p>Por tudo isso — robustez, pouco ajuste, resistência a overfitting — a random
+forest é um dos primeiros modelos a se tentar em dados tabulares.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_random_forest.ipynb</code> treina uma <code>RandomForestClassifier</code> no conjunto
+<strong>breast cancer</strong>, mostra a acurácia crescer e estabilizar com o número de árvores,
+compara com uma árvore isolada, calcula a <strong>importância das variáveis</strong> e a exibe
+com Plotly.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Pela fórmula da variância, por que aumentar o número de árvores $B$ para o
+infinito <strong>não</strong> zera a variância do conjunto?</p>
+<details><summary>Ver solução</summary>
 
+Porque o termo $\rho\sigma^2$ **não depende de $B$**: quando $B \to \infty$, o
+segundo termo $\frac{1-\rho}{B}\sigma^2$ vai a zero, mas sobra $\rho\sigma^2$. Ou
+seja, a variância do conjunto é limitada por baixo pela **correlação entre as
+árvores**. É exatamente por isso que a random forest injeta aleatoriedade nas
+variáveis: para reduzir $\rho$ e baixar esse piso.
+
+</details>
+
+<p><strong>2.</strong> Por que o erro OOB pode substituir uma validação cruzada na random forest?</p>
+<details><summary>Ver solução</summary>
+
+Cada exemplo ficou **de fora** do bootstrap de cerca de 1/3 das árvores; usando só
+essas árvores para prevê-lo, temos uma previsão em um exemplo que elas **não
+viram** — exatamente o que a validação faz. Agregando isso sobre todos os exemplos,
+o erro OOB é uma estimativa de generalização quase de graça, obtida durante o
+próprio treino, sem separar dados nem retreinar.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Breiman, L. (1996). <em>Bagging Predictors</em>. Machine Learning, 24, 123–140.</li>
+<li>Breiman, L. (2001). <em>Random Forests</em>. Machine Learning, 45, 5–32 — o artigo seminal.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 8. Livro aberto: https://www.statlearning.com/</li>
+</ul>
+<div class="widget" data-widget="wBagging" data-id="bag_4_1">
+  <div class="widget-title">Bagging — a média de muitas árvores reduz a variância</div>
+  <canvas id="bag_4_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de árvores (B)</span><input type="range" min="1" max="60" step="1" value="1" id="bag_4_1-b"><span class="ctrl-val" id="bag_4_1-b-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="bag_4_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Variabilidade da média</div><div class="sval" id="bag_4_1-var" style="color:#3266ad;">—</div><div class="sdesc">dispersão do modelo combinado</div></div>
+    <div class="stat-card"><div class="slabel">Efeito</div><div class="sval" id="bag_4_1-reg">—</div><div class="sdesc">o que B faz</div></div>
+  </div>
+</div>
 </article>
 <article id="04-ensembles-02-gradient-boosting-md" class="topic">
 <div class="topic-num">4.2</div>
 <h1 class="topic-title">Gradient Boosting</h1>
-<p>Boosting constrói modelos em sequência, cada um corrigindo os erros do anterior. No Gradient Boosting, cada nova árvore é ajustada aos resíduos (gradientes) do modelo acumulado, reduzindo o viés progressivamente.</p>
-<p>É a família por trás de muitos resultados campeões em competições com dados tabulares. Veremos a intuição do ajuste sequencial, o papel da taxa de aprendizado e o risco de overfitting quando há árvores demais.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Ajuste aos resíduos</td>
-<td>boosting passo a passo</td>
-</tr>
-<tr>
-<td>Taxa de aprendizado</td>
-<td>compromisso entre velocidade e overfitting</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/02_gradient_boosting.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>A random forest treina árvores <strong>em paralelo</strong> e tira a média. O <em>boosting</em> faz o
+oposto: treina árvores <strong>em sequência</strong>, cada uma consertando o que a anterior
+errou. Enquanto o bagging ataca a <strong>variância</strong>, o boosting ataca o <strong>viés</strong> —
+construindo, passo a passo, um modelo forte a partir de modelos fracos.</p>
+<h2>A ideia: corrigir os resíduos</h2>
+<p>Começamos com uma previsão grosseira (por exemplo, a média de $y$) e melhoramos em
+$M$ estágios. A cada estágio, uma nova árvore aprende <strong>o erro que ainda resta</strong>:</p>
+<div class="math-display">$$
+F_m(\mathbf{x}) = F_{m-1}(\mathbf{x}) + \nu \, h_m(\mathbf{x})
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$F_m$ é o <strong>modelo acumulado</strong> após $m$ estágios;</li>
+<li>$h_m$ é a <strong>nova árvore</strong> do estágio $m$, ajustada aos erros de $F_{m-1}$;</li>
+<li>$\nu$ (a letra grega <em>nu</em>) é a <strong>taxa de aprendizado</strong> ($0 < \nu \le 1$) — o
+  tamanho do passo, o quanto de cada nova árvore incorporamos.</li>
+</ul>
+<p>O que $h_m$ aprende? No <strong>gradient</strong> boosting, ela é ajustada ao <strong>gradiente
+negativo</strong> da função de perda em relação à previsão atual. Para a perda quadrática,
+esse gradiente negativo é simplesmente o <strong>resíduo</strong> $y_i - F_{m-1}(\mathbf{x}_i)$:
+cada árvore aprende, literalmente, o que falta. O nome "gradient" vem daí — é
+gradiente descendente, só que no espaço das funções.</p>
+<p>O widget abaixo mostra o processo em uma curva 1D: aumente o número de estágios e
+veja o modelo acumulado se aproximar dos dados, um pedacinho por vez; mude a taxa
+de aprendizado e observe o passo mudar de tamanho.</p>
+<h2>A taxa de aprendizado e o número de árvores</h2>
+<p>Esses dois hiperparâmetros andam de mãos dadas:</p>
+<ul>
+<li>$\nu$ <strong>pequeno</strong> (ex.: 0,1 ou menos) → cada árvore contribui pouco, o modelo
+  aprende devagar e com cuidado; costuma <strong>generalizar melhor</strong>, mas exige <strong>mais
+  árvores</strong>.</li>
+<li>$\nu$ <strong>grande</strong> → aprende rápido, com menos árvores, mas arrisca passar do ponto.</li>
+</ul>
+<p>E, ao contrário da random forest, <strong>mais árvores no boosting podem piorar</strong>: como
+cada árvore persegue os resíduos, um número excessivo acaba ajustando o <strong>ruído</strong>
+do treino. O número de estágios é, ele próprio, um regulador de overfitting — e se
+escolhe por validação (muitas vezes com <em>early stopping</em>, parando quando o erro de
+validação para de cair).</p>
+<h2>No notebook</h2>
+<p>O notebook <code>02_gradient_boosting.ipynb</code> constrói o boosting <strong>à mão</strong> num problema
+de regressão 1D — ajustando árvores rasas aos resíduos num laço explícito, para ver
+o modelo tomar forma — e depois usa o <code>GradientBoostingClassifier</code> do scikit-learn,
+mostrando o efeito da taxa de aprendizado e do número de estágios no erro de treino
+e de validação.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que, no gradient boosting com perda quadrática, dizer que a árvore
+"aprende o gradiente negativo" é o mesmo que dizer que ela "aprende os resíduos"?</p>
+<details><summary>Ver solução</summary>
 
+A perda quadrática de um exemplo é $\ell = \tfrac{1}{2}(y - F(\mathbf{x}))^2$. Sua
+derivada em relação à previsão $F$ é $\partial \ell / \partial F = -(y - F)$, então o
+**gradiente negativo** é $-(\partial \ell/\partial F) = y - F$, que é exatamente o
+**resíduo**. Ajustar a nova árvore ao gradiente negativo é, nesse caso, ajustá-la
+ao resíduo. (Para outras perdas, o gradiente negativo é uma versão generalizada do
+resíduo.)
+
+</details>
+
+<p><strong>2.</strong> Duas configurações dão o mesmo erro de treino: (A) $\nu = 0{,}5$ com 100
+árvores; (B) $\nu = 0{,}05$ com 1000 árvores. Qual tende a generalizar melhor, e por
+quê?</p>
+<details><summary>Ver solução</summary>
+
+Em geral a **(B)**: uma taxa de aprendizado menor, compensada por mais árvores, faz
+o modelo avançar em passos pequenos e cautelosos, o que costuma suavizar o ajuste e
+melhorar a generalização (é uma forma de regularização, o *shrinkage*). A (A) dá
+passos grandes e arrisca ajustar ruído. O custo da (B) é treinar mais árvores — o
+clássico compromisso entre desempenho e tempo de treino.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Freund, Y. &amp; Schapire, R. (1997). <em>A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting</em> (AdaBoost). Journal of Computer and System Sciences, 55(1), 119–139.</li>
+<li>Friedman, J. H. (2001). <em>Greedy Function Approximation: A Gradient Boosting Machine</em>. Annals of Statistics, 29(5), 1189–1232 — o artigo seminal.</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 10.</li>
+</ul>
+<div class="widget" data-widget="wBoosting" data-id="boost_4_2">
+  <div class="widget-title">Gradient boosting — árvores que corrigem resíduos</div>
+  <canvas id="boost_4_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de estágios (M)</span><input type="range" min="0" max="40" step="1" value="0" id="boost_4_2-m"><span class="ctrl-val" id="boost_4_2-m-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado ν</span><input type="range" min="0.05" max="1" step="0.05" value="0.3" id="boost_4_2-nu"><span class="ctrl-val" id="boost_4_2-nu-v">0.3</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="boost_4_2-err" style="color:#c0392b;">—</div><div class="sdesc">resíduo quadrático médio</div></div>
+    <div class="stat-card"><div class="slabel">Estágio</div><div class="sval" id="boost_4_2-reg">—</div><div class="sdesc">o modelo se aproxima</div></div>
+  </div>
+</div>
 </article>
 <article id="04-ensembles-03-xgboost-md" class="topic">
 <div class="topic-num">4.3</div>
 <h1 class="topic-title">XGBoost e LightGBM</h1>
-<p>XGBoost e LightGBM são implementações otimizadas de gradient boosting que dominam aplicações com dados tabulares. Elas adicionam regularização, tratamento nativo de valores faltantes e paralelização, ganhando velocidade e desempenho.</p>
-<p>Compararemos as duas bibliotecas, entenderemos os principais hiperparâmetros (profundidade, número de árvores, <code>learning_rate</code>, subamostragem) e discutiremos estratégias práticas de ajuste sem cair em overfitting.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/03_xgboost.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O gradient boosting do capítulo anterior é a ideia; <strong>XGBoost</strong> e <strong>LightGBM</strong> são
+as implementações que a levaram ao estado da arte em dados tabulares. Por anos,
+elas foram as ferramentas por trás da maioria das soluções vencedoras em
+competições com tabelas — e continuam sendo o padrão prático quando o dado não é
+imagem nem texto.</p>
+<h2>O que elas acrescentam</h2>
+<p>Sobre o gradient boosting clássico, essas bibliotecas trazem três ganhos:</p>
+<ul>
+<li><strong>Regularização explícita.</strong> A função objetivo penaliza a complexidade de cada
+  árvore, não só o erro:</li>
+</ul>
+<div class="math-display">$$
+\text{Obj} = \sum_{i=1}^{n} \ell\bigl(y_i, \hat{y}_i\bigr) \;+\; \sum_{k=1}^{K} \Omega(f_k)
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\ell(y_i, \hat{y}_i)$ é a <strong>perda</strong> no exemplo $i$ (o quanto a previsão erra);</li>
+<li>$f_k$ é a <strong>$k$-ésima árvore</strong> do conjunto e $K$ o total de árvores;</li>
+<li>
+<p>$\Omega(f_k)$ é a <strong>penalidade de complexidade</strong> da árvore (número de folhas e
+  tamanho dos pesos) — o mesmo espírito da regularização Ridge/Lasso, agora sobre
+  as árvores. É o que dá ao XGBoost sua resistência a overfitting.</p>
+</li>
+<li>
+<p><strong>Velocidade.</strong> Ambas constroem as árvores usando <strong>histogramas</strong> de valores (em
+  vez de testar todos os cortes possíveis), paralelizam e usam a memória com
+  esperteza. O LightGBM, em particular, cresce as árvores por folha (<em>leaf-wise</em>),
+  o que costuma ser mais rápido.</p>
+</li>
+<li>
+<p><strong>Praticidade.</strong> Tratam <strong>valores faltantes</strong> nativamente e trazem <em>early
+  stopping</em> embutido.</p>
+</li>
+</ul>
+<h2>Os hiperparâmetros que importam</h2>
+<p>Poucos parâmetros concentram quase todo o ajuste:</p>
 <table>
 <thead>
 <tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
+<th>Parâmetro</th>
+<th>O que controla</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>XGBoost × LightGBM</td>
-<td>diferenças de crescimento das árvores</td>
+<td><code>n_estimators</code></td>
+<td>número de árvores (estágios de boosting)</td>
 </tr>
 <tr>
-<td>Ajuste de hiperparâmetros</td>
-<td>grid e early stopping</td>
+<td><code>learning_rate</code></td>
+<td>a taxa $\nu$ — passo de cada árvore</td>
+</tr>
+<tr>
+<td><code>max_depth</code></td>
+<td>profundidade de cada árvore (complexidade)</td>
+</tr>
+<tr>
+<td><code>subsample</code></td>
+<td>fração das amostras usadas por árvore (aleatoriedade)</td>
+</tr>
+<tr>
+<td><code>colsample_bytree</code></td>
+<td>fração das colunas usadas por árvore</td>
+</tr>
+<tr>
+<td><code>reg_lambda</code> / <code>reg_alpha</code></td>
+<td>regularização $\ell_2$ / $\ell_1$</td>
 </tr>
 </tbody>
 </table>
+<p>A estratégia prática recomendada: fixar uma <code>learning_rate</code> pequena (0,05–0,1),
+usar <em>early stopping</em> para achar o número de árvores, e então ajustar <code>max_depth</code> e
+a subamostragem. Regularizar sempre — é o que separa um bom modelo de um
+sobreajustado.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_xgboost.ipynb</code> usa o <code>HistGradientBoostingClassifier</code> do
+scikit-learn — o mesmo estilo de boosting por histogramas, disponível sem instalar
+nada — para mostrar <em>early stopping</em> e o efeito da regularização, e traz uma célula
+<strong>opcional</strong> que instala e roda o XGBoost de verdade para quem quiser comparar.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que uma <code>learning_rate</code> menor quase sempre exige aumentar o
+<code>n_estimators</code>?</p>
+<details><summary>Ver solução</summary>
+
+Cada árvore contribui com um passo proporcional à `learning_rate`. Com passos
+menores, é preciso **mais passos** (mais árvores) para percorrer a mesma distância
+até um bom ajuste. Por isso os dois andam juntos: reduzir a taxa sem aumentar o
+número de árvores deixa o modelo **subajustado**, por não ter avançado o
+suficiente.
+
+</details>
+
+<p><strong>2.</strong> O termo $\Omega(f_k)$ na função objetivo penaliza árvores complexas. Que
+problema isso combate, e a que técnica do capítulo de regressão ele se assemelha?</p>
+<details><summary>Ver solução</summary>
+
+Combate o **overfitting**: sem penalizar a complexidade, o boosting tende a criar
+árvores cada vez mais elaboradas que ajustam o ruído do treino. O termo $\Omega$ é
+diretamente análogo à **regularização Ridge/Lasso** — adiciona ao objetivo um custo
+pelo "tamanho" do modelo (folhas e pesos), empurrando para soluções mais simples e
+que generalizam melhor.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Chen, T. &amp; Guestrin, C. (2016). <em>XGBoost: A Scalable Tree Boosting System</em>. KDD, 785–794.</li>
+<li>Ke, G. et al. (2017). <em>LightGBM: A Highly Efficient Gradient Boosting Decision Tree</em>. NeurIPS, 30.</li>
+<li>Friedman, J. H. (2001). <em>Greedy Function Approximation: A Gradient Boosting Machine</em>. Annals of Statistics, 29(5), 1189–1232.</li>
+</ul>
 
 </article>
 <article id="04-ensembles-04-stacking-md" class="topic">
 <div class="topic-num">4.4</div>
 <h1 class="topic-title">Stacking e combinação de modelos</h1>
-<p>Stacking combina modelos heterogêneos treinando um meta-modelo sobre as previsões dos modelos de base. Em vez de escolher o melhor algoritmo, aprendemos a melhor forma de misturá-los.</p>
-<p>Veremos a diferença entre voting (média/maioria) e stacking, como evitar vazamento de dados usando previsões out-of-fold e quando o esforço adicional compensa o ganho de desempenho.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Voting × stacking</td>
-<td>combinação simples vs. aprendida</td>
-</tr>
-<tr>
-<td>Previsões out-of-fold</td>
-<td>evitando vazamento no meta-modelo</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/04_stacking.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Até aqui combinamos muitos modelos <strong>do mesmo tipo</strong> (árvores). E se combinássemos
+modelos <strong>diferentes</strong> — uma regressão logística, uma SVM, uma floresta — para que
+as forças de um cobrissem as fraquezas do outro? É a ideia da combinação de
+modelos, cujo ápice é o <em>stacking</em>.</p>
+<h2>Voting: a combinação mais simples</h2>
+<p>O <strong>voting</strong> (votação) apenas junta as previsões de vários modelos de base:</p>
+<ul>
+<li><strong>hard voting</strong> — cada modelo dá um voto de classe; vence a maioria;</li>
+<li><strong>soft voting</strong> — faz-se a <strong>média das probabilidades</strong> previstas e escolhe-se a
+  classe de maior média (costuma ser melhor, por usar a confiança de cada modelo).</li>
+</ul>
+<p>Funciona bem quando os modelos são <strong>bons e diferentes</strong>: se erram em exemplos
+distintos, a média cancela erros individuais. Se todos erram nos mesmos casos,
+votar não ajuda.</p>
+<h2>Stacking: aprender a combinar</h2>
+<p>O <em>stacking</em> dá um passo além: em vez de uma regra fixa (média/maioria), ele
+<strong>aprende</strong> a melhor forma de combinar. A arquitetura tem dois níveis:</p>
+<ul>
+<li><strong>modelos de base</strong> (nível 0) — os vários modelos diferentes;</li>
+<li><strong>meta-modelo</strong> (nível 1) — um modelo simples (em geral uma regressão) que recebe
+  como entrada as <strong>previsões dos modelos de base</strong> e aprende a pesá-las para dar a
+  resposta final.</li>
+</ul>
+<p>Em símbolos, a previsão final é</p>
+<div class="math-display">$$
+\hat{y} = g\bigl(f_1(\mathbf{x}),\, f_2(\mathbf{x}),\, \dots,\, f_L(\mathbf{x})\bigr)
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$f_1, \dots, f_L$ são os <strong>$L$ modelos de base</strong>;</li>
+<li>$f_\ell(\mathbf{x})$ é a <strong>previsão</strong> (ou probabilidade) do modelo de base $\ell$;</li>
+<li>$g$ é o <strong>meta-modelo</strong>, que aprende como misturar essas previsões.</li>
+</ul>
+<h2>O perigo: vazamento, e como evitá-lo</h2>
+<p>Há uma armadilha sutil. Se o meta-modelo for treinado nas previsões que os modelos
+de base fizeram <strong>sobre os próprios dados de treino deles</strong>, essas previsões são
+otimistas demais (os modelos já viram esses exemplos), e o meta-modelo aprende com
+informação vazada. A solução é usar <strong>previsões out-of-fold</strong>: cada modelo de base
+prevê um exemplo somente quando esse exemplo ficou <strong>de fora</strong> da dobra em que ele
+treinou — a mesma lógica da validação cruzada. O <code>StackingClassifier</code> do
+scikit-learn faz isso automaticamente.</p>
+<p>O widget abaixo mostra a intuição com soft voting: dois modelos de base com forças
+diferentes: um slider mistura as duas probabilidades, e a acurácia da combinação
+pode superar a de cada um isolado.</p>
+<h2>Quando compensa</h2>
+<p>Stacking costuma render um ganho <strong>pequeno</strong> de desempenho a um custo <strong>grande</strong> de
+complexidade (treinar vários modelos e mais um por cima). Vale a pena quando cada
+ponto percentual importa (competições, produção madura) e os modelos de base são
+genuinamente diversos. Para a maioria dos casos, uma boa random forest ou um
+gradient boosting bem ajustado já entrega quase tudo, com muito menos trabalho.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_stacking.ipynb</code> combina três modelos de base diferentes (regressão
+logística, SVM e floresta) por soft voting e por stacking (com o
+<code>StackingClassifier</code>), e compara a acurácia da combinação com a de cada modelo
+isolado — mostrando quando misturar realmente ajuda.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um colega treinou o stacking usando, como entrada do meta-modelo, as
+previsões dos modelos de base sobre o <strong>conjunto de treino inteiro</strong>. A acurácia
+ficou ótima no treino e péssima no teste. O que aconteceu?</p>
+<details><summary>Ver solução</summary>
 
+**Vazamento de dados.** As previsões dos modelos de base sobre os dados em que eles
+treinaram são otimistas demais (eles já viram esses exemplos, às vezes os
+decoraram). O meta-modelo aprendeu a confiar nessas previsões irrealisticamente
+boas, que não se repetem em dados novos — daí o colapso no teste. O correto é usar
+**previsões out-of-fold**, em que cada exemplo é previsto por modelos que não o
+viram.
+
+</details>
+
+<p><strong>2.</strong> Em que situação o soft voting entre três modelos <strong>não</strong> supera o melhor
+modelo isolado?</p>
+<details><summary>Ver solução</summary>
+
+Quando os modelos são muito **parecidos** e erram nos **mesmos** exemplos: a média
+das probabilidades não corrige nada, porque não há diversidade de erros para
+cancelar. O ganho da combinação vem justamente de os modelos serem **diferentes** e
+falharem em casos distintos; sem isso, votar apenas reproduz os mesmos erros.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Wolpert, D. H. (1992). <em>Stacked Generalization</em>. Neural Networks, 5(2), 241–259 — o artigo seminal.</li>
+<li>Breiman, L. (1996). <em>Stacked Regressions</em>. Machine Learning, 24, 49–64.</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 8.8.</li>
+</ul>
+<div class="widget" data-widget="wVoting" data-id="vote_4_4">
+  <div class="widget-title">Soft voting — misturar dois modelos diferentes</div>
+  <canvas id="vote_4_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Peso do modelo A na mistura</span><input type="range" min="0" max="1" step="0.05" value="0.5" id="vote_4_4-w"><span class="ctrl-val" id="vote_4_4-w-v">0.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia — só A</div><div class="sval" id="vote_4_4-accA" style="color:#3266ad;">—</div><div class="sdesc">modelo de base A</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia — só B</div><div class="sval" id="vote_4_4-accB" style="color:#c0392b;">—</div><div class="sdesc">modelo de base B</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia da mistura</div><div class="sval" id="vote_4_4-accM" style="color:#1a7a4a;">—</div><div class="sdesc">combinação ponderada</div></div>
+  </div>
+</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

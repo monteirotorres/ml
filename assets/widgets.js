@@ -745,6 +745,142 @@ function wSvm(id) {
 }
 
 // ============================================================
+// Widget: bagging — a média de muitas árvores reduz a variância
+// ============================================================
+function wBagging(id) {
+  const cv = $(id + '-cv'); let xs = [], ys = [], semente = 13;
+  const K = 6, G = 80, POOL = 40;
+  function gerar() {
+    const rng = makeRng(semente); xs = []; ys = [];
+    for (let i = 0; i < 30; i++) { const x = rng(); xs.push(x); ys.push(Math.sin(2 * Math.PI * x) + rngNormal(rng) * 0.35); }
+  }
+  function arvore(rng) {
+    const s = new Array(K).fill(0), c = new Array(K).fill(0);
+    for (let i = 0; i < xs.length; i++) { const j = Math.floor(rng() * xs.length); const b = Math.min(K - 1, Math.floor(xs[j] * K)); s[b] += ys[j]; c[b]++; }
+    const m = []; for (let b = 0; b < K; b++) m.push(c[b] ? s[b] / c[b] : (b > 0 ? m[b - 1] : 0)); return m;
+  }
+  const prever = (m, x) => m[Math.min(K - 1, Math.floor(x * K))];
+  function draw() {
+    const p = pal(), B = +$(id + '-b').value, rng = makeRng(semente ^ 0x9e3779b9);
+    const pool = []; for (let t = 0; t < POOL; t++) pool.push(arvore(rng));
+    const W = 640, H = 340, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 30, padR = 16, padT = 14, padB = 24;
+    const X = x => padL + x * (W - padL - padR), Y = y => H - padB - ((y + 1.7) / 3.4) * (H - padT - padB);
+    ctx.lineWidth = 1; ctx.strokeStyle = p.line;
+    for (let t = 0; t < Math.min(B, 12); t++) {
+      ctx.beginPath(); for (let g = 0; g <= G; g++) { const x = g / G, yy = prever(pool[t], x); g ? ctx.lineTo(X(x), Y(yy)) : ctx.moveTo(X(x), Y(yy)); } ctx.stroke();
+    }
+    let seSum = 0;
+    ctx.lineWidth = 3; ctx.strokeStyle = p.blue; ctx.beginPath();
+    for (let g = 0; g <= G; g++) {
+      const x = g / G;
+      let sB = 0; for (let t = 0; t < B; t++) sB += prever(pool[t], x); const mediaB = sB / B;
+      let s = 0, s2 = 0; for (let t = 0; t < POOL; t++) { const v = prever(pool[t], x); s += v; s2 += v * v; }
+      const varInd = Math.max(0, s2 / POOL - (s / POOL) * (s / POOL));
+      seSum += Math.sqrt(varInd) / Math.sqrt(B);
+      g ? ctx.lineTo(X(x), Y(mediaB)) : ctx.moveTo(X(x), Y(mediaB));
+    }
+    ctx.stroke();
+    ctx.strokeStyle = p.ink; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let g = 0; g <= G; g++) { const x = g / G; g ? ctx.lineTo(X(x), Y(Math.sin(2 * Math.PI * x))) : ctx.moveTo(X(x), Y(Math.sin(2 * Math.PI * x))); } ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = p.muted; ctx.globalAlpha = 0.5;
+    for (let i = 0; i < xs.length; i++) { ctx.beginPath(); ctx.arc(X(xs[i]), Y(ys[i]), 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+    $(id + '-var').textContent = (seSum / (G + 1)).toFixed(3);
+    $(id + '-reg').textContent = B <= 2 ? 'poucas árvores: média instável' : B >= 25 ? 'muitas árvores: média estável' : 'a média se firma';
+  }
+  $(id + '-b').addEventListener('input', () => { $(id + '-b-v').textContent = $(id + '-b').value; draw(); });
+  $(id + '-nova').addEventListener('click', () => { semente = (semente * 1664525 + 1013904223) >>> 0; gerar(); draw(); });
+  window.addEventListener('resize', draw);
+  gerar(); $(id + '-b-v').textContent = '1'; draw();
+}
+
+// ============================================================
+// Widget: gradient boosting — stumps ajustados aos resíduos
+// ============================================================
+function wBoosting(id) {
+  const cv = $(id + '-cv'); let xs = [], ys = []; const G = 100;
+  (function () {
+    const rng = makeRng(21);
+    for (let i = 0; i < 40; i++) { const x = i / 39; xs.push(x); ys.push(Math.sin(2 * Math.PI * x) + rngNormal(rng) * 0.15); }
+  })();
+  function stump(res) {
+    let best = null;
+    for (let ti = 1; ti < xs.length; ti++) {
+      const t = (xs[ti - 1] + xs[ti]) / 2;
+      let sl = 0, cl = 0, sr = 0, cr = 0;
+      for (let i = 0; i < xs.length; i++) { if (xs[i] < t) { sl += res[i]; cl++; } else { sr += res[i]; cr++; } }
+      if (!cl || !cr) continue;
+      const ml = sl / cl, mr = sr / cr; let sse = 0;
+      for (let i = 0; i < xs.length; i++) { const pr = xs[i] < t ? ml : mr; sse += (res[i] - pr) ** 2; }
+      if (!best || sse < best.sse) best = { t, ml, mr, sse };
+    }
+    return best;
+  }
+  const preverStump = (s, x) => x < s.t ? s.ml : s.mr;
+  function draw() {
+    const p = pal(), M = +$(id + '-m').value, nu = +$(id + '-nu').value;
+    $(id + '-m-v').textContent = M; $(id + '-nu-v').textContent = nu.toFixed(2);
+    const media0 = ys.reduce((a, b) => a + b, 0) / ys.length;
+    const F = new Array(xs.length).fill(media0), arvores = [];
+    for (let m = 0; m < M; m++) {
+      const res = ys.map((y, i) => y - F[i]);
+      const tr = stump(res); if (!tr) break; arvores.push(tr);
+      for (let i = 0; i < xs.length; i++) F[i] += nu * preverStump(tr, xs[i]);
+    }
+    const pred = x => { let v = media0; for (let m = 0; m < arvores.length; m++) v += nu * preverStump(arvores[m], x); return v; };
+    const W = 640, H = 340, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 30, padR = 16, padT = 14, padB = 24;
+    const X = x => padL + x * (W - padL - padR), Y = y => H - padB - ((y + 1.6) / 3.2) * (H - padT - padB);
+    ctx.strokeStyle = p.ink; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let g = 0; g <= G; g++) { const x = g / G; g ? ctx.lineTo(X(x), Y(Math.sin(2 * Math.PI * x))) : ctx.moveTo(X(x), Y(Math.sin(2 * Math.PI * x))); } ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 3; ctx.beginPath();
+    for (let g = 0; g <= G; g++) { const x = g / G; g ? ctx.lineTo(X(x), Y(pred(x))) : ctx.moveTo(X(x), Y(pred(x))); } ctx.stroke();
+    ctx.fillStyle = p.muted; ctx.globalAlpha = 0.5;
+    for (let i = 0; i < xs.length; i++) { ctx.beginPath(); ctx.arc(X(xs[i]), Y(ys[i]), 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+    let err = 0; for (let i = 0; i < xs.length; i++) err += (ys[i] - F[i]) ** 2; err /= xs.length;
+    $(id + '-err').textContent = err.toFixed(3);
+    $(id + '-reg').textContent = M === 0 ? 'só a média (viés máximo)' : M >= 25 ? 'bem ajustado' : 'aprendendo os resíduos';
+  }
+  ['m', 'nu'].forEach(k => $(id + '-' + k).addEventListener('input', draw));
+  window.addEventListener('resize', draw);
+  $(id + '-m-v').textContent = '0'; $(id + '-nu-v').textContent = '0.30'; draw();
+}
+
+// ============================================================
+// Widget: soft voting — misturar dois modelos complementares
+// ============================================================
+function wVoting(id) {
+  const cv = $(id + '-cv'); const pts = [];
+  for (let i = 0; i < 24; i++) {
+    const t = i % 2, region = i < 8 ? 0 : (i < 16 ? 1 : 2);
+    const pA = region === 1 ? (t ? 0.35 : 0.65) : (t ? 0.82 : 0.18);
+    const pB = region === 2 ? (t ? 0.35 : 0.65) : (t ? 0.82 : 0.18);
+    pts.push({ t, pA, pB });
+  }
+  const acc = w => { let ok = 0; pts.forEach(pt => { if (((w * pt.pA + (1 - w) * pt.pB) > 0.5 ? 1 : 0) === pt.t) ok++; }); return ok / pts.length; };
+  function draw() {
+    const p = pal(), w = +$(id + '-w').value;
+    $(id + '-w-v').textContent = w.toFixed(2);
+    $(id + '-accA').textContent = (100 * acc(1)).toFixed(0) + '%';
+    $(id + '-accB').textContent = (100 * acc(0)).toFixed(0) + '%';
+    $(id + '-accM').textContent = (100 * acc(w)).toFixed(0) + '%';
+    const W = 640, H = 210, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const cols = 12, mx = 40, my = 46, gw = (W - 2 * mx) / (cols - 1), gh = 74;
+    pts.forEach((pt, i) => {
+      const r = Math.floor(i / cols), c = i % cols, x = mx + c * gw, y = my + r * gh;
+      const correct = (((w * pt.pA + (1 - w) * pt.pB) > 0.5 ? 1 : 0) === pt.t);
+      ctx.fillStyle = pt.t ? p.red : p.blue; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = correct ? p.green : p.red;
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, 7); ctx.stroke();
+    });
+    ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif'; ctx.textAlign = 'left';
+    ctx.fillText('preenchimento = classe verdadeira · anel verde = a mistura acertou', mx, H - 12);
+  }
+  $(id + '-w').addEventListener('input', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {

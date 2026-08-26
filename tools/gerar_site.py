@@ -40,6 +40,9 @@ WIDGETS = {
     "03_classificacao/02_arvores_decisao.md": ("tree", "wTree"),
     "03_classificacao/03_naive_bayes.md": ("bayes", "wBayes"),
     "03_classificacao/04_svm.md": ("svm", "wSvm"),
+    "04_ensembles/01_random_forest.md": ("bag", "wBagging"),
+    "04_ensembles/02_gradient_boosting.md": ("boost", "wBoosting"),
+    "04_ensembles/04_stacking.md": ("vote", "wVoting"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -106,6 +109,47 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wBagging":
+        return f"""<div class="widget">
+  <div class="widget-title">Bagging — a média de muitas árvores reduz a variância</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "b", "Número de árvores (B)", 1, 60, 1, 1)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "var", "Variabilidade da média", "dispersão do modelo combinado", PAL_BLUE)}
+    {_card(wid, "reg", "Efeito", "o que B faz")}
+  </div>
+</div>"""
+    if fn == "wBoosting":
+        return f"""<div class="widget">
+  <div class="widget-title">Gradient boosting — árvores que corrigem resíduos</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "m", "Número de estágios (M)", 0, 40, 1, 0)}
+    {_slider(wid, "nu", "Taxa de aprendizado ν", 0.05, 1, 0.05, 0.3)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "err", "Erro de treino", "resíduo quadrático médio", PAL_RED)}
+    {_card(wid, "reg", "Estágio", "o modelo se aproxima")}
+  </div>
+</div>"""
+    if fn == "wVoting":
+        return f"""<div class="widget">
+  <div class="widget-title">Soft voting — misturar dois modelos diferentes</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "w", "Peso do modelo A na mistura", 0, 1, 0.05, 0.5)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "accA", "Acurácia — só A", "modelo de base A", PAL_BLUE)}
+    {_card(wid, "accB", "Acurácia — só B", "modelo de base B", PAL_RED)}
+    {_card(wid, "accM", "Acurácia da mistura", "combinação ponderada", PAL_GREEN)}
   </div>
 </div>"""
     if fn == "wKnn":
