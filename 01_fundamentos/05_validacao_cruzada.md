@@ -4,9 +4,7 @@ Se o erro de teste é o que importa, como estimá-lo de forma confiável antes d
 colocar o modelo em produção? A validação cruzada é a resposta padrão — e uma das
 ferramentas mais úteis e mal compreendidas da prática de ML.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Separar os dados em treino e teste uma única vez tem um problema: a estimativa do
 erro depende de **quais** exemplos calharam de cair no teste. Com pouca sorte na

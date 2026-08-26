@@ -98,8 +98,7 @@
 experiência</strong> em vez de seguir regras que alguém escreveu à mão. Neste primeiro
 tópico definimos o que isso significa, por que a abordagem é tão poderosa e onde
 ela se encaixa dentro da estatística e da inteligência artificial.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Imagine que você precisa escrever um programa para distinguir uma célula tumoral
 de uma célula saudável a partir de uma imagem de microscopia. A abordagem
 tradicional seria sentar com um patologista e transcrever regras: "se o núcleo
@@ -247,8 +246,7 @@ overfitting (tópico 4).
 <p>Nem todo problema de aprendizagem tem a mesma forma. Antes de escolher um
 algoritmo, precisamos reconhecer que <strong>tipo</strong> de problema temos em mãos — isso
 determina quais métodos fazem sentido e como avaliar o resultado.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Escolher um algoritmo antes de entender o tipo de problema é como escolher o
 remédio antes do diagnóstico. Um mesmo conjunto de dados — digamos, medidas de
 pacientes — pode alimentar problemas completamente diferentes: prever um valor
@@ -399,8 +397,7 @@ ajustando um classificador com os 200 exemplos rotulados.
 <p>Antes de qualquer algoritmo, os dados precisam ganhar uma forma que o modelo
 entenda. A maneira como representamos os exemplos e suas características determina
 metade do sucesso de um projeto — e é onde mora boa parte do trabalho real.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Modelos de aprendizagem de máquina não "veem" pacientes, imagens ou textos: eles
 veem <strong>números organizados em uma matriz</strong>. Um algoritmo brilhante alimentado com
 uma representação ruim produz resultados ruins. Por isso, entender a estrutura
@@ -549,8 +546,7 @@ dimensionalidade** (PCA) antes de treinar.
 <p>O objetivo da aprendizagem de máquina não é acertar nos dados que já vimos, mas
 prever bem nos que ainda <strong>não</strong> vimos. Essa capacidade se chama generalização, e
 compreendê-la é o conceito mais importante de todo o curso.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Um estudante que decora as respostas da prova antiga vai mal na prova nova; um
 que entende a matéria vai bem em ambas. Modelos de ML enfrentam exatamente o
 mesmo dilema. Um modelo pode ter erro <strong>zero</strong> nos dados de treino e ainda assim
@@ -666,8 +662,7 @@ flexível, menos regularização).
 <p>Se o erro de teste é o que importa, como estimá-lo de forma confiável antes de
 colocar o modelo em produção? A validação cruzada é a resposta padrão — e uma das
 ferramentas mais úteis e mal compreendidas da prática de ML.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Separar os dados em treino e teste uma única vez tem um problema: a estimativa do
 erro depende de <strong>quais</strong> exemplos calharam de cair no teste. Com pouca sorte na
 divisão, você pode superestimar ou subestimar o desempenho e tomar decisões
@@ -805,8 +800,7 @@ colocando o `StandardScaler` dentro de um `Pipeline`.
 <p>Treinar um modelo é só metade do trabalho; a outra metade é medir se ele é bom.
 Em problemas de regressão, isso significa quantificar o quão longe as previsões
 $\hat{y}$ ficam dos valores reais $y$ — e há mais de uma forma de fazer isso.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>"O modelo está bom?" é uma pergunta vazia sem uma métrica. Pior: métricas
 diferentes recompensam comportamentos diferentes. Uma métrica pode dizer que o
 modelo A é melhor e outra apontar o modelo B. Escolher a métrica certa é uma
@@ -948,8 +942,7 @@ avaliado em dados muito diferentes dos de treino.
 mais enganosas. Este tópico apresenta o conjunto de métricas que realmente
 descreve o desempenho de um classificador, sobretudo quando as classes são
 desbalanceadas.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>Suponha um teste para uma doença rara que atinge 1% da população. Um "modelo"
 que responde <strong>sempre "saudável"</strong> acerta 99% das vezes. A acurácia é altíssima —
 e o modelo é completamente inútil, pois nunca detecta um doente. Esse paradoxo,
@@ -1085,8 +1078,7 @@ exato depende dos custos reais de cada erro.
 categorias em texto. O pré-processamento é a etapa — muitas vezes a mais
 demorada — que transforma esses dados brutos em algo que um modelo consegue
 aprender bem.</p>
-<p>▶ <a href="fundamentos_slides.html">Slides — Fundamentos</a></p>
-<h2>Por que isso importa</h2>
+<h2>Motivação</h2>
 <p>A frase mais repetida em ciência de dados é <em>"garbage in, garbage out"</em>. Nenhum
 algoritmo compensa dados mal preparados. Além disso, vários métodos têm
 <strong>suposições</strong> sobre a forma dos dados — k-NN e SVM assumem que todas as

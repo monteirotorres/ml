@@ -5,9 +5,7 @@ mais enganosas. Este tópico apresenta o conjunto de métricas que realmente
 descreve o desempenho de um classificador, sobretudo quando as classes são
 desbalanceadas.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Suponha um teste para uma doença rara que atinge 1% da população. Um "modelo"
 que responde **sempre "saudável"** acerta 99% das vezes. A acurácia é altíssima —

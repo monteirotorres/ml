@@ -343,6 +343,213 @@ function wSklearnMap(id) {
 }
 
 // ============================================================
+// Widget: ajuste de reta por mínimos quadrados (regressão linear)
+// ============================================================
+function wLinReg(id) {
+  const cv = $(id + '-cv');
+  let pts = [], semente = 7;
+  function gerar() {
+    const rng = makeRng(semente), a = 1.3, b = 0.4;
+    pts = [];
+    for (let i = 0; i < 14; i++) {
+      const x = -2 + 4 * rng();
+      pts.push([x, a * x + b + rngNormal(rng) * 0.9]);
+    }
+  }
+  function otimo() {
+    const n = pts.length; let mx = 0, my = 0;
+    pts.forEach(p => { mx += p[0]; my += p[1]; }); mx /= n; my /= n;
+    let sxy = 0, sxx = 0;
+    pts.forEach(p => { sxy += (p[0] - mx) * (p[1] - my); sxx += (p[0] - mx) ** 2; });
+    const b1 = sxy / sxx; return [my - b1 * mx, b1];
+  }
+  function mse(b0, b1) {
+    let s = 0; pts.forEach(p => { const e = p[1] - (b0 + b1 * p[0]); s += e * e; });
+    return s / pts.length;
+  }
+  function draw() {
+    const p = pal(), W = 640, H = 340, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 40, padR = 20, padT = 18, padB = 28, xmin = -2.5, xmax = 2.5, ymin = -4, ymax = 4;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    ctx.strokeStyle = p.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(xmin), Y(0)); ctx.lineTo(X(xmax), Y(0));
+    ctx.moveTo(X(0), Y(ymin)); ctx.lineTo(X(0), Y(ymax)); ctx.stroke();
+    const b0 = +$(id + '-b0').value, b1 = +$(id + '-b1').value;
+    ctx.strokeStyle = p.red; ctx.lineWidth = 1;
+    pts.forEach(pt => { const yh = b0 + b1 * pt[0]; ctx.beginPath(); ctx.moveTo(X(pt[0]), Y(pt[1])); ctx.lineTo(X(pt[0]), Y(yh)); ctx.stroke(); });
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(X(xmin), Y(b0 + b1 * xmin)); ctx.lineTo(X(xmax), Y(b0 + b1 * xmax)); ctx.stroke();
+    ctx.fillStyle = p.ink;
+    pts.forEach(pt => { ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 4, 0, 7); ctx.fill(); });
+    const o = otimo();
+    $(id + '-mse').textContent = mse(b0, b1).toFixed(3);
+    $(id + '-mseo').textContent = mse(o[0], o[1]).toFixed(3);
+  }
+  function sincroniza() {
+    $(id + '-b0-v').textContent = (+$(id + '-b0').value).toFixed(1);
+    $(id + '-b1-v').textContent = (+$(id + '-b1').value).toFixed(1);
+  }
+  ['b0', 'b1'].forEach(k => $(id + '-' + k).addEventListener('input', () => { sincroniza(); draw(); }));
+  $(id + '-otimo').addEventListener('click', () => {
+    const o = otimo();
+    $(id + '-b0').value = o[0].toFixed(1); $(id + '-b1').value = o[1].toFixed(1);
+    sincroniza(); draw();
+  });
+  $(id + '-nova').addEventListener('click', () => { semente = (semente * 1664525 + 1013904223) >>> 0; gerar(); draw(); });
+  window.addEventListener('resize', draw);
+  gerar(); sincroniza(); draw();
+}
+
+// ============================================================
+// Widget: colinearidade — VIF e instabilidade dos coeficientes
+// ============================================================
+function wColinear(id) {
+  const cv = $(id + '-cv');
+  function draw() {
+    const p = pal(), rho = +$(id + '-rho').value;
+    $(id + '-rho-v').textContent = rho.toFixed(2);
+    $(id + '-vif').textContent = (1 / (1 - rho * rho)).toFixed(1);
+    // 60 reajustes: desvio-padrão do coeficiente de x1 (dispara quando rho -> 1)
+    const rng = makeRng(2024), coefs = [];
+    for (let b = 0; b < 60; b++) {
+      const n = 40; let s11 = 0, s12 = 0, s22 = 0, s1y = 0, s2y = 0;
+      for (let i = 0; i < n; i++) {
+        const a = rngNormal(rng), c = rngNormal(rng);
+        const u = a, v = rho * a + Math.sqrt(1 - rho * rho) * c;
+        const y = u + v + rngNormal(rng) * 0.5;
+        s11 += u * u; s12 += u * v; s22 += v * v; s1y += u * y; s2y += v * y;
+      }
+      const det = s11 * s22 - s12 * s12;
+      coefs.push(Math.abs(det) < 1e-9 ? 0 : (s22 * s1y - s12 * s2y) / det);
+    }
+    const m = coefs.reduce((a, b) => a + b, 0) / coefs.length;
+    const sd = Math.sqrt(coefs.reduce((a, b) => a + (b - m) * (b - m), 0) / coefs.length);
+    $(id + '-desvio').textContent = '±' + sd.toFixed(2);
+    // nuvem (x1, x2) colapsando numa reta
+    const W = 640, H = 300, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 36, padR = 18, padT = 18, padB = 28, lim = 3;
+    const X = x => padL + (x + lim) / (2 * lim) * (W - padL - padR);
+    const Y = y => H - padB - (y + lim) / (2 * lim) * (H - padT - padB);
+    ctx.strokeStyle = p.line; ctx.beginPath();
+    ctx.moveTo(X(-lim), Y(0)); ctx.lineTo(X(lim), Y(0));
+    ctx.moveTo(X(0), Y(-lim)); ctx.lineTo(X(0), Y(lim)); ctx.stroke();
+    const rng2 = makeRng(99); ctx.fillStyle = p.blue; ctx.globalAlpha = 0.6;
+    for (let i = 0; i < 130; i++) {
+      const a = rngNormal(rng2), c = rngNormal(rng2);
+      ctx.beginPath(); ctx.arc(X(a), Y(rho * a + Math.sqrt(1 - rho * rho) * c), 3, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('x₁', X(lim) - 10, Y(0) - 8); ctx.fillText('x₂', X(0) + 14, Y(lim) + 6);
+  }
+  $(id + '-rho').addEventListener('input', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: caminho de regularização (Ridge x Lasso), ilustrativo
+// ------------------------------------------------------------
+// Sobre coeficientes OLS fixos, aplica encolhimento estilizado:
+// Ridge  theta = beta/(1+alpha);  Lasso  soft-threshold.
+// Mostra a diferença qualitativa: Ridge encolhe, Lasso zera.
+// ============================================================
+function wRidgeLasso(id) {
+  const cv = $(id + '-cv');
+  const beta = [2.5, -1.8, 1.2, 0.0, 0.6, 0.0, -0.9, 0.05];
+  const cores = [PAL.blue, PAL.red, PAL.green, '#8660a0', '#d68910', '#16a085', '#7f8c8d', '#b9770e'];
+  function coef(b, alpha, tipo) {
+    if (tipo === 'ridge') return b / (1 + alpha);
+    const m = Math.abs(b) - alpha * 0.5; return m > 0 ? Math.sign(b) * m : 0;
+  }
+  function draw() {
+    const p = pal(), loga = +$(id + '-loga').value, tipo = $(id + '-tipo').value, alpha = Math.pow(10, loga);
+    $(id + '-loga-v').textContent = loga.toFixed(1);
+    $(id + '-alpha').textContent = alpha < 1 ? alpha.toFixed(3) : alpha.toFixed(1);
+    const th = beta.map(b => coef(b, alpha, tipo));
+    $(id + '-nz').textContent = th.filter(t => Math.abs(t) > 1e-3).length + ' / 8';
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 46, padR = 14, padT = 16, padB = 34, la0 = -3, la1 = 3, ymax = 3;
+    const X = la => padL + (la - la0) / (la1 - la0) * (W - padL - padR);
+    const Y = v => padT + (ymax - v) / (2 * ymax) * (H - padT - padB);
+    ctx.strokeStyle = p.line; ctx.beginPath(); ctx.moveTo(padL, Y(0)); ctx.lineTo(W - padR, Y(0)); ctx.stroke();
+    for (let j = 0; j < beta.length; j++) {
+      ctx.strokeStyle = cores[j % cores.length]; ctx.lineWidth = 2; ctx.beginPath();
+      for (let k = 0; k <= 60; k++) {
+        const la = la0 + (la1 - la0) * k / 60;
+        const v = Math.max(-ymax, Math.min(ymax, coef(beta[j], Math.pow(10, la), tipo)));
+        k ? ctx.lineTo(X(la), Y(v)) : ctx.moveTo(X(la), Y(v));
+      }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = p.muted; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(X(loga), padT); ctx.lineTo(X(loga), H - padB); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('log₁₀(α)', W / 2, H - 8);
+    ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('coeficiente', 0, 0); ctx.restore();
+  }
+  $(id + '-loga').addEventListener('input', draw);
+  $(id + '-tipo').addEventListener('change', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: regressão logística — sigmoide e fronteira de decisão
+// ============================================================
+function wLogistic(id) {
+  const cv = $(id + '-cv');
+  let pts = [], semente = 5;
+  function gerar() {
+    const rng = makeRng(semente); pts = [];
+    for (let i = 0; i < 30; i++) {
+      const c = i < 15 ? 0 : 1;
+      pts.push([(c ? 1 : -1) + rngNormal(rng) * 0.8, c]);
+    }
+  }
+  function draw() {
+    const p = pal(), b0 = +$(id + '-b0').value, b1 = +$(id + '-b1').value;
+    $(id + '-b0-v').textContent = b0.toFixed(1); $(id + '-b1-v').textContent = b1.toFixed(1);
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 40, padR = 20, padT = 20, padB = 30, xmin = -4, xmax = 4;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = pp => H - padB - pp * (H - padT - padB);
+    ctx.strokeStyle = p.line; ctx.lineWidth = 1;
+    [0, 0.5, 1].forEach(v => { ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(W - padR, Y(v)); ctx.stroke(); });
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (let k = 0; k <= 120; k++) {
+      const x = xmin + (xmax - xmin) * k / 120, pr = 1 / (1 + Math.exp(-(b0 + b1 * x)));
+      k ? ctx.lineTo(X(x), Y(pr)) : ctx.moveTo(X(x), Y(pr));
+    }
+    ctx.stroke();
+    if (Math.abs(b1) > 1e-3) {
+      const xb = -b0 / b1;
+      if (xb > xmin && xb < xmax) {
+        ctx.strokeStyle = p.muted; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(X(xb), padT); ctx.lineTo(X(xb), H - padB); ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
+    let acertos = 0, loss = 0;
+    pts.forEach(pt => {
+      const pr = 1 / (1 + Math.exp(-(b0 + b1 * pt[0]))), yv = pt[1];
+      ctx.fillStyle = yv ? p.red : p.blue; ctx.globalAlpha = 0.8;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Y(yv), 4, 0, 7); ctx.fill();
+      if ((pr > 0.5 ? 1 : 0) === yv) acertos++;
+      loss += -(yv * Math.log(pr + 1e-9) + (1 - yv) * Math.log(1 - pr + 1e-9));
+    });
+    ctx.globalAlpha = 1;
+    $(id + '-acc').textContent = (100 * acertos / pts.length).toFixed(0) + '%';
+    $(id + '-loss').textContent = (loss / pts.length).toFixed(3);
+  }
+  ['b0', 'b1'].forEach(k => $(id + '-' + k).addEventListener('input', draw));
+  $(id + '-nova').addEventListener('click', () => { semente = (semente * 1664525 + 1013904223) >>> 0; gerar(); draw(); });
+  window.addEventListener('resize', draw);
+  gerar(); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {

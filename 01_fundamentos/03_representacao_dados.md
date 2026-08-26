@@ -4,9 +4,7 @@ Antes de qualquer algoritmo, os dados precisam ganhar uma forma que o modelo
 entenda. A maneira como representamos os exemplos e suas características determina
 metade do sucesso de um projeto — e é onde mora boa parte do trabalho real.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Modelos de aprendizagem de máquina não "veem" pacientes, imagens ou textos: eles
 veem **números organizados em uma matriz**. Um algoritmo brilhante alimentado com

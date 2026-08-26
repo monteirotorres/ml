@@ -31,6 +31,11 @@ WIDGETS = {
     "01_fundamentos/04_generalizacao.md": ("overfit", "wOverfit"),
     "01_fundamentos/05_validacao_cruzada.md": ("kfold", "wKfold"),
     "01_fundamentos/09_ferramentas_sklearn_pytorch.md": ("skmap", "wSklearnMap"),
+    "02_regressao/01_regressao_linear.md": ("linreg", "wLinReg"),
+    "02_regressao/02_regressao_multipla.md": ("colin", "wColinear"),
+    "02_regressao/03_regressao_polinomial.md": ("polyreg", "wOverfit"),
+    "02_regressao/04_regularizacao.md": ("regul", "wRidgeLasso"),
+    "02_regressao/05_regressao_logistica.md": ("logi", "wLogistic"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -97,6 +102,65 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wLinReg":
+        return f"""<div class="widget">
+  <div class="widget-title">Ajuste a reta na mão — mínimos quadrados</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "b0", "Intercepto θ₀", -3, 3, 0.1, 0)}
+    {_slider(wid, "b1", "Inclinação θ₁", -3, 3, 0.1, 1)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-otimo">Mostrar reta ótima</button>
+    <button class="btn" id="{wid}-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "mse", "MSE da sua reta", "erro quadrático médio", PAL_BLUE)}
+    {_card(wid, "mseo", "MSE da reta ótima", "o menor possível", PAL_GREEN)}
+  </div>
+</div>"""
+    if fn == "wColinear":
+        return f"""<div class="widget">
+  <div class="widget-title">Colinearidade — quando dois preditores se confundem</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "rho", "Correlação entre x₁ e x₂", 0, 0.99, 0.01, 0.0)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "vif", "VIF", "fator de inflação da variância", PAL_RED)}
+    {_card(wid, "desvio", "Instabilidade dos coeficientes", "desvio entre 60 reajustes", PAL_BLUE)}
+  </div>
+</div>"""
+    if fn == "wRidgeLasso":
+        return f"""<div class="widget">
+  <div class="widget-title">Caminho de regularização — Ridge × Lasso</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "loga", "log₁₀(α) — força da penalidade", -3, 3, 0.1, 0)}
+    <div class="ctrl-row"><span class="ctrl-label">Penalidade</span>
+      <select class="ctrl-select" id="{wid}-tipo"><option value="ridge">Ridge (ℓ₂)</option><option value="lasso">Lasso (ℓ₁)</option></select></div>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "alpha", "α atual", "força da penalidade", PAL_RED)}
+    {_card(wid, "nz", "Coeficientes ≠ 0", "de 8 preditores", PAL_GREEN)}
+  </div>
+</div>"""
+    if fn == "wLogistic":
+        return f"""<div class="widget">
+  <div class="widget-title">Regressão logística — sigmoide e fronteira de decisão</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "b1", "Inclinação θ₁ (peso)", 0.2, 8, 0.1, 2)}
+    {_slider(wid, "b0", "Deslocamento θ₀", -6, 6, 0.1, 0)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "acc", "Acurácia", "no limiar p = 0,5", PAL_BLUE)}
+    {_card(wid, "loss", "Log-loss", "menor = melhor", PAL_RED)}
   </div>
 </div>"""
     if fn == "wSklearnMap":

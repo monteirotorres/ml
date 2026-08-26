@@ -5,9 +5,7 @@ experiência** em vez de seguir regras que alguém escreveu à mão. Neste prime
 tópico definimos o que isso significa, por que a abordagem é tão poderosa e onde
 ela se encaixa dentro da estatística e da inteligência artificial.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Imagine que você precisa escrever um programa para distinguir uma célula tumoral
 de uma célula saudável a partir de uma imagem de microscopia. A abordagem

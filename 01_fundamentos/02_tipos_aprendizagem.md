@@ -4,9 +4,7 @@ Nem todo problema de aprendizagem tem a mesma forma. Antes de escolher um
 algoritmo, precisamos reconhecer que **tipo** de problema temos em mãos — isso
 determina quais métodos fazem sentido e como avaliar o resultado.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Escolher um algoritmo antes de entender o tipo de problema é como escolher o
 remédio antes do diagnóstico. Um mesmo conjunto de dados — digamos, medidas de

@@ -4,9 +4,7 @@ Treinar um modelo é só metade do trabalho; a outra metade é medir se ele é b
 Em problemas de regressão, isso significa quantificar o quão longe as previsões
 $\hat{y}$ ficam dos valores reais $y$ — e há mais de uma forma de fazer isso.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 "O modelo está bom?" é uma pergunta vazia sem uma métrica. Pior: métricas
 diferentes recompensam comportamentos diferentes. Uma métrica pode dizer que o

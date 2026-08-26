@@ -4,9 +4,7 @@ O objetivo da aprendizagem de máquina não é acertar nos dados que já vimos, 
 prever bem nos que ainda **não** vimos. Essa capacidade se chama generalização, e
 compreendê-la é o conceito mais importante de todo o curso.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 Um estudante que decora as respostas da prova antiga vai mal na prova nova; um
 que entende a matéria vai bem em ambas. Modelos de ML enfrentam exatamente o

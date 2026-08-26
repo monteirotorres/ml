@@ -93,147 +93,553 @@
 <article id="02-regressao-01-regressao-linear-md" class="topic">
 <div class="topic-num">2.1</div>
 <h1 class="topic-title">Regressão linear simples</h1>
-<p>A regressão linear simples é o modelo mais elementar de aprendizagem supervisionada: supomos que a variável resposta $y$ depende de um único preditor $x$ por uma reta, $\hat{y} = \theta_0 + \theta_1 x$. Apesar da simplicidade, ela introduz todas as ideias centrais do restante do curso — função de custo, ajuste por mínimos quadrados e interpretação de coeficientes.</p>
-<p>Um exemplo clássico do domínio biomédico é prever a pressão arterial a partir da idade, ou o peso de um órgão a partir do peso corporal. Vamos estimar os parâmetros que minimizam a soma dos quadrados dos resíduos e discutir o que o coeficiente angular $\theta_1$ realmente significa.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Ajuste manual vs. <code>LinearRegression</code></td>
-<td>comparar mínimos quadrados na mão e no scikit-learn</td>
-</tr>
-<tr>
-<td>Interpretação dos coeficientes</td>
-<td>unidades, intercepto e resíduos</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/01_regressao_linear.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>A regressão linear simples é o modelo mais elementar de aprendizagem
+supervisionada: supomos que a variável resposta $y$ depende de um único preditor
+$x$ por uma <strong>reta</strong>. Apesar da simplicidade, ela introduz todas as ideias
+centrais do restante do curso — função de custo, ajuste por mínimos quadrados e
+interpretação de coeficientes.</p>
+<p>Um exemplo do domínio biomédico: prever a progressão de uma doença a partir de um
+único exame, ou a pressão arterial a partir da idade. Vamos estimar os parâmetros
+que melhor descrevem essa relação e discutir o que cada um significa.</p>
+<h2>O modelo</h2>
+<div class="math-display">$$
+\hat{y} = \theta_0 + \theta_1 \, x
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$x$ é o <strong>preditor</strong> (a variável de entrada — a idade, por exemplo);</li>
+<li>$\hat{y}$ é a <strong>predição</strong> do modelo (o "chapéu" indica que é uma estimativa,
+  não o valor real $y$);</li>
+<li>$\theta_0$ é o <strong>intercepto</strong> — o valor previsto quando $x = 0$;</li>
+<li>$\theta_1$ é o <strong>coeficiente angular</strong> (a inclinação) — de quanto $\hat{y}$ muda
+  quando $x$ aumenta em <strong>uma unidade</strong>. É a peça que carrega o significado do
+  modelo.</li>
+</ul>
+<h2>O que "melhor reta" quer dizer</h2>
+<p>Para cada exemplo $i$, o <strong>resíduo</strong> é a distância vertical entre o valor real e a
+predição: $r_i = y_i - \hat{y}_i$. Uma reta é boa quando os resíduos são pequenos.
+Medimos isso pela <strong>função de custo</strong> de mínimos quadrados — o <strong>erro quadrático
+médio</strong> (MSE):</p>
+<div class="math-display">$$
+J(\theta_0, \theta_1) = \frac{1}{n} \sum_{i=1}^{n} \bigl(y_i - \theta_0 - \theta_1 x_i\bigr)^2
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$n$ é o <strong>número de exemplos</strong>;</li>
+<li>$y_i$ é o <strong>valor real</strong> do exemplo $i$;</li>
+<li>o termo ao quadrado penaliza erros grandes muito mais que pequenos (um resíduo
+  de 2 pesa 4; um de 3 pesa 9), e elevar ao quadrado também impede que resíduos
+  positivos e negativos se cancelem.</li>
+</ul>
+<p>"Ajustar o modelo" é encontrar o par $(\theta_0, \theta_1)$ que <strong>minimiza</strong> $J$.</p>
+<h2>A solução fechada (mínimos quadrados)</h2>
+<p>Diferente da maioria dos modelos do curso, aqui o mínimo tem <strong>fórmula exata</strong>.
+Derivando $J$ e igualando a zero, chega-se a:</p>
+<div class="math-display">$$
+\theta_1 = \frac{\sum_{i}(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i}(x_i - \bar{x})^2},
+\qquad
+\theta_0 = \bar{y} - \theta_1 \bar{x}
+$$</div>
+<p>Onde $\bar{x}$ e $\bar{y}$ são as <strong>médias</strong> de $x$ e de $y$. Repare que o
+numerador de $\theta_1$ é a <strong>covariância</strong> entre $x$ e $y$ e o denominador é a
+<strong>variância</strong> de $x$: a inclinação é, literalmente, o quanto $x$ e $y$ variam
+juntos, normalizado pela variação de $x$. E a segunda fórmula garante que a reta
+<strong>sempre passa pelo ponto médio</strong> $(\bar{x}, \bar{y})$.</p>
+<h2>Experimente</h2>
+<p>O widget abaixo mostra alguns pontos fixos e uma reta que você controla com dois
+sliders — o intercepto $\theta_0$ e a inclinação $\theta_1$. As linhas verticais
+são os resíduos; o cartão mostra o MSE da sua reta e o MSE da reta ótima (a de
+mínimos quadrados). Tente bater a reta ótima na mão e sinta por que o problema
+tem uma única solução: o MSE é uma "tigela" (função convexa), sem mínimos locais
+para enganar.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_regressao_linear.ipynb</code> faz o ajuste de duas maneiras e mostra que
+dão o mesmo resultado:</p>
+<ul>
+<li><strong>na mão</strong>, aplicando as fórmulas fechadas acima com NumPy explícito;</li>
+<li><strong>com o scikit-learn</strong>, via <code>LinearRegression</code>.</li>
+</ul>
+<p>Depois interpretamos o coeficiente $\theta_1$ nas unidades do problema e
+inspecionamos o gráfico de resíduos — a ferramenta diagnóstica que revela quando
+a suposição de linearidade não se sustenta.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Se $\theta_1 = 1{,}8$ mmHg/ano em um modelo que prevê pressão arterial a
+partir da idade, o que isso significa em palavras? E o que seria $\theta_0$?</p>
+<details><summary>Ver solução</summary>
 
+- $\theta_1 = 1{,}8$ mmHg/ano: a cada ano a mais de idade, o modelo prevê um
+  aumento **médio** de 1,8 mmHg na pressão. É uma associação no modelo, não uma
+  relação causal comprovada.
+- $\theta_0$ é a pressão prevista para idade $= 0$ — em geral uma **extrapolação**
+  sem sentido físico (recém-nascidos não estão na faixa dos dados). O intercepto
+  costuma ser só o que ancora a reta na altura certa, não uma quantidade
+  interpretável por si só.
+
+</details>
+
+<p><strong>2.</strong> Por que elevamos os resíduos ao quadrado em vez de somar seus valores
+absolutos?</p>
+<details><summary>Ver solução</summary>
+
+Duas razões. (1) Ao quadrado, o custo é **derivável** em todo ponto e leva à
+solução fechada acima; o valor absoluto tem um "bico" em zero. (2) O quadrado
+penaliza fortemente resíduos grandes, tornando o ajuste sensível a desvios
+grandes. (Somar valores absolutos também é um método legítimo — a *regressão de
+mínimos desvios absolutos* —, mais robusta a outliers, porém sem fórmula fechada.)
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 3. Livro aberto: https://www.statlearning.com/</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 3.</li>
+<li>Galton, F. (1886). <em>Regression Towards Mediocrity in Hereditary Stature</em>. Journal of the Anthropological Institute — o trabalho que deu nome à "regressão".</li>
+</ul>
+<div class="widget" data-widget="wLinReg" data-id="linreg_2_1">
+  <div class="widget-title">Ajuste a reta na mão — mínimos quadrados</div>
+  <canvas id="linreg_2_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Intercepto θ₀</span><input type="range" min="-3" max="3" step="0.1" value="0" id="linreg_2_1-b0"><span class="ctrl-val" id="linreg_2_1-b0-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="linreg_2_1-b1"><span class="ctrl-val" id="linreg_2_1-b1-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="linreg_2_1-otimo">Mostrar reta ótima</button>
+    <button class="btn" id="linreg_2_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">MSE da sua reta</div><div class="sval" id="linreg_2_1-mse" style="color:#3266ad;">—</div><div class="sdesc">erro quadrático médio</div></div>
+    <div class="stat-card"><div class="slabel">MSE da reta ótima</div><div class="sval" id="linreg_2_1-mseo" style="color:#1a7a4a;">—</div><div class="sdesc">o menor possível</div></div>
+  </div>
+</div>
 </article>
 <article id="02-regressao-02-regressao-multipla-md" class="topic">
 <div class="topic-num">2.2</div>
 <h1 class="topic-title">Regressão linear múltipla</h1>
-<p>Quando há vários preditores, a reta vira um hiperplano: $\hat{y} = \theta_0 + \theta_1 x_1 + \cdots + \theta_p x_p = \boldsymbol\theta^\top \mathbf{x}$. A regressão múltipla permite controlar variáveis de confusão e medir o efeito de cada preditor mantendo os demais fixos — a base da inferência em estudos observacionais.</p>
-<p>Discutiremos colinearidade (preditores correlacionados que inflam a variância das estimativas), a leitura de coeficientes parciais e como codificar variáveis categóricas com dummies. Usaremos um conjunto de dados clínicos com múltiplos fatores de risco.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Matriz de design $\mathbf{X}$</td>
-<td>montagem com dummies e intercepto</td>
-</tr>
-<tr>
-<td>Colinearidade e VIF</td>
-<td>diagnóstico de preditores redundantes</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/02_regressao_multipla.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Raramente uma resposta depende de um único fator. A regressão <strong>múltipla</strong>
+generaliza a reta para vários preditores: a reta vira um <strong>hiperplano</strong>. Isso nos
+permite medir o efeito de cada preditor <strong>mantendo os demais fixos</strong> — a ideia de
+"ajustar para variáveis de confusão" que sustenta boa parte da inferência em
+estudos observacionais.</p>
+<h2>O modelo, em forma matricial</h2>
+<div class="math-display">$$
+\hat{y} = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \cdots + \theta_p x_p
+= \boldsymbol\theta^\top \mathbf{x}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$p$ é o <strong>número de preditores</strong> (as colunas);</li>
+<li>$x_j$ é o <strong>$j$-ésimo preditor</strong> e $\theta_j$ o seu <strong>coeficiente parcial</strong> — de
+  quanto $\hat{y}$ muda quando $x_j$ aumenta uma unidade <strong>e todos os outros
+  preditores ficam constantes</strong>. Essa cláusula "todos os outros fixos" é o que
+  torna o coeficiente parcial diferente de uma regressão simples de $y$ contra
+  $x_j$ sozinho;</li>
+<li>$\boldsymbol\theta = (\theta_0, \theta_1, \dots, \theta_p)$ é o <strong>vetor de
+  parâmetros</strong> e $\mathbf{x} = (1, x_1, \dots, x_p)$ o vetor de entrada (o $1$ na
+  frente absorve o intercepto $\theta_0$).</li>
+</ul>
+<p>Empilhando os $n$ exemplos nas linhas de uma <strong>matriz de design</strong> $\mathbf{X}$ de
+forma $n \times (p+1)$, todas as predições viram um único produto de matrizes,
+$\hat{\mathbf{y}} = \mathbf{X}\boldsymbol\theta$, e a solução de mínimos quadrados
+tem forma fechada — a <strong>equação normal</strong>:</p>
+<div class="math-display">$$
+\boldsymbol\theta = (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top \mathbf{y}
+$$</div>
+<p>Onde $\mathbf{X}^\top$ é a transposta de $\mathbf{X}$ e ${}^{-1}$ é a inversa. Na
+prática nunca invertemos essa matriz à mão — o scikit-learn resolve por métodos
+numéricos mais estáveis —, mas a fórmula mostra que o ajuste é direto quando
+$\mathbf{X}^\top\mathbf{X}$ é <strong>inversível</strong>. E é justamente aí que mora o próximo
+problema.</p>
+<h2>Colinearidade: o inimigo silencioso</h2>
+<p>Quando dois preditores são muito <strong>correlacionados</strong> (digamos, peso e índice de
+massa corporal), eles carregam quase a mesma informação. A matriz
+$\mathbf{X}^\top\mathbf{X}$ fica quase não-inversível, e as estimativas dos
+coeficientes ficam <strong>instáveis</strong>: pequenas mudanças nos dados provocam grandes
+saltos em $\boldsymbol\theta$. O modelo ainda prevê bem, mas os coeficientes
+individuais deixam de ser confiáveis para interpretação.</p>
+<p>O diagnóstico padrão é o <strong>fator de inflação da variância</strong> (VIF). Para o preditor
+$x_j$:</p>
+<div class="math-display">$$
+\text{VIF}_j = \frac{1}{1 - R_j^2}
+$$</div>
+<p>Onde $R_j^2$ é o <strong>coeficiente de determinação</strong> de uma regressão de $x_j$ contra
+todos os <em>outros</em> preditores. Se $x_j$ é bem previsto pelos demais ($R_j^2$ perto
+de 1), o VIF explode. A regra de bolso comum: VIF acima de 5–10 pede atenção.</p>
+<p>O widget abaixo deixa isso concreto: um slider controla a correlação entre dois
+preditores; à medida que a nuvem de pontos colapsa numa linha, o VIF dispara e a
+variância dos coeficientes estimados cresce junto.</p>
+<h2>Codificando variáveis categóricas</h2>
+<p>Preditores categóricos (sexo, grupo de tratamento) entram como <strong>variáveis
+indicadoras</strong> (dummies): uma coluna 0/1 por categoria, deixando uma de fora como
+referência. O coeficiente de cada dummy lê-se como a diferença média em relação a
+essa categoria de referência.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>02_regressao_multipla.ipynb</code> usa o conjunto <strong>diabetes</strong> do
+scikit-learn (dez fatores clínicos prevendo a progressão da doença). Montamos a
+matriz de design, resolvemos pela equação normal com NumPy explícito, conferimos
+contra o <code>LinearRegression</code>, e calculamos o VIF de cada preditor com um laço à
+mostra para flagrar redundâncias.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Em uma regressão simples, o coeficiente de "horas de exercício" contra
+"colesterol" deu negativo. Ao adicionar "idade" ao modelo, ficou perto de zero.
+Como interpretar isso?</p>
+<details><summary>Ver solução</summary>
 
+O efeito aparente do exercício sozinho estava **confundido** pela idade: pessoas
+que se exercitam mais também tendem a ser mais jovens, e a idade é que puxava o
+colesterol. O coeficiente **parcial** (com idade no modelo) mede o efeito do
+exercício *entre pessoas de mesma idade*, e ele quase some. É exatamente para isso
+que serve a regressão múltipla — separar efeitos que a análise de um preditor só
+mistura.
+
+</details>
+
+<p><strong>2.</strong> Se o VIF de um preditor é 25, qual é aproximadamente o $R_j^2$ dele contra
+os demais? O que você faria?</p>
+<details><summary>Ver solução</summary>
+
+De $\text{VIF} = 1/(1 - R_j^2) = 25$, tem-se $R_j^2 = 0{,}96$: 96% da variação
+desse preditor é explicada pelos outros — ele é quase redundante. Opções: remover
+um dos preditores colineares, combiná-los em um só (ex.: um índice), ou usar
+regularização (próximo tópico), que lida bem com colinearidade.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 3. Livro aberto: https://www.statlearning.com/</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 3.</li>
+<li>Belsley, D. A., Kuh, E. &amp; Welsch, R. E. (1980). <em>Regression Diagnostics: Identifying Influential Data and Sources of Collinearity</em>. Wiley.</li>
+</ul>
+<div class="widget" data-widget="wColinear" data-id="colin_2_2">
+  <div class="widget-title">Colinearidade — quando dois preditores se confundem</div>
+  <canvas id="colin_2_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Correlação entre x₁ e x₂</span><input type="range" min="0" max="0.99" step="0.01" value="0.0" id="colin_2_2-rho"><span class="ctrl-val" id="colin_2_2-rho-v">0.0</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">VIF</div><div class="sval" id="colin_2_2-vif" style="color:#c0392b;">—</div><div class="sdesc">fator de inflação da variância</div></div>
+    <div class="stat-card"><div class="slabel">Instabilidade dos coeficientes</div><div class="sval" id="colin_2_2-desvio" style="color:#3266ad;">—</div><div class="sdesc">desvio entre 60 reajustes</div></div>
+  </div>
+</div>
 </article>
 <article id="02-regressao-03-regressao-polinomial-md" class="topic">
 <div class="topic-num">2.3</div>
 <h1 class="topic-title">Regressão polinomial</h1>
-<p>Nem toda relação é uma reta. A regressão polinomial estende o modelo linear incluindo potências do preditor ($x^2, x^3, \dots$) como novas colunas, capturando curvaturas sem abandonar o arcabouço linear — o modelo continua linear nos parâmetros.</p>
-<p>É o exemplo didático perfeito para o compromisso viés–variância: grau baixo demais gera underfitting; grau alto demais, overfitting. Vamos visualizar como a escolha do grau muda o ajuste e por que precisamos de dados de validação para escolhê-lo.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Expansão polinomial</td>
-<td><code>PolynomialFeatures</code> do scikit-learn</td>
-</tr>
-<tr>
-<td>Grau × erro de validação</td>
-<td>curva de seleção do grau ótimo</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/03_regressao_polinomial.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Nem toda relação é uma reta. A regressão polinomial captura <strong>curvaturas</strong> sem
+abandonar o arcabouço linear: basta incluir potências do preditor como novas
+colunas. O truque conceitual é que o modelo continua <strong>linear nos parâmetros</strong> —
+por isso todo o maquinário de mínimos quadrados continua valendo.</p>
+<h2>De reta a curva</h2>
+<div class="math-display">$$
+\hat{y} = \theta_0 + \theta_1 x + \theta_2 x^2 + \cdots + \theta_d x^d
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$d$ é o <strong>grau</strong> do polinômio — o maior expoente incluído;</li>
+<li>$\theta_0, \dots, \theta_d$ são os <strong>coeficientes</strong>, ajustados exatamente como na
+  regressão múltipla, tratando $x^2, x^3, \dots, x^d$ como se fossem preditores
+  independentes $x_2, x_3, \dots$;</li>
+<li>com $d = 1$ recuperamos a reta; $d = 2$ dá uma parábola; graus maiores permitem
+  curvas cada vez mais sinuosas.</li>
+</ul>
+<p>A mágica: embora a <strong>curva</strong> em $x$ seja não-linear, a <strong>função nos parâmetros</strong>
+$\theta_j$ é linear. Construímos a matriz de design com as potências de $x$ nas
+colunas e resolvemos como uma regressão múltipla comum.</p>
+<h2>O compromisso viés–variância, ao vivo</h2>
+<p>O grau $d$ é um <strong>hiperparâmetro</strong> que controla a flexibilidade do modelo, e ele é
+o exemplo didático perfeito do compromisso central da ML:</p>
+<ul>
+<li><strong>grau baixo demais</strong> → o modelo é rígido, não acompanha a curvatura real e erra
+  por igual no treino e no teste. É o <strong>underfitting</strong> (viés alto);</li>
+<li><strong>grau alto demais</strong> → o modelo tem liberdade para passar por cima de cada ponto
+  de treino, inclusive o ruído, e erra feio em dados novos. É o <strong>overfitting</strong>
+  (variância alta);</li>
+<li><strong>grau certo</strong> → captura o sinal e ignora o ruído.</li>
+</ul>
+<p>O erro de <strong>treino</strong> cai monotonicamente com o grau — mais flexibilidade sempre
+ajusta melhor os pontos vistos. O erro de <strong>teste</strong> cai e depois volta a subir, e
+o fundo dessa curva em U marca o grau ideal. Por isso o grau <strong>não</strong> pode ser
+escolhido pelo erro de treino; precisamos de dados de validação (tópico de
+validação cruzada, no capítulo de Fundamentos).</p>
+<p>O widget abaixo mostra isso: mova o slider do grau e veja a curva sair de rígida
+(subajustada) a excessivamente sinuosa (sobreajustada), enquanto os cartões de
+erro de treino e de teste seguem caminhos opostos.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_regressao_polinomial.ipynb</code> usa o <code>PolynomialFeatures</code> do
+scikit-learn dentro de um <code>Pipeline</code>, ajusta polinômios de vários graus a dados
+com curvatura conhecida e traça a <strong>curva de seleção do grau</strong> — erro de treino e
+de validação em função de $d$ — para escolher o grau ótimo com base em dados que o
+modelo não viu.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que o erro de treino nunca aumenta quando subimos o grau, mas o erro de
+teste pode piorar?</p>
+<details><summary>Ver solução</summary>
 
+Aumentar o grau só **acrescenta** flexibilidade: um polinômio de grau $d+1$
+contém todos os de grau $d$ como caso particular (basta $\theta_{d+1}=0$), então
+ele nunca ajusta os pontos de treino pior — no máximo igual. Mas essa
+flexibilidade extra pode ser usada para acompanhar o **ruído** do treino, que não
+se repete em dados novos; aí o erro de **teste** sobe. É a assinatura do
+overfitting.
+
+</details>
+
+<p><strong>2.</strong> Um colega ajusta um polinômio de grau 15 a 16 pontos e obtém erro de treino
+praticamente zero. Ele deveria comemorar?</p>
+<details><summary>Ver solução</summary>
+
+Não. Com 16 pontos, um polinômio de grau 15 tem parâmetros suficientes para passar
+**exatamente** por todos eles (interpolação) — erro de treino zero é esperado e não
+diz nada sobre generalização. O teste em dados novos quase certamente será
+péssimo. É o retrato do overfitting: memorizou, não aprendeu.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 7. Livro aberto: https://www.statlearning.com/</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 2 e 7 (viés–variância).</li>
+</ul>
+<div class="widget" data-widget="wOverfit" data-id="polyreg_2_3">
+  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
+  <canvas id="polyreg_2_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="polyreg_2_3-deg"><span class="ctrl-val" id="polyreg_2_3-deg-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="polyreg_2_3-redraw">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="polyreg_2_3-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
+    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="polyreg_2_3-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
+    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="polyreg_2_3-diag">—</div><div class="sdesc">regime do modelo</div></div>
+  </div>
+</div>
 </article>
 <article id="02-regressao-04-regularizacao-md" class="topic">
 <div class="topic-num">2.4</div>
 <h1 class="topic-title">Regularização Ridge e Lasso</h1>
-<p>Regularização adiciona uma penalidade ao tamanho dos coeficientes para conter o overfitting. Ridge ($\ell_2$) encolhe os coeficientes suavemente; Lasso ($\ell_1$) pode zerá-los, funcionando como seleção automática de variáveis.</p>
-<p>Veremos como o hiperparâmetro $\alpha$ controla a força da penalidade e como escolhê-lo por validação cruzada. A regularização é indispensável em dados de alta dimensão, como expressão gênica, onde há mais variáveis do que amostras.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/04_regularizacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O tópico anterior mostrou que flexibilidade demais leva ao overfitting. A
+<strong>regularização</strong> é a forma mais elegante de conter isso: em vez de limitar o
+número de preditores, adicionamos à função de custo uma <strong>penalidade sobre o
+tamanho dos coeficientes</strong>. O modelo passa a equilibrar dois objetivos — ajustar
+os dados <strong>e</strong> manter os coeficientes pequenos.</p>
+<h2>A ideia, em uma fórmula</h2>
+<p>O custo regularizado soma o erro quadrático a um termo de penalidade:</p>
+<div class="math-display">$$
+J(\boldsymbol\theta) = \underbrace{\sum_{i=1}^{n}\bigl(y_i - \boldsymbol\theta^\top \mathbf{x}_i\bigr)^2}_{\text{ajuste aos dados}} \;+\; \underbrace{\alpha \, \Omega(\boldsymbol\theta)}_{\text{penalidade}}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\Omega(\boldsymbol\theta)$ é a <strong>penalidade</strong> — uma medida do tamanho dos
+  coeficientes;</li>
+<li>$\alpha \ge 0$ é o <strong>hiperparâmetro de regularização</strong> — a "força" da penalidade.
+  Com $\alpha = 0$ voltamos aos mínimos quadrados comuns; quanto maior $\alpha$,
+  mais o modelo é empurrado a encolher os coeficientes, aceitando um ajuste pior em
+  troca de mais simplicidade e estabilidade.</li>
+</ul>
+<p>A escolha de $\Omega$ define os dois métodos clássicos.</p>
+<h2>Ridge ($\ell_2$) — encolher suavemente</h2>
+<p>A regressão <strong>Ridge</strong> penaliza a soma dos <strong>quadrados</strong> dos coeficientes:</p>
+<div class="math-display">$$
+\Omega_{\text{Ridge}}(\boldsymbol\theta) = \sum_{j=1}^{p} \theta_j^2
+$$</div>
+<p>Ela <strong>encolhe</strong> todos os coeficientes na direção de zero de forma suave, mas
+raramente os zera. É especialmente boa contra <strong>colinearidade</strong>: onde os mínimos
+quadrados dariam coeficientes gigantes e instáveis (tópico anterior), a Ridge
+distribui o peso entre os preditores correlacionados e estabiliza as estimativas.</p>
+<h2>Lasso ($\ell_1$) — encolher e selecionar</h2>
+<p>A regressão <strong>Lasso</strong> penaliza a soma dos <strong>valores absolutos</strong>:</p>
+<div class="math-display">$$
+\Omega_{\text{Lasso}}(\boldsymbol\theta) = \sum_{j=1}^{p} |\theta_j|
+$$</div>
+<p>A diferença parece pequena, mas a consequência é grande: a penalidade $\ell_1$
+tende a zerar <strong>exatamente</strong> os coeficientes dos preditores menos úteis. A Lasso
+faz, portanto, <strong>seleção automática de variáveis</strong> — entrega um modelo esparso,
+que usa só um subconjunto dos preditores. Isso é ouro em dados de alta dimensão,
+como expressão gênica, onde há mais variáveis do que amostras e queremos descobrir
+quais poucas importam.</p>
 <blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
+<p><strong>Observação importante:</strong> como a penalidade depende da escala dos coeficientes,
+a regularização <strong>exige padronizar os preditores</strong> antes (média 0, desvio 1).
+Sem isso, um preditor medido em unidades grandes seria penalizado de forma
+injusta. No notebook fazemos isso com um <code>Pipeline</code>.</p>
 </blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Caminho de regularização</td>
-<td>coeficientes em função de $\alpha$</td>
-</tr>
-<tr>
-<td>Ridge × Lasso × ElasticNet</td>
-<td>quando cada um brilha</td>
-</tr>
-</tbody>
-</table>
+<p>O <strong>ElasticNet</strong> combina as duas penalidades, herdando a estabilidade da Ridge e a
+esparsidade da Lasso.</p>
+<h2>O caminho de regularização</h2>
+<p>O widget abaixo traça o <strong>caminho de regularização</strong>: como cada coeficiente muda
+conforme $\alpha$ cresce. Mova o slider de $\alpha$ (em escala logarítmica) e
+compare Ridge e Lasso — na Ridge os coeficientes encolhem juntos e suavemente; na
+Lasso, um a um eles chegam a <strong>zero</strong> e ali ficam. O cartão conta quantos
+coeficientes continuam diferentes de zero.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_regularizacao.ipynb</code> ajusta Ridge, Lasso e ElasticNet ao conjunto
+<strong>diabetes</strong>, sempre dentro de um <code>Pipeline</code> com padronização, traça os caminhos
+de regularização com Plotly e escolhe o $\alpha$ por <strong>validação cruzada</strong>
+(<code>RidgeCV</code> / <code>LassoCV</code>), mostrando o valor que minimiza o erro em dados não vistos.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Você tem 20 000 genes (preditores) e 200 pacientes. Quer um modelo
+interpretável, que aponte um punhado de genes relevantes. Ridge ou Lasso?</p>
+<details><summary>Ver solução</summary>
 
+**Lasso.** Ela zera a maioria dos coeficientes e devolve um modelo esparso, usando
+só alguns genes — exatamente o que se quer para interpretação e para o caso
+$p \gg n$ (muito mais variáveis que amostras), em que os mínimos quadrados comuns
+nem têm solução única. A Ridge encolheria todos, mas manteria os 20 000 no modelo.
+
+</details>
+
+<p><strong>2.</strong> O que acontece com os coeficientes quando $\alpha \to \infty$? E quando
+$\alpha = 0$?</p>
+<details><summary>Ver solução</summary>
+
+- $\alpha \to \infty$: a penalidade domina e todos os coeficientes são empurrados
+  a **zero** — o modelo vira uma constante (só o intercepto), prevendo a média de
+  $y$. Viés máximo, variância mínima.
+- $\alpha = 0$: nenhuma penalidade — recuperamos a **regressão de mínimos quadrados
+  comum**, com todo o risco de overfitting que ela traz em alta dimensão.
+
+O bom $\alpha$ fica no meio, e se escolhe por validação cruzada.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 6. Livro aberto: https://www.statlearning.com/</li>
+<li>Hoerl, A. E. &amp; Kennard, R. W. (1970). <em>Ridge Regression: Biased Estimation for Nonorthogonal Problems</em>. Technometrics, 12(1), 55–67.</li>
+<li>Tibshirani, R. (1996). <em>Regression Shrinkage and Selection via the Lasso</em>. Journal of the Royal Statistical Society B, 58(1), 267–288.</li>
+<li>Zou, H. &amp; Hastie, T. (2005). <em>Regularization and Variable Selection via the Elastic Net</em>. JRSS B, 67(2), 301–320.</li>
+</ul>
+<div class="widget" data-widget="wRidgeLasso" data-id="regul_2_4">
+  <div class="widget-title">Caminho de regularização — Ridge × Lasso</div>
+  <canvas id="regul_2_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">log₁₀(α) — força da penalidade</span><input type="range" min="-3" max="3" step="0.1" value="0" id="regul_2_4-loga"><span class="ctrl-val" id="regul_2_4-loga-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Penalidade</span>
+      <select class="ctrl-select" id="regul_2_4-tipo"><option value="ridge">Ridge (ℓ₂)</option><option value="lasso">Lasso (ℓ₁)</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">α atual</div><div class="sval" id="regul_2_4-alpha" style="color:#c0392b;">—</div><div class="sdesc">força da penalidade</div></div>
+    <div class="stat-card"><div class="slabel">Coeficientes ≠ 0</div><div class="sval" id="regul_2_4-nz" style="color:#1a7a4a;">—</div><div class="sdesc">de 8 preditores</div></div>
+  </div>
+</div>
 </article>
 <article id="02-regressao-05-regressao-logistica-md" class="topic">
 <div class="topic-num">2.5</div>
 <h1 class="topic-title">Regressão logística</h1>
-<p>Apesar do nome, a regressão logística é um modelo de <strong>classificação</strong>. Ela modela a probabilidade de uma classe aplicando a função sigmoide à combinação linear dos preditores: $p = \sigma(\boldsymbol\theta^\top \mathbf{x})$, garantindo saídas entre 0 e 1.</p>
-<p>É o modelo de referência em epidemiologia, onde os coeficientes viram razões de chance (odds ratios) interpretáveis. Vamos treinar um classificador para diagnóstico binário, interpretar os coeficientes e ligar o tema às métricas de classificação.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Sigmoide e odds ratio</td>
-<td>interpretação clínica dos coeficientes</td>
-</tr>
-<tr>
-<td>Fronteira de decisão</td>
-<td>visualização em 2D</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/05_regressao_logistica.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Apesar do nome, a regressão logística é um modelo de <strong>classificação</strong> — talvez o
+mais importante da estatística aplicada à saúde. Ela fecha o capítulo de regressão
+porque reaproveita toda a maquinaria linear que vimos, mudando apenas o que fazemos
+com a combinação linear no final: em vez de prever um número qualquer, prevemos uma
+<strong>probabilidade</strong>.</p>
+<h2>Da reta à probabilidade</h2>
+<p>Uma combinação linear $z = \boldsymbol\theta^\top\mathbf{x}$ pode dar qualquer valor
+real, de $-\infty$ a $+\infty$ — imprestável como probabilidade. A regressão
+logística passa esse $z$ pela função <strong>sigmoide</strong> (ou logística), que espreme a
+reta inteira no intervalo $(0, 1)$:</p>
+<div class="math-display">$$
+p = \sigma(z) = \frac{1}{1 + e^{-z}}, \qquad z = \boldsymbol\theta^\top \mathbf{x}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$z$ é o <strong>logito</strong> — a combinação linear dos preditores, igualzinha à da
+  regressão múltipla;</li>
+<li>$\sigma(\cdot)$ é a <strong>sigmoide</strong>: vale $0{,}5$ quando $z = 0$, tende a $1$ quando
+  $z \to +\infty$ e a $0$ quando $z \to -\infty$;</li>
+<li>$p = P(y = 1 \mid \mathbf{x})$ é a <strong>probabilidade estimada</strong> de a classe ser
+  positiva (doente, por exemplo). Decidimos a classe comparando $p$ a um limiar
+  (em geral $0{,}5$).</li>
+</ul>
+<h2>Como se treina: verossimilhança e log-loss</h2>
+<p>Aqui não há fórmula fechada. Ajustamos $\boldsymbol\theta$ <strong>maximizando a
+verossimilhança</strong> — equivalente a minimizar a <strong>entropia cruzada binária</strong>
+(log-loss):</p>
+<div class="math-display">$$
+J(\boldsymbol\theta) = -\frac{1}{n}\sum_{i=1}^{n} \Bigl[\, y_i \ln p_i + (1 - y_i)\ln(1 - p_i) \Bigr]
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$y_i \in \{0, 1\}$ é a <strong>classe verdadeira</strong> do exemplo $i$;</li>
+<li>$p_i$ é a <strong>probabilidade prevista</strong> para esse exemplo;</li>
+<li>o termo funciona como um "castigo por confiança errada": se o modelo diz $p$
+  perto de 1 e a classe era 0, $\ln(1 - p)$ dispara para $-\infty$. Prever com
+  confiança e errar é o pior dos mundos.</li>
+</ul>
+<p>Esse custo é <strong>convexo</strong>, então o gradiente descendente (que vimos no PyTorch)
+encontra o mínimo global. É exatamente esse laço que o <code>LogisticRegression</code> do
+scikit-learn resolve por baixo.</p>
+<h2>O presente para a epidemiologia: razão de chances</h2>
+<p>Reorganizando a sigmoide, o logito vira o logaritmo das <strong>chances</strong> (odds):</p>
+<div class="math-display">$$
+\ln\!\left(\frac{p}{1-p}\right) = \theta_0 + \theta_1 x_1 + \cdots + \theta_p x_p
+$$</div>
+<p>Isso dá aos coeficientes uma leitura clínica direta: $e^{\theta_j}$ é a <strong>razão de
+chances</strong> (odds ratio) associada a aumentar $x_j$ em uma unidade, mantidos os
+demais fixos. Um $\theta_j > 0$ (razão de chances $> 1$) marca um <strong>fator de
+risco</strong>; $\theta_j < 0$, um fator de proteção. É por isso que a regressão logística
+é a espinha dorsal dos estudos de fatores de risco.</p>
+<p>O widget abaixo mostra a sigmoide de um preditor: mova a <strong>inclinação</strong> (o peso
+$\theta_1$) e o <strong>limiar</strong> de decisão e veja a fronteira separar os dois grupos de
+pontos, com a acurácia atualizando ao vivo.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>05_regressao_logistica.ipynb</code> treina um classificador no conjunto
+<strong>breast cancer</strong> do scikit-learn (diagnóstico benigno × maligno), interpreta os
+coeficientes como razões de chance, desenha a <strong>fronteira de decisão</strong> em 2D com
+Plotly e liga o desempenho às métricas de classificação (matriz de confusão, AUC)
+do capítulo de Fundamentos. Fazemos o mesmo modelo também com um laço de treino
+explícito em PyTorch, para ver que "logística" e "uma camada + sigmoide" são a
+mesma coisa.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um coeficiente de regressão logística para "fumante" (0/1) vale
+$\theta = 0{,}92$. Qual é a razão de chances e como interpretá-la?</p>
+<details><summary>Ver solução</summary>
 
+A razão de chances é $e^{0{,}92} \approx 2{,}5$. Interpretação: mantidos os demais
+fatores fixos, um fumante tem cerca de **2,5 vezes mais chances** (odds) do
+desfecho do que um não fumante. Atenção: razão de *chances* não é razão de
+*probabilidades* — as duas só se aproximam quando o desfecho é raro.
+
+</details>
+
+<p><strong>2.</strong> Por que não treinamos a regressão logística minimizando o erro quadrático,
+como na regressão linear?</p>
+<details><summary>Ver solução</summary>
+
+Com a sigmoide no meio, o erro quadrático em função de $\boldsymbol\theta$ deixa de
+ser convexo — ganha mínimos locais que prendem o otimizador — e penaliza mal os
+erros de probabilidade. A entropia cruzada (log-loss), derivada da verossimilhança,
+é convexa e penaliza fortemente a confiança errada, o que dá um treino estável e
+bem-calibrado.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 4. Livro aberto: https://www.statlearning.com/</li>
+<li>Hosmer, D. W., Lemeshow, S. &amp; Sturdivant, R. X. (2013). <em>Applied Logistic Regression</em>, 3ª ed. Wiley.</li>
+<li>Cox, D. R. (1958). <em>The Regression Analysis of Binary Sequences</em>. Journal of the Royal Statistical Society B, 20(2), 215–242.</li>
+</ul>
+<div class="widget" data-widget="wLogistic" data-id="logi_2_5">
+  <div class="widget-title">Regressão logística — sigmoide e fronteira de decisão</div>
+  <canvas id="logi_2_5-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁ (peso)</span><input type="range" min="0.2" max="8" step="0.1" value="2" id="logi_2_5-b1"><span class="ctrl-val" id="logi_2_5-b1-v">2</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Deslocamento θ₀</span><input type="range" min="-6" max="6" step="0.1" value="0" id="logi_2_5-b0"><span class="ctrl-val" id="logi_2_5-b0-v">0</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="logi_2_5-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="logi_2_5-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar p = 0,5</div></div>
+    <div class="stat-card"><div class="slabel">Log-loss</div><div class="sval" id="logi_2_5-loss" style="color:#c0392b;">—</div><div class="sdesc">menor = melhor</div></div>
+  </div>
+</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

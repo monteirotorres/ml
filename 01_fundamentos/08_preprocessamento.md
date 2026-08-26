@@ -5,9 +5,7 @@ categorias em texto. O pré-processamento é a etapa — muitas vezes a mais
 demorada — que transforma esses dados brutos em algo que um modelo consegue
 aprender bem.
 
-▶ [Slides — Fundamentos](fundamentos_slides.html)
-
-## Por que isso importa
+## Motivação
 
 A frase mais repetida em ciência de dados é *"garbage in, garbage out"*. Nenhum
 algoritmo compensa dados mal preparados. Além disso, vários métodos têm
