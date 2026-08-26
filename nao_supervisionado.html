@@ -93,117 +93,377 @@
 <article id="05-nao-supervisionado-01-kmeans-md" class="topic">
 <div class="topic-num">5.1</div>
 <h1 class="topic-title">k-means clustering</h1>
-<p>O k-means agrupa dados em $k$ conglomerados minimizando a distância de cada ponto ao centro do seu grupo. É o algoritmo de clustering mais usado — rápido, simples e um excelente primeiro passo para explorar estrutura em dados não rotulados.</p>
-<p>Discutiremos a inicialização (k-means++), como escolher $k$ (método do cotovelo e silhueta) e as limitações do método: sensibilidade à escala e a suposição de grupos esféricos de tamanho parecido.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Iterações do k-means</td>
-<td>atribuição e atualização dos centros</td>
-</tr>
-<tr>
-<td>Escolha de $k$</td>
-<td>cotovelo e coeficiente de silhueta</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/01_kmeans.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Entramos na aprendizagem <strong>não supervisionada</strong>: agora não há rótulos $y$ para
+prever. O objetivo muda de "acertar a resposta" para "encontrar estrutura". O
+k-means é o algoritmo mais usado para isso — ele agrupa os dados em $k$
+conglomerados (clusters), colocando cada ponto no grupo cujo centro está mais
+perto.</p>
+<h2>O que o k-means otimiza</h2>
+<p>O k-means busca $k$ centros (chamados <strong>centroides</strong>) que minimizem a soma das
+distâncias ao quadrado de cada ponto ao seu centro:</p>
+<div class="math-display">$$
+J = \sum_{c=1}^{k} \sum_{\mathbf{x} \in C_c} \lVert \mathbf{x} - \boldsymbol\mu_c \rVert^2
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$k$ é o <strong>número de grupos</strong> (você escolhe);</li>
+<li>$C_c$ é o <strong>conjunto de pontos</strong> atribuídos ao grupo $c$;</li>
+<li>$\boldsymbol\mu_c$ é o <strong>centroide</strong> do grupo $c$ (a média dos pontos dele);</li>
+<li>$\lVert \mathbf{x} - \boldsymbol\mu_c \rVert^2$ é a <strong>distância ao quadrado</strong> do
+  ponto ao seu centroide;</li>
+<li>$J$ é a <strong>inércia</strong> (ou WCSS, <em>within-cluster sum of squares</em>) — quanto menor,
+  mais compactos os grupos.</li>
+</ul>
+<h2>Como ele encontra os grupos (algoritmo de Lloyd)</h2>
+<p>Não dá para testar todas as atribuições possíveis, então o k-means alterna dois
+passos simples até estabilizar:</p>
+<ol>
+<li><strong>atribuição</strong> — cada ponto vai para o centroide mais próximo;</li>
+<li><strong>atualização</strong> — cada centroide vira a média dos pontos que recebeu.</li>
+</ol>
+<p>Repetindo, a inércia $J$ só diminui, até parar de mudar. Como o resultado depende
+de <strong>onde os centroides começam</strong>, a inicialização inteligente <strong>k-means++</strong>
+(usada por padrão) espalha os centros iniciais para evitar soluções ruins — e
+roda-se o algoritmo várias vezes, ficando com a de menor $J$.</p>
+<p>O widget abaixo executa o k-means ao vivo: escolha $k$, gere uma nova amostra e
+veja os pontos serem coloridos pelo grupo e os centroides se acomodarem. O cartão
+mostra a inércia.</p>
+<h2>Escolhendo k</h2>
+<p>Como não há rótulo, $k$ é decisão sua. Dois guias:</p>
+<ul>
+<li><strong>método do cotovelo</strong> — trace a inércia $J$ contra $k$. Ela sempre cai (mais
+  grupos ajustam melhor), mas há um "cotovelo" onde a queda desacelera: acrescentar
+  grupos além dali rende pouco. Esse joelho sugere um bom $k$.</li>
+<li><strong>silhueta</strong> — mede, para cada ponto, quão mais perto ele está do próprio grupo
+  do que do grupo vizinho mais próximo (varia de $-1$ a $1$). A silhueta média alta
+  indica grupos bem separados.</li>
+</ul>
+<h2>As limitações (importante)</h2>
+<p>O k-means supõe grupos <strong>esféricos, de tamanho parecido</strong>, e usa distância
+euclidiana — então é <strong>sensível à escala</strong> (padronize antes!) e falha quando os
+grupos reais têm formas alongadas ou densidades muito diferentes. Saber onde ele
+quebra é tão importante quanto saber usá-lo.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_kmeans.ipynb</code> aplica o <code>KMeans</code> ao Iris (sem usar os rótulos),
+traça a curva do <strong>cotovelo</strong> e a <strong>silhueta</strong> para escolher $k$, compara o
+agrupamento encontrado com as espécies verdadeiras e mostra um caso em que o
+k-means falha (grupos não esféricos), tudo com Plotly.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que a inércia $J$ <strong>nunca</strong> aumenta ao passarmos de $k$ para $k+1$
+grupos? Isso significa que $k+1$ é sempre melhor?</p>
+<details><summary>Ver solução</summary>
 
+Com mais centroides, cada ponto pode ficar **igual ou mais perto** de algum centro,
+então a soma das distâncias ao quadrado só pode diminuir ou empatar — no extremo
+$k = n$, cada ponto vira seu próprio grupo e $J = 0$. Mas isso **não** significa que
+mais grupos sejam melhores: um $J$ menor à custa de grupos artificiais não revela
+estrutura real. Por isso escolhemos $k$ pelo cotovelo/silhueta, não minimizando $J$.
+
+</details>
+
+<p><strong>2.</strong> Você aplicou k-means sem padronizar, com "idade" (20–80) e "renda" (milhares).
+O que dominou os grupos?</p>
+<details><summary>Ver solução</summary>
+
+A **renda**, por ter valores muito maiores, dominou a distância euclidiana: os
+grupos se formaram quase só por faixa de renda, ignorando a idade. Como no k-NN, o
+k-means baseia-se em distância, então **padronizar** (média 0, desvio 1) antes é
+essencial para que todas as variáveis pesem de forma comparável.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>MacQueen, J. (1967). <em>Some Methods for Classification and Analysis of Multivariate Observations</em>. Proc. 5th Berkeley Symposium.</li>
+<li>Lloyd, S. (1982). <em>Least Squares Quantization in PCM</em>. IEEE Transactions on Information Theory, 28(2), 129–137.</li>
+<li>Arthur, D. &amp; Vassilvitskii, S. (2007). <em>k-means++: The Advantages of Careful Seeding</em>. SODA, 1027–1035.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 12. Livro aberto: https://www.statlearning.com/</li>
+</ul>
+<div class="widget" data-widget="wKmeans" data-id="kmeans_5_1">
+  <div class="widget-title">k-means — agrupando ao vivo</div>
+  <canvas id="kmeans_5_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de grupos (k)</span><input type="range" min="1" max="6" step="1" value="3" id="kmeans_5_1-k"><span class="ctrl-val" id="kmeans_5_1-k-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="kmeans_5_1-passo">Um passo (Lloyd)</button>
+    <button class="btn" id="kmeans_5_1-conv">Convergir</button>
+    <button class="btn" id="kmeans_5_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Inércia (WCSS)</div><div class="sval" id="kmeans_5_1-inercia" style="color:#3266ad;">—</div><div class="sdesc">soma das distâncias² aos centros</div></div>
+    <div class="stat-card"><div class="slabel">Iterações</div><div class="sval" id="kmeans_5_1-iter">—</div><div class="sdesc">passos até estabilizar</div></div>
+  </div>
+</div>
 </article>
 <article id="05-nao-supervisionado-02-hierarquico-md" class="topic">
 <div class="topic-num">5.2</div>
 <h1 class="topic-title">Clustering hierárquico</h1>
-<p>O clustering hierárquico constrói uma árvore de agrupamentos (dendrograma) unindo sucessivamente os pontos ou grupos mais próximos. Não exige fixar $k$ de antemão e revela estrutura em múltiplas escalas.</p>
-<p>É onipresente em bioinformática — pense nos heatmaps de expressão gênica. Veremos os critérios de ligação (simples, completa, média, Ward), como cortar o dendrograma e como interpretá-lo.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Dendrograma</td>
-<td>leitura e corte em k grupos</td>
-</tr>
-<tr>
-<td>Critérios de ligação</td>
-<td>single, complete, average, Ward</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/02_hierarquico.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>O k-means exige que você diga <strong>quantos</strong> grupos existem. O clustering hierárquico
+não: ele constrói uma <strong>árvore de agrupamentos</strong> (o <strong>dendrograma</strong>) que revela
+estrutura em todas as escalas de uma vez — de cada ponto isolado até um único grupo
+com tudo. Você decide onde cortar essa árvore depois de vê-la.</p>
+<h2>Como a árvore é construída</h2>
+<p>A versão mais comum é <strong>aglomerativa</strong> (de baixo para cima):</p>
+<ol>
+<li>comece com cada ponto sendo seu próprio grupo;</li>
+<li>una os <strong>dois grupos mais próximos</strong> em um só;</li>
+<li>repita até sobrar um único grupo.</li>
+</ol>
+<p>Cada união vira um "galho" do dendrograma, na altura igual à distância entre os
+grupos unidos. A pergunta central é: o que significa "distância entre <strong>grupos</strong>"?
+Isso é definido pelo <strong>critério de ligação</strong>:</p>
+<ul>
+<li><strong>simples</strong> (single) — distância entre os <strong>dois pontos mais próximos</strong> dos
+  grupos. Tende a formar grupos alongados, em "corrente".</li>
+<li><strong>completa</strong> (complete) — distância entre os <strong>dois pontos mais distantes</strong>.
+  Favorece grupos compactos.</li>
+<li><strong>média</strong> (average) — média das distâncias entre todos os pares.</li>
+<li><strong>Ward</strong> — une os grupos que <strong>menos aumentam a variância interna</strong> total. É o
+  padrão na prática e costuma dar grupos equilibrados; minimiza, a cada passo,</li>
+</ul>
+<div class="math-display">$$
+\Delta = \frac{n_a\, n_b}{n_a + n_b} \, \lVert \boldsymbol\mu_a - \boldsymbol\mu_b \rVert^2
+$$</div>
+<p>Onde $n_a, n_b$ são os <strong>tamanhos</strong> dos grupos unidos e $\boldsymbol\mu_a,
+\boldsymbol\mu_b$ seus <strong>centroides</strong>: unir grupos grandes ou distantes custa caro,
+então o Ward prefere fusões que mantêm os grupos coesos.</p>
+<h2>Lendo e cortando o dendrograma</h2>
+<p>A <strong>altura</strong> de cada união mede o quão diferentes eram os grupos fundidos: uniões
+baixas juntam pontos muito parecidos; uniões altas juntam grupos já distintos.
+Para obter $k$ grupos, <strong>corta-se</strong> o dendrograma numa altura que atravesse $k$
+galhos verticais. Uma altura de corte logo abaixo de um "salto" grande costuma ser
+uma boa escolha — ali, unir mais custaria juntar grupos genuinamente diferentes.</p>
+<p>O widget abaixo mostra um dendrograma com uma linha de corte que você desliza: veja
+o número de grupos mudar conforme a altura, e como um corte abaixo de um salto
+grande separa a estrutura natural.</p>
+<h2>Onipresente em bioinformática</h2>
+<p>O dendrograma é a estrutura por trás dos <strong>heatmaps de expressão gênica</strong>: genes e
+amostras são reordenados por proximidade e as árvores nas bordas mostram quais
+agrupam com quais. É a ferramenta visual padrão para explorar dados ômicos.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>02_hierarquico.ipynb</code> aplica clustering aglomerativo ao Iris,
+<strong>desenha o dendrograma</strong> com Plotly (usando a ligação de Ward), compara os critérios
+de ligação e mostra como cortar a árvore em $k$ grupos com o
+<code>AgglomerativeClustering</code>.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Uma vantagem prática do clustering hierárquico sobre o k-means é não precisar
+fixar $k$ de antemão. Cite uma <strong>desvantagem</strong> em conjuntos de dados grandes.</p>
+<details><summary>Ver solução</summary>
 
+O **custo computacional**: construir o dendrograma aglomerativo exige comparar
+todos os pares de grupos a cada passo, com custo de tempo e memória que cresce
+tipicamente com $O(n^2)$ ou pior. Para dezenas ou centenas de milhares de pontos
+isso fica inviável, enquanto o k-means escala bem melhor. Por isso, em dados
+grandes, é comum usar k-means (ou amostrar antes do hierárquico).
+
+</details>
+
+<p><strong>2.</strong> Com a ligação <strong>simples</strong> (single), dois grupos claramente separados podem
+acabar unidos por causa de poucos pontos entre eles. Por quê?</p>
+<details><summary>Ver solução</summary>
+
+Porque a ligação simples define a distância entre grupos pelos **dois pontos mais
+próximos**. Se houver uma "ponte" de pontos intermediários ligando os dois grupos,
+o par mais próximo através da ponte terá distância pequena, e o algoritmo os unirá
+cedo — o efeito de **encadeamento** (*chaining*). A ligação completa ou de Ward, que
+olham o grupo como um todo, são mais robustas a isso.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Ward, J. H. (1963). <em>Hierarchical Grouping to Optimize an Objective Function</em>. Journal of the American Statistical Association, 58(301), 236–244.</li>
+<li>Sokal, R. &amp; Michener, C. (1958). <em>A Statistical Method for Evaluating Systematic Relationships</em>. University of Kansas Science Bulletin.</li>
+<li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 14.3.</li>
+</ul>
+<div class="widget" data-widget="wDendro" data-id="dendro_5_2">
+  <div class="widget-title">Dendrograma — corte a árvore e conte os grupos</div>
+  <canvas id="dendro_5_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Altura do corte</span><input type="range" min="0.05" max="1" step="0.01" value="0.55" id="dendro_5_2-corte"><span class="ctrl-val" id="dendro_5_2-corte-v">0.55</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Grupos formados</div><div class="sval" id="dendro_5_2-ngrupos" style="color:#1a7a4a;">—</div><div class="sdesc">abaixo da linha de corte</div></div>
+  </div>
+</div>
 </article>
 <article id="05-nao-supervisionado-03-pca-md" class="topic">
 <div class="topic-num">5.3</div>
 <h1 class="topic-title">Análise de Componentes Principais (PCA)</h1>
-<p>A PCA reduz a dimensionalidade projetando os dados nas direções de maior variância — as componentes principais. Ela comprime informação, remove redundância e permite visualizar dados de alta dimensão em 2D ou 3D.</p>
-<p>É a técnica de redução de dimensionalidade mais fundamental. Discutiremos a ligação com autovalores da matriz de covariância, a variância explicada acumulada e a importância de padronizar antes de aplicá-la.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Variância explicada</td>
-<td>quantas componentes reter</td>
-</tr>
-<tr>
-<td>Projeção 2D</td>
-<td>visualização de dados multivariados</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/03_pca.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Dados de alta dimensão — dezenas ou milhares de variáveis — são difíceis de
+visualizar e muitas vezes cheios de redundância (variáveis que dizem quase a mesma
+coisa). A <strong>PCA</strong> (análise de componentes principais) resolve os dois problemas de
+uma vez: encontra um punhado de novas direções que capturam a maior parte da
+informação e projeta os dados nelas.</p>
+<h2>A ideia: direções de máxima variância</h2>
+<p>A PCA procura as direções ao longo das quais os dados <strong>mais variam</strong> — porque é aí
+que está a informação. A primeira componente principal é a direção de <strong>maior
+variância</strong>; a segunda é a de maior variância <strong>perpendicular</strong> à primeira; e assim
+por diante.</p>
+<p>Formalmente, essas direções são os <strong>autovetores</strong> da <strong>matriz de covariância</strong> dos
+dados, e a variância capturada por cada uma é o <strong>autovalor</strong> correspondente:</p>
+<div class="math-display">$$
+\mathbf{C}\,\mathbf{v}_j = \lambda_j\,\mathbf{v}_j
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\mathbf{C}$ é a <strong>matriz de covariância</strong> dos dados (mede como as variáveis
+  variam juntas);</li>
+<li>$\mathbf{v}_j$ é o <strong>$j$-ésimo autovetor</strong> — a direção da $j$-ésima componente
+  principal;</li>
+<li>$\lambda_j$ é o <strong>$j$-ésimo autovalor</strong> — a <strong>variância</strong> dos dados ao longo dessa
+  direção.</li>
+</ul>
+<p>Ordenando os autovalores do maior para o menor, ficamos com as direções que mais
+importam e descartamos as de variância desprezível.</p>
+<h2>Quanta informação cada componente guarda</h2>
+<p>A <strong>variância explicada</strong> pela componente $j$ é sua fração do total:</p>
+<div class="math-display">$$
+\text{variância explicada}_j = \frac{\lambda_j}{\sum_{i} \lambda_i}
+$$</div>
+<p>Somando as maiores, obtemos a <strong>variância explicada acumulada</strong>. Uma regra comum:
+manter componentes suficientes para reter, digamos, 90% ou 95% da variância — assim
+comprimimos os dados perdendo pouco.</p>
+<p>O widget abaixo mostra a intuição: uma nuvem de pontos correlacionados e uma direção
+de projeção que você gira. Encontre o ângulo que <strong>maximiza</strong> a variância dos pontos
+projetados — essa é, por definição, a primeira componente principal. O cartão mostra
+quanto da variância total aquela direção captura.</p>
+<h2>Padronizar quase sempre</h2>
+<p>A PCA persegue variância, e variância depende de <strong>unidades</strong>. Uma variável em
+milhares (renda) teria variância muito maior que uma proporção (0 a 1), e a PCA a
+escolheria como primeira componente só pela escala. Por isso, salvo quando todas as
+variáveis já estão na mesma unidade, <strong>padroniza-se</strong> antes (média 0, desvio 1) —
+aí a PCA opera sobre a matriz de <strong>correlação</strong>, não de covariância.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_pca.ipynb</code> aplica a PCA (com padronização) ao Iris e ao conjunto
+<strong>breast cancer</strong>, traça o <strong>scree plot</strong> e a variância explicada acumulada, projeta
+os dados em 2D com Plotly — vendo as espécies/classes se separarem sem nunca terem
+sido usadas — e interpreta as cargas (o peso de cada variável em cada componente).</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> As duas primeiras componentes de um conjunto explicam 62% e 21% da variância.
+Quanto se perde ao visualizar os dados apenas no plano dessas duas componentes?</p>
+<details><summary>Ver solução</summary>
 
+As duas juntas retêm $62\% + 21\% = 83\%$ da variância total, então a projeção 2D
+**perde 17%** da variância (a informação nas demais componentes). Costuma ser um
+ótimo negócio para visualização: enxergamos a estrutura dominante num plano, cientes
+de que uma fração menor da variação fica de fora.
+
+</details>
+
+<p><strong>2.</strong> Por que a PCA sem padronizar pode ser enganada por uma única variável de
+escala grande?</p>
+<details><summary>Ver solução</summary>
+
+Porque a PCA maximiza **variância**, e a variância é medida nas unidades de cada
+variável. Uma variável em unidades grandes (ex.: renda em reais) tem variância
+numérica enorme comparada a uma proporção, então a primeira componente aponta quase
+que só na direção dela — não porque seja a mais informativa, mas porque tem a maior
+escala. Padronizar coloca todas na mesma régua e evita esse artefato.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Pearson, K. (1901). <em>On Lines and Planes of Closest Fit to Systems of Points in Space</em>. Philosophical Magazine, 2(11), 559–572 — a origem da PCA.</li>
+<li>Hotelling, H. (1933). <em>Analysis of a Complex of Statistical Variables into Principal Components</em>. Journal of Educational Psychology, 24, 417–441.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 12. Livro aberto: https://www.statlearning.com/</li>
+</ul>
+<div class="widget" data-widget="wPca" data-id="pca_5_3">
+  <div class="widget-title">PCA — a direção de máxima variância</div>
+  <canvas id="pca_5_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Ângulo da direção de projeção (°)</span><input type="range" min="0" max="180" step="1" value="20" id="pca_5_3-ang"><span class="ctrl-val" id="pca_5_3-ang-v">20</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="pca_5_3-otimo">Ir para a 1ª componente</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Variância capturada</div><div class="sval" id="pca_5_3-vexp" style="color:#3266ad;">—</div><div class="sdesc">nesta direção</div></div>
+    <div class="stat-card"><div class="slabel">Máximo possível (PC1)</div><div class="sval" id="pca_5_3-max" style="color:#1a7a4a;">—</div><div class="sdesc">variância da 1ª componente</div></div>
+  </div>
+</div>
 </article>
 <article id="05-nao-supervisionado-04-tsne-umap-md" class="topic">
 <div class="topic-num">5.4</div>
 <h1 class="topic-title">t-SNE e UMAP</h1>
-<p>t-SNE e UMAP são técnicas não lineares de redução de dimensionalidade voltadas à <strong>visualização</strong>. Elas preservam a estrutura local — pontos vizinhos permanecem vizinhos — revelando agrupamentos que a PCA linear pode não capturar.</p>
-<p>São padrão em single-cell RNA-seq e outros dados biológicos de altíssima dimensão. Veremos os hiperparâmetros críticos (perplexidade, <code>n_neighbors</code>), suas armadilhas de interpretação e por que distâncias globais nesses mapas enganam.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Perplexidade / n_neighbors</td>
-<td>efeito no mapa resultante</td>
-</tr>
-<tr>
-<td>Armadilhas de interpretação</td>
-<td>o que NÃO ler nos eixos</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/04_tsne_umap.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>A PCA é <strong>linear</strong>: ela projeta os dados em um plano. Mas muita estrutura biológica
+é curva, enovelada — e uma projeção linear a achata. O <strong>t-SNE</strong> e o <strong>UMAP</strong> são
+técnicas <strong>não lineares</strong> feitas para um objetivo específico: <strong>visualizar</strong> dados
+de altíssima dimensão em 2D, preservando quem está perto de quem.</p>
+<h2>A ideia: preservar a vizinhança local</h2>
+<p>Ambos partem do mesmo princípio: se dois pontos são <strong>vizinhos</strong> no espaço original
+(de milhares de dimensões), eles devem continuar <strong>vizinhos</strong> no mapa 2D. Em vez de
+tentar preservar todas as distâncias (impossível ao espremer mil dimensões em duas),
+eles preservam a <strong>estrutura local</strong>.</p>
+<ul>
+<li>O <strong>t-SNE</strong> converte distâncias em <strong>probabilidades de vizinhança</strong> e procura um
+  arranjo 2D cujas probabilidades sejam as mais parecidas possíveis com as
+  originais. Seu hiperparâmetro-chave é a <strong>perplexidade</strong> — grosso modo, quantos
+  vizinhos cada ponto "considera" (valores típicos: 5 a 50).</li>
+<li>O <strong>UMAP</strong> parte de fundamentos geométricos diferentes, costuma ser <strong>mais rápido</strong>
+  e preservar um pouco melhor a estrutura mais global. Seu parâmetro análogo é o
+  <code>n_neighbors</code>.</li>
+</ul>
+<p>Nos dois, o número de vizinhos regula o equilíbrio entre enxergar <strong>detalhe local</strong>
+(poucos vizinhos) e <strong>estrutura ampla</strong> (muitos vizinhos).</p>
+<h2>As armadilhas de interpretação (leia com atenção)</h2>
+<p>Esses mapas são lindos e reveladores, mas fáceis de superinterpretar. Três regras:</p>
+<ul>
+<li><strong>O tamanho dos grupos não significa nada.</strong> t-SNE e UMAP expandem grupos densos e
+  encolhem os esparsos; a área de um aglomerado no mapa não reflete sua dispersão
+  real.</li>
+<li><strong>As distâncias entre grupos enganam.</strong> A técnica preserva vizinhança <strong>local</strong>,
+  não distâncias globais. Dois grupos afastados no mapa não são necessariamente mais
+  diferentes que dois grupos próximos.</li>
+<li><strong>O resultado muda entre execuções</strong> e com os hiperparâmetros. Vale rodar com
+  algumas perplexidades/sementes e confiar no que é <strong>estável</strong>, não em um mapa
+  único.</li>
+</ul>
+<p>Em resumo: use t-SNE e UMAP para <strong>gerar hipóteses</strong> sobre agrupamentos, não para
+medir distâncias ou tamanhos. A quantificação fica para outros métodos.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_tsne_umap.ipynb</code> usa o conjunto de <strong>dígitos manuscritos</strong> (64
+dimensões) para comparar, lado a lado com Plotly, a projeção <strong>linear da PCA</strong> com a
+do <strong>t-SNE</strong> — vendo os dígitos se separarem em ilhas que a PCA mistura. O UMAP entra
+como célula <strong>opcional</strong> (se a biblioteca estiver instalada), e variamos a
+perplexidade para mostrar sua influência.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Em um mapa t-SNE de células, um grupo aparece com o <strong>dobro</strong> da área de
+outro. Um colega conclui que esse tipo celular é "mais variável". Ele está certo?</p>
+<details><summary>Ver solução</summary>
+
+**Não.** O tamanho de um grupo em t-SNE (e UMAP) **não** corresponde à sua dispersão
+real: a técnica expande regiões densas e comprime as esparsas para caber no plano. A
+área no mapa é um artefato do método, não uma medida de variabilidade. Para comparar
+dispersão, é preciso quantificar no espaço original (por exemplo, a variância dentro
+de cada grupo).
+
+</details>
+
+<p><strong>2.</strong> Por que a PCA, mesmo sendo mais simples, ainda é útil <strong>antes</strong> de aplicar
+t-SNE ou UMAP em dados com milhares de dimensões?</p>
+<details><summary>Ver solução</summary>
+
+Rodar t-SNE/UMAP diretamente em milhares de dimensões é lento e sensível a ruído. É
+prática comum reduzir primeiro com **PCA** (digamos, para 30–50 componentes),
+removendo ruído e acelerando muito o cálculo, e só então aplicar t-SNE/UMAP sobre
+essa representação já comprimida. A PCA faz o trabalho pesado de compressão linear; o
+t-SNE/UMAP cuida do arranjo local final.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>van der Maaten, L. &amp; Hinton, G. (2008). <em>Visualizing Data using t-SNE</em>. Journal of Machine Learning Research, 9, 2579–2605.</li>
+<li>McInnes, L., Healy, J. &amp; Melville, J. (2018). <em>UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</em>. arXiv:1802.03426.</li>
+<li>Wattenberg, M., Viégas, F. &amp; Johnson, I. (2016). <em>How to Use t-SNE Effectively</em>. Distill — sobre as armadilhas de interpretação.</li>
+</ul>
 
 </article>
 </div>

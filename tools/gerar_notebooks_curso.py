@@ -1300,6 +1300,289 @@ def nb_stacking():
     escrever(nb, "04_ensembles/04_stacking.ipynb")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+def nb_kmeans():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# k-means clustering\n\n"
+           "**Objetivo:** agrupar o Iris **sem** usar os rótulos, escolher $k$ pelo "
+           "cotovelo e pela silhueta, comparar os grupos com as espécies verdadeiras e "
+           "ver um caso em que o k-means falha."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_iris\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.cluster import KMeans\n'
+             'from sklearn.metrics import silhouette_score\n\n'
+             'iris = load_iris()\n'
+             'X = StandardScaler().fit_transform(iris.data)   # padronizar e essencial\n'
+             'y_verdade = iris.target\n'
+             'print("X:", X.shape, "(rotulos escondidos do algoritmo)")'),
+        md("## 1. Cotovelo e silhueta\n\n"
+           "A inércia sempre cai com $k$ — procuramos o **cotovelo**. A silhueta média "
+           "tem um **pico** no $k$ com grupos mais bem separados. Um laço explícito "
+           "calcula os dois para cada $k$."),
+        code('ks = list(range(2, 9))\n'
+             'inercias = []\n'
+             'silhuetas = []\n'
+             'for k in ks:\n'
+             '    modelo = KMeans(n_clusters=k, n_init=10, random_state=SEMENTE).fit(X)\n'
+             '    inercias.append(modelo.inertia_)\n'
+             '    silhuetas.append(silhouette_score(X, modelo.labels_))\n'
+             '    print("k =", k, "| inercia", round(modelo.inertia_, 1), "| silhueta", round(silhuetas[-1], 3))\n\n'
+             'from plotly.subplots import make_subplots\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("Cotovelo (inercia)", "Silhueta media"))\n'
+             'figura.add_trace(go.Scatter(x=ks, y=inercias, mode="lines+markers", line=dict(color=AZUL)), row=1, col=1)\n'
+             'figura.add_trace(go.Scatter(x=ks, y=silhuetas, mode="lines+markers", line=dict(color=VERDE)), row=1, col=2)\n'
+             'figura.update_layout(height=340, showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()\n'
+             'print("k de maior silhueta:", ks[int(np.argmax(silhuetas))])'),
+        md("## 2. Os grupos encontrados × as espécies reais\n\n"
+           "Com $k=3$, comparamos os grupos do k-means (que nunca viu os rótulos) com as "
+           "três espécies. A tabela cruzada mostra o quanto eles coincidem."),
+        code('modelo = KMeans(n_clusters=3, n_init=10, random_state=SEMENTE).fit(X)\n'
+             'tabela = pd.crosstab(pd.Series(iris.target_names[y_verdade], name="especie real"),\n'
+             '                     pd.Series(modelo.labels_, name="grupo do k-means"))\n'
+             'print(tabela)\n'
+             'print("\\nsetosa costuma ficar sozinha num grupo; versicolor e virginica se misturam um pouco.")'),
+        md("## 3. Onde o k-means falha\n\n"
+           "O k-means supõe grupos **esféricos**. Em dados com formato de duas luas, ele "
+           "corta pelo meio em vez de seguir as luas — a lição de que a suposição "
+           "importa."),
+        code('from sklearn.datasets import make_moons\n\n'
+             'X_luas, _ = make_moons(n_samples=300, noise=0.06, random_state=SEMENTE)\n'
+             'grupos_luas = KMeans(n_clusters=2, n_init=10, random_state=SEMENTE).fit_predict(X_luas)\n\n'
+             'figura = go.Figure(go.Scatter(x=X_luas[:, 0], y=X_luas[:, 1], mode="markers",\n'
+             '                              marker=dict(color=grupos_luas, colorscale="Bluered", size=6)))\n'
+             'figura.update_layout(title="k-means em duas luas: corta reto, ignora a forma",\n'
+             '                     height=380, showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Pela silhueta do item 1, qual $k$ o método sugere para o Iris? Isso bate com "
+           "o número de espécies? Se não, o que pode explicar a diferença?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "A silhueta costuma indicar $k=2$ para o Iris, embora existam **três** "
+           "espécies. O motivo: *setosa* é muito separada das outras duas, enquanto "
+           "*versicolor* e *virginica* se sobrepõem bastante — do ponto de vista de "
+           "distância, elas parecem quase um único grupo. A silhueta mede separação "
+           "geométrica, não conhece as espécies; por isso premia a divisão em 2 grupos "
+           "bem distintos. É um lembrete de que o \"melhor\" $k$ estatístico nem sempre "
+           "é o número de classes reais.\n\n</details>"),
+    ]
+    escrever(nb, "05_nao_supervisionado/01_kmeans.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_hierarquico():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Clustering hierárquico\n\n"
+           "**Objetivo:** construir e ler um **dendrograma** do Iris (ligação de Ward), "
+           "cortá-lo em $k$ grupos com o `AgglomerativeClustering` e comparar critérios "
+           "de ligação."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_iris\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'iris = load_iris()\n'
+             'X = StandardScaler().fit_transform(iris.data)\n'
+             '# amostra pequena para um dendrograma legivel\n'
+             'rng = np.random.RandomState(SEMENTE)\n'
+             'indices = rng.choice(len(X), 30, replace=False)\n'
+             'X_amostra = X[indices]\n'
+             'especies = iris.target_names[iris.target[indices]]\n'
+             'print("amostra:", X_amostra.shape)'),
+        md("## 1. O dendrograma (ligação de Ward)\n\n"
+           "Cada folha é uma flor; a **altura** de cada união mede o quão diferentes "
+           "eram os grupos fundidos. Saltos grandes de altura marcam separações "
+           "naturais — bons lugares para cortar."),
+        code('import plotly.figure_factory as ff\n'
+             'from scipy.cluster.hierarchy import linkage\n\n'
+             'figura = ff.create_dendrogram(X_amostra, labels=list(especies),\n'
+             '                              linkagefun=lambda d: linkage(d, "ward"))\n'
+             'figura.update_layout(title="Dendrograma do Iris (ligacao de Ward)",\n'
+             '                     height=420, margin=dict(l=10, r=10, t=50, b=80))\n'
+             'figura.show()'),
+        md("## 2. Cortando em k grupos\n\n"
+           "O `AgglomerativeClustering` corta a árvore para dar exatamente $k$ grupos. "
+           "Com $k=3$, comparamos com as espécies (usando a base completa)."),
+        code('from sklearn.cluster import AgglomerativeClustering\n\n'
+             'agrupador = AgglomerativeClustering(n_clusters=3, linkage="ward")\n'
+             'grupos = agrupador.fit_predict(X)\n'
+             'tabela = pd.crosstab(pd.Series(iris.target_names[iris.target], name="especie"),\n'
+             '                     pd.Series(grupos, name="grupo (Ward)"))\n'
+             'print(tabela)'),
+        md("## 3. O critério de ligação muda tudo\n\n"
+           "Comparamos quatro critérios pelo quanto os grupos batem com as espécies "
+           "(índice de Rand ajustado, de 0 a 1). A ligação **simples** costuma sofrer "
+           "com o encadeamento; **Ward** e **completa** vão melhor."),
+        code('from sklearn.metrics import adjusted_rand_score\n\n'
+             'for ligacao in ["single", "complete", "average", "ward"]:\n'
+             '    g = AgglomerativeClustering(n_clusters=3, linkage=ligacao).fit_predict(X)\n'
+             '    ari = adjusted_rand_score(iris.target, g)\n'
+             '    print("ligacao", ligacao.ljust(9), "-> ARI com as especies:", round(ari, 3))'),
+        md("## Exercício\n\n"
+           "No item 3, a ligação `single` costuma dar o pior ARI. Relacione isso com o "
+           "efeito de **encadeamento** discutido no texto."),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "A ligação simples define a distância entre grupos pelos **dois pontos mais "
+           "próximos**. Como *versicolor* e *virginica* se tocam (há pontos de um bem "
+           "perto do outro), esses pares próximos formam uma \"ponte\" e o algoritmo "
+           "funde os dois cedo — o **encadeamento** —, produzindo grupos que não "
+           "correspondem às espécies e, por isso, um ARI baixo. Ward e completa olham o "
+           "grupo como um todo e resistem melhor a essa ponte.\n\n</details>"),
+    ]
+    escrever(nb, "05_nao_supervisionado/02_hierarquico.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_pca():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Análise de Componentes Principais (PCA)\n\n"
+           "**Objetivo:** reduzir a dimensionalidade do conjunto **breast cancer** (30 "
+           "variáveis) com PCA, ler o *scree plot* e a variância acumulada, e projetar "
+           "em 2D — vendo as classes se separarem sem terem sido usadas."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.decomposition import PCA\n\n'
+             'dados = load_breast_cancer()\n'
+             'X = StandardScaler().fit_transform(dados.data)   # padronizar antes da PCA\n'
+             'y = dados.target\n'
+             'print("X:", X.shape, "-> vamos comprimir 30 variaveis")'),
+        md("## 1. Variância explicada (scree plot)\n\n"
+           "Cada componente captura uma fração da variância total (seu autovalor "
+           "normalizado). O *scree plot* mostra quanto cada uma guarda; a curva "
+           "acumulada mostra quantas bastam."),
+        code('pca = PCA().fit(X)\n'
+             'variancia = pca.explained_variance_ratio_\n'
+             'acumulada = np.cumsum(variancia)\n'
+             'for i in range(6):\n'
+             '    print("PC", i+1, "-> variancia", round(variancia[i], 3), "| acumulada", round(acumulada[i], 3))\n\n'
+             'from plotly.subplots import make_subplots\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("Variancia por componente", "Variancia acumulada"))\n'
+             'figura.add_trace(go.Bar(x=list(range(1, 11)), y=variancia[:10], marker_color=AZUL), row=1, col=1)\n'
+             'figura.add_trace(go.Scatter(x=list(range(1, 11)), y=acumulada[:10], mode="lines+markers",\n'
+             '                            line=dict(color=VERDE)), row=1, col=2)\n'
+             'figura.add_hline(y=0.9, line_dash="dash", line_color=VERMELHO, row=1, col=2)\n'
+             'figura.update_layout(height=340, showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()\n'
+             'n90 = int(np.argmax(acumulada >= 0.9)) + 1\n'
+             'print("componentes para reter 90% da variancia:", n90, "de 30")'),
+        md("## 2. Os dados em 2D\n\n"
+           "Projetando nas duas primeiras componentes, os 30 números viram 2 — e as "
+           "classes (que a PCA **não** viu) já aparecem quase separadas."),
+        code('coords = PCA(n_components=2).fit_transform(X)\n'
+             'figura = go.Figure()\n'
+             'for classe, nome, cor in [(0, "maligno", VERMELHO), (1, "benigno", AZUL)]:\n'
+             '    m = y == classe\n'
+             '    figura.add_trace(go.Scatter(x=coords[m, 0], y=coords[m, 1], mode="markers",\n'
+             '                                marker=dict(color=cor, size=6, opacity=0.6), name=nome))\n'
+             'figura.update_layout(title="breast cancer projetado em 2 componentes principais",\n'
+             '                     xaxis_title="PC1", yaxis_title="PC2", height=420,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. O que carrega cada componente\n\n"
+           "As **cargas** dizem o peso de cada variável original em cada componente. As "
+           "cinco maiores da PC1 revelam o que domina a maior direção de variação."),
+        code('pca2 = PCA(n_components=2).fit(X)\n'
+             'cargas_pc1 = pca2.components_[0]\n'
+             'ordem = np.argsort(np.abs(cargas_pc1))[::-1][:5]\n'
+             'print("variaveis com maior peso na PC1:")\n'
+             'for j in ordem:\n'
+             '    print("  ", dados.feature_names[j].ljust(24), round(cargas_pc1[j], 3))'),
+        md("## Exercício\n\n"
+           "Se a PC1 sozinha explica cerca de 44% da variância e a PC2 cerca de 19%, "
+           "quanto se perde ao olhar só o plano PC1–PC2? Isso invalida a visualização?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "As duas juntas retêm $\\approx 44\\% + 19\\% = 63\\%$; a projeção 2D perde os "
+           "$\\approx 37\\%$ restantes, espalhados pelas outras 28 componentes. Não "
+           "invalida a visualização: 63% da variação num único plano já basta para ver a "
+           "separação dominante entre maligno e benigno. A ressalva é lembrar que pontos "
+           "próximos no plano podem diferir nas dimensões descartadas.\n\n</details>"),
+    ]
+    escrever(nb, "05_nao_supervisionado/03_pca.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_tsne_umap():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# t-SNE e UMAP\n\n"
+           "**Objetivo:** comparar a projeção **linear** da PCA com a **não linear** do "
+           "t-SNE no conjunto de dígitos manuscritos, ver os dígitos se separarem em "
+           "ilhas, e experimentar o efeito da perplexidade. UMAP entra como opcional."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_digits\n\n'
+             'digitos = load_digits()\n'
+             '# subamostra para o t-SNE rodar rapido\n'
+             'rng = np.random.RandomState(SEMENTE)\n'
+             'sel = rng.choice(len(digitos.data), 600, replace=False)\n'
+             'X = digitos.data[sel]      # 64 dimensoes (imagens 8x8)\n'
+             'y = digitos.target[sel]\n'
+             'print("X:", X.shape, "| digitos de 0 a 9")'),
+        md("## 1. PCA linear × t-SNE não linear\n\n"
+           "A PCA projeta no plano de maior variância; o t-SNE preserva a **vizinhança "
+           "local**. Lado a lado, os dígitos que a PCA mistura o t-SNE separa em ilhas."),
+        code('from sklearn.decomposition import PCA\n'
+             'from sklearn.manifold import TSNE\n\n'
+             'coords_pca = PCA(n_components=2).fit_transform(X)\n'
+             'coords_tsne = TSNE(n_components=2, perplexity=30, init="pca",\n'
+             '                   random_state=SEMENTE).fit_transform(X)\n\n'
+             'from plotly.subplots import make_subplots\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("PCA (linear)", "t-SNE (nao linear)"))\n'
+             'figura.add_trace(go.Scatter(x=coords_pca[:, 0], y=coords_pca[:, 1], mode="markers",\n'
+             '                            marker=dict(color=y, colorscale="Rainbow", size=5, showscale=False),\n'
+             '                            text=y), row=1, col=1)\n'
+             'figura.add_trace(go.Scatter(x=coords_tsne[:, 0], y=coords_tsne[:, 1], mode="markers",\n'
+             '                            marker=dict(color=y, colorscale="Rainbow", size=5, showscale=False),\n'
+             '                            text=y), row=1, col=2)\n'
+             'figura.update_layout(height=420, showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 2. O efeito da perplexidade\n\n"
+           "A perplexidade regula quantos vizinhos cada ponto considera. Valores muito "
+           "baixos fragmentam; muito altos borram. Comparamos três."),
+        code('figura = make_subplots(rows=1, cols=3, subplot_titles=("perplexidade 5", "30", "50"))\n'
+             'coluna = 1\n'
+             'for perp in [5, 30, 50]:\n'
+             '    coords = TSNE(n_components=2, perplexity=perp, init="pca",\n'
+             '                  random_state=SEMENTE).fit_transform(X)\n'
+             '    figura.add_trace(go.Scatter(x=coords[:, 0], y=coords[:, 1], mode="markers",\n'
+             '                                marker=dict(color=y, colorscale="Rainbow", size=4)),\n'
+             '                     row=1, col=coluna)\n'
+             '    coluna += 1\n'
+             'figura.update_layout(height=340, showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. (Opcional) UMAP\n\n"
+           "Se a biblioteca `umap-learn` estiver instalada (no Colab, um `!pip install "
+           "umap-learn` resolve), a célula abaixo roda o UMAP; senão, avisa e segue."),
+        code('try:\n'
+             '    import umap\n'
+             '    reducao = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=SEMENTE)\n'
+             '    coords_umap = reducao.fit_transform(X)\n'
+             '    figura = go.Figure(go.Scatter(x=coords_umap[:, 0], y=coords_umap[:, 1], mode="markers",\n'
+             '                                  marker=dict(color=y, colorscale="Rainbow", size=5)))\n'
+             '    figura.update_layout(title="UMAP dos digitos", height=420, showlegend=False,\n'
+             '                         margin=dict(l=10, r=10, t=50, b=10))\n'
+             '    figura.show()\n'
+             'except Exception as erro:\n'
+             '    print("umap-learn nao disponivel — pulando.")\n'
+             '    print("para instalar no Colab: !pip install umap-learn")\n'
+             '    print("detalhe:", type(erro).__name__)'),
+        md("## Exercício\n\n"
+           "No mapa t-SNE, dois grupos de dígitos aparecem bem afastados. Você pode "
+           "concluir que esses dígitos são \"mais diferentes\" entre si do que dois "
+           "grupos próximos? Por quê?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "**Não.** O t-SNE preserva a estrutura **local** (quem é vizinho de quem), "
+           "não as distâncias **globais**. A separação entre dois grupos no mapa é "
+           "amplamente arbitrária — o algoritmo é livre para posicionar ilhas distantes "
+           "sem que isso reflita a distância real no espaço de 64 dimensões. Para "
+           "comparar o quão diferentes são dois grupos, é preciso medir no espaço "
+           "original, não no mapa.\n\n</details>"),
+    ]
+    escrever(nb, "05_nao_supervisionado/04_tsne_umap.ipynb")
+
+
 CONSTRUTORES = [
     nb_ferramentas,
     nb_reg_linear,
@@ -1315,6 +1598,10 @@ CONSTRUTORES = [
     nb_gradient_boosting,
     nb_xgboost,
     nb_stacking,
+    nb_kmeans,
+    nb_hierarquico,
+    nb_pca,
+    nb_tsne_umap,
 ]
 
 if __name__ == "__main__":

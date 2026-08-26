@@ -43,6 +43,9 @@ WIDGETS = {
     "04_ensembles/01_random_forest.md": ("bag", "wBagging"),
     "04_ensembles/02_gradient_boosting.md": ("boost", "wBoosting"),
     "04_ensembles/04_stacking.md": ("vote", "wVoting"),
+    "05_nao_supervisionado/01_kmeans.md": ("kmeans", "wKmeans"),
+    "05_nao_supervisionado/02_hierarquico.md": ("dendro", "wDendro"),
+    "05_nao_supervisionado/03_pca.md": ("pca", "wPca"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -109,6 +112,49 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wKmeans":
+        return f"""<div class="widget">
+  <div class="widget-title">k-means — agrupando ao vivo</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "k", "Número de grupos (k)", 1, 6, 1, 3)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-passo">Um passo (Lloyd)</button>
+    <button class="btn" id="{wid}-conv">Convergir</button>
+    <button class="btn" id="{wid}-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "inercia", "Inércia (WCSS)", "soma das distâncias² aos centros", PAL_BLUE)}
+    {_card(wid, "iter", "Iterações", "passos até estabilizar")}
+  </div>
+</div>"""
+    if fn == "wDendro":
+        return f"""<div class="widget">
+  <div class="widget-title">Dendrograma — corte a árvore e conte os grupos</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "corte", "Altura do corte", 0.05, 1, 0.01, 0.55)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "ngrupos", "Grupos formados", "abaixo da linha de corte", PAL_GREEN)}
+  </div>
+</div>"""
+    if fn == "wPca":
+        return f"""<div class="widget">
+  <div class="widget-title">PCA — a direção de máxima variância</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "ang", "Ângulo da direção de projeção (°)", 0, 180, 1, 20)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-otimo">Ir para a 1ª componente</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "vexp", "Variância capturada", "nesta direção", PAL_BLUE)}
+    {_card(wid, "max", "Máximo possível (PC1)", "variância da 1ª componente", PAL_GREEN)}
   </div>
 </div>"""
     if fn == "wBagging":

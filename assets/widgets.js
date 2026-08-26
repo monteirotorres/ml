@@ -881,6 +881,146 @@ function wVoting(id) {
 }
 
 // ============================================================
+// Widget: k-means ao vivo (algoritmo de Lloyd)
+// ============================================================
+function wKmeans(id) {
+  const cv = $(id + '-cv'); let pts = [], cent = [], iter = 0, semente = 7;
+  const cores = ['#3266ad', '#c0392b', '#1a7a4a', '#8660a0', '#d68910', '#16a085'];
+  function gerar() {
+    const rng = makeRng(semente); pts = [];
+    const centros = [[-1.5, -1], [1.5, -1.2], [0, 1.6], [2.2, 1.4]];
+    for (let i = 0; i < 120; i++) { const c = centros[i % 4]; pts.push([c[0] + rngNormal(rng) * 0.5, c[1] + rngNormal(rng) * 0.5]); }
+  }
+  function initCent() {
+    const k = +$(id + '-k').value, rng = makeRng((semente * 2654435761) >>> 0); cent = []; const usados = new Set();
+    while (cent.length < k) { const j = Math.floor(rng() * pts.length); if (usados.has(j)) continue; usados.add(j); cent.push([pts[j][0], pts[j][1]]); }
+    iter = 0;
+  }
+  function rotular() {
+    return pts.map(p => { let bi = 0, bd = 1e9; for (let c = 0; c < cent.length; c++) { const dx = p[0] - cent[c][0], dy = p[1] - cent[c][1], d = dx * dx + dy * dy; if (d < bd) { bd = d; bi = c; } } return bi; });
+  }
+  function passo() {
+    const lab = rotular(), s = cent.map(() => [0, 0, 0]);
+    for (let i = 0; i < pts.length; i++) { const c = lab[i]; s[c][0] += pts[i][0]; s[c][1] += pts[i][1]; s[c][2]++; }
+    let moveu = false;
+    for (let c = 0; c < cent.length; c++) if (s[c][2]) { const nx = s[c][0] / s[c][2], ny = s[c][1] / s[c][2]; if (Math.abs(nx - cent[c][0]) > 1e-6 || Math.abs(ny - cent[c][1]) > 1e-6) moveu = true; cent[c] = [nx, ny]; }
+    iter++; return moveu;
+  }
+  function draw() {
+    const p = pal(), lab = rotular(), W = 640, H = 360, ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const padL = 10, padR = 10, padT = 10, padB = 10, xmin = -3.5, xmax = 4, ymin = -3, ymax = 3.5;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    ctx.globalAlpha = 0.65;
+    for (let i = 0; i < pts.length; i++) { ctx.fillStyle = cores[lab[i] % cores.length]; ctx.beginPath(); ctx.arc(X(pts[i][0]), Y(pts[i][1]), 4, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1;
+    let inercia = 0;
+    for (let i = 0; i < pts.length; i++) { const c = lab[i], dx = pts[i][0] - cent[c][0], dy = pts[i][1] - cent[c][1]; inercia += dx * dx + dy * dy; }
+    for (let c = 0; c < cent.length; c++) {
+      ctx.fillStyle = cores[c % cores.length]; ctx.strokeStyle = p.ink; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(X(cent[c][0]), Y(cent[c][1]), 9, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = p.paper; ctx.lineWidth = 2; const cx = X(cent[c][0]), cy = Y(cent[c][1]);
+      ctx.beginPath(); ctx.moveTo(cx - 4, cy - 4); ctx.lineTo(cx + 4, cy + 4); ctx.moveTo(cx + 4, cy - 4); ctx.lineTo(cx - 4, cy + 4); ctx.stroke();
+    }
+    $(id + '-inercia').textContent = inercia.toFixed(1); $(id + '-iter').textContent = iter;
+  }
+  $(id + '-k').addEventListener('input', () => { $(id + '-k-v').textContent = $(id + '-k').value; initCent(); draw(); });
+  $(id + '-passo').addEventListener('click', () => { passo(); draw(); });
+  $(id + '-conv').addEventListener('click', () => { let n = 0; while (passo() && n < 50) n++; draw(); });
+  $(id + '-nova').addEventListener('click', () => { semente = (semente * 1664525 + 1013904223) >>> 0; gerar(); initCent(); draw(); });
+  window.addEventListener('resize', draw);
+  gerar(); $(id + '-k-v').textContent = '3'; initCent(); draw();
+}
+
+// ============================================================
+// Widget: dendrograma com linha de corte
+// ============================================================
+function wDendro(id) {
+  const cv = $(id + '-cv'); const leaves = 8;
+  const merges = [
+    { a: 0, b: 1, h: 0.12 }, { a: 2, b: 3, h: 0.15 }, { a: 8, b: 9, h: 0.35 },
+    { a: 4, b: 5, h: 0.18 }, { a: 6, b: 7, h: 0.22 }, { a: 11, b: 12, h: 0.45 },
+    { a: 10, b: 13, h: 0.85 },
+  ];
+  const nx = {}, nh = {};
+  for (let i = 0; i < leaves; i++) { nx[i] = i; nh[i] = 0; }
+  merges.forEach((m, k) => { const id2 = leaves + k; nx[id2] = (nx[m.a] + nx[m.b]) / 2; nh[id2] = m.h; });
+  const cores = ['#3266ad', '#c0392b', '#1a7a4a', '#8660a0', '#d68910', '#16a085', '#2c7fb8', '#b9770e'];
+  function draw() {
+    const p = pal(), cut = +$(id + '-corte').value;
+    $(id + '-corte-v').textContent = cut.toFixed(2);
+    const parent = {}; for (let i = 0; i < leaves + merges.length; i++) parent[i] = i;
+    const find = x => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    merges.forEach((m, k) => { if (m.h <= cut) { parent[find(m.a)] = find(leaves + k); parent[find(m.b)] = find(leaves + k); } });
+    const rootColor = {}; let ci = 0; const leafRoot = [];
+    for (let i = 0; i < leaves; i++) { const r = find(i); if (!(r in rootColor)) { rootColor[r] = cores[ci % cores.length]; ci++; } leafRoot.push(r); }
+    $(id + '-ngrupos').textContent = new Set(leafRoot).size;
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 20, padR = 20, padT = 20, padB = 34, hmax = 1.0;
+    const X = x => padL + x / (leaves - 1) * (W - padL - padR);
+    const Y = h => H - padB - (h / hmax) * (H - padT - padB);
+    merges.forEach((m, k) => {
+      const id2 = leaves + k, below = m.h <= cut;
+      ctx.strokeStyle = below ? (rootColor[find(id2)] || p.ink) : p.line; ctx.lineWidth = below ? 2.5 : 1.2;
+      ctx.beginPath();
+      ctx.moveTo(X(nx[m.a]), Y(nh[m.a])); ctx.lineTo(X(nx[m.a]), Y(m.h));
+      ctx.lineTo(X(nx[m.b]), Y(m.h)); ctx.lineTo(X(nx[m.b]), Y(nh[m.b])); ctx.stroke();
+    });
+    ctx.strokeStyle = p.red; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(padL, Y(cut)); ctx.lineTo(W - padR, Y(cut)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = p.red; ctx.font = '12px Georgia, serif'; ctx.textAlign = 'right'; ctx.fillText('corte', W - padR, Y(cut) - 6);
+    for (let i = 0; i < leaves; i++) { ctx.fillStyle = rootColor[leafRoot[i]]; ctx.beginPath(); ctx.arc(X(i), Y(0), 4, 0, 7); ctx.fill(); }
+  }
+  $(id + '-corte').addEventListener('input', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: PCA — direção de máxima variância
+// ============================================================
+function wPca(id) {
+  const cv = $(id + '-cv'); let pts = [], mx = 0, my = 0, C = [0, 0, 0];
+  (function () {
+    const rng = makeRng(15), ang = Math.PI / 6;
+    for (let i = 0; i < 120; i++) {
+      const a = rngNormal(rng) * 1.7, b = rngNormal(rng) * 0.55;
+      pts.push([a * Math.cos(ang) - b * Math.sin(ang), a * Math.sin(ang) + b * Math.cos(ang)]);
+    }
+    for (const q of pts) { mx += q[0]; my += q[1]; } mx /= pts.length; my /= pts.length;
+    for (const q of pts) { C[0] += (q[0] - mx) ** 2; C[1] += (q[0] - mx) * (q[1] - my); C[2] += (q[1] - my) ** 2; }
+    C = C.map(v => v / pts.length);
+  })();
+  const trace = C[0] + C[2];
+  const varDir = th => { const c = Math.cos(th), s = Math.sin(th); return c * c * C[0] + 2 * c * s * C[1] + s * s * C[2]; };
+  const pc1 = 0.5 * Math.atan2(2 * C[1], C[0] - C[2]);
+  const varPC1 = varDir(pc1);
+  function draw() {
+    const p = pal(), th = (+$(id + '-ang').value) * Math.PI / 180;
+    $(id + '-ang-v').textContent = $(id + '-ang').value;
+    $(id + '-vexp').textContent = (100 * varDir(th) / trace).toFixed(1) + '%';
+    $(id + '-max').textContent = (100 * varPC1 / trace).toFixed(1) + '%';
+    const W = 640, H = 340, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const lim = 5, s = Math.min((W - 20) / (2 * lim), (H - 20) / (2 * lim)), cxp = W / 2, cyp = H / 2;
+    const X = x => cxp + (x - mx) * s, Y = y => cyp - (y - my) * s;
+    const u = [Math.cos(th), Math.sin(th)], t = 6;
+    ctx.strokeStyle = p.green; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(X(mx - u[0] * t), Y(my - u[1] * t)); ctx.lineTo(X(mx + u[0] * t), Y(my + u[1] * t)); ctx.stroke();
+    for (const pt of pts) {
+      const dx = pt[0] - mx, dy = pt[1] - my, proj = dx * u[0] + dy * u[1];
+      const fx = mx + proj * u[0], fy = my + proj * u[1];
+      ctx.strokeStyle = p.line; ctx.lineWidth = 0.7;
+      ctx.beginPath(); ctx.moveTo(X(pt[0]), Y(pt[1])); ctx.lineTo(X(fx), Y(fy)); ctx.stroke();
+      ctx.fillStyle = p.blue; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 3.5, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.fillStyle = p.green; ctx.beginPath(); ctx.arc(X(fx), Y(fy), 2.5, 0, 7); ctx.fill();
+    }
+  }
+  $(id + '-ang').addEventListener('input', draw);
+  $(id + '-otimo').addEventListener('click', () => { let d = pc1 * 180 / Math.PI; if (d < 0) d += 180; $(id + '-ang').value = Math.round(d); draw(); });
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {
