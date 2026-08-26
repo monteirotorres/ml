@@ -6,6 +6,18 @@ k-means é o algoritmo mais usado para isso — ele agrupa os dados em $k$
 conglomerados (clusters), colocando cada ponto no grupo cujo centro está mais
 perto.
 
+Antes de mergulhar no k-means, vale ver o panorama: existem **muitos** algoritmos
+de agrupamento, e cada um enxerga a "estrutura" de um jeito. A figura abaixo, da
+documentação do scikit-learn, aplica vários deles a conjuntos de formatos
+diferentes (círculos, luas, blobs…). Repare que **nenhum acerta tudo** — o k-means
+(primeira coluna), por supor grupos esféricos, falha nos formatos alongados que
+outros métodos capturam. Guarde essa imagem: ela resume por que a escolha do
+algoritmo depende da forma dos dados.
+
+![Comparação de algoritmos de agrupamento do scikit-learn aplicados a conjuntos de formatos diferentes](assets/sklearn_cluster_comparison.png)
+
+*Comparação de métodos de agrupamento — [exemplo da documentação do scikit-learn](https://scikit-learn.org/stable/auto_examples/cluster/plot_cluster_comparison.html) (licença BSD).*
+
 ## O que o k-means otimiza
 
 O k-means busca $k$ centros (chamados **centroides**) que minimizem a soma das

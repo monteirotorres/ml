@@ -93,6 +93,7 @@
 <article id="06-redes-neurais-01-perceptron-md" class="topic">
 <div class="topic-num">6.1</div>
 <h1 class="topic-title">Perceptron e redes neurais simples</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://docs.pytorch.org/docs/stable/nn.html" target="_blank" rel="noopener">PyTorch · torch.nn<span class="ext">↗</span></a><a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html" target="_blank" rel="noopener">scikit-learn · MLPClassifier<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/01_perceptron.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Toda rede neural, por maior que seja, é feita da mesma peça minúscula: o
 <strong>neurônio artificial</strong>, ou perceptron. Entender essa peça — e por que ela sozinha
@@ -193,6 +194,7 @@ linearidade** da ativação que quebra esse colapso e dá poder à profundidade.
 <article id="06-redes-neurais-02-backprop-md" class="topic">
 <div class="topic-num">6.2</div>
 <h1 class="topic-title">Backpropagation e gradiente descendente</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://docs.pytorch.org/docs/stable/autograd.html" target="_blank" rel="noopener">PyTorch · autograd<span class="ext">↗</span></a><a href="https://docs.pytorch.org/docs/stable/optim.html" target="_blank" rel="noopener">PyTorch · optim<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/02_backprop.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Uma rede aprende ajustando seus pesos para reduzir o erro. Duas peças fazem isso
 acontecer: o <strong>gradiente descendente</strong>, que diz <em>em que direção</em> mexer os pesos, e a
@@ -295,6 +297,7 @@ o padrão.
 <article id="06-redes-neurais-03-ativacoes-md" class="topic">
 <div class="topic-num">6.3</div>
 <h1 class="topic-title">Funções de ativação</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://docs.pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity" target="_blank" rel="noopener">PyTorch · ativações<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/03_ativacoes.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>A função de ativação é a peça que dá <strong>não linearidade</strong> ao neurônio — e, como
 vimos, sem ela uma rede profunda colapsa em um único modelo linear. A escolha da
@@ -396,6 +399,7 @@ ReLU evita isso dando uma pequena inclinação (derivada $\alpha > 0$) aos negat
 <article id="06-redes-neurais-04-deep-learning-md" class="topic">
 <div class="topic-num">6.4</div>
 <h1 class="topic-title">Introdução ao deep learning</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://docs.pytorch.org/tutorials/beginner/basics/intro.html" target="_blank" rel="noopener">PyTorch · tutoriais<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/04_deep_learning.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p><em>Deep learning</em> é, em uma frase, o uso de redes neurais com <strong>muitas camadas</strong>. Mas
 a profundidade não é só "mais do mesmo": ela muda qualitativamente o que a rede

@@ -93,6 +93,7 @@
 <article id="02-regressao-01-regressao-linear-md" class="topic">
 <div class="topic-num">2.1</div>
 <h1 class="topic-title">Regressão linear simples</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html" target="_blank" rel="noopener">scikit-learn · LinearRegression<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/01_regressao_linear.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>A regressão linear simples é o modelo mais elementar de aprendizagem
 supervisionada: supomos que a variável resposta $y$ depende de um único preditor
@@ -216,6 +217,7 @@ mínimos desvios absolutos* —, mais robusta a outliers, porém sem fórmula fe
 <article id="02-regressao-02-regressao-multipla-md" class="topic">
 <div class="topic-num">2.2</div>
 <h1 class="topic-title">Regressão linear múltipla</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/linear_model.html" target="_blank" rel="noopener">scikit-learn · modelos lineares<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/02_regressao_multipla.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Raramente uma resposta depende de um único fator. A regressão <strong>múltipla</strong>
 generaliza a reta para vários preditores: a reta vira um <strong>hiperplano</strong>. Isso nos
@@ -327,6 +329,7 @@ regularização (próximo tópico), que lida bem com colinearidade.
 <article id="02-regressao-03-regressao-polinomial-md" class="topic">
 <div class="topic-num">2.3</div>
 <h1 class="topic-title">Regressão polinomial</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html" target="_blank" rel="noopener">scikit-learn · PolynomialFeatures<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/03_regressao_polinomial.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Nem toda relação é uma reta. A regressão polinomial captura <strong>curvaturas</strong> sem
 abandonar o arcabouço linear: basta incluir potências do preditor como novas
@@ -422,6 +425,7 @@ péssimo. É o retrato do overfitting: memorizou, não aprendeu.
 <article id="02-regressao-04-regularizacao-md" class="topic">
 <div class="topic-num">2.4</div>
 <h1 class="topic-title">Regularização Ridge e Lasso</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html" target="_blank" rel="noopener">scikit-learn · Ridge<span class="ext">↗</span></a><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html" target="_blank" rel="noopener">scikit-learn · Lasso<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/04_regularizacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>O tópico anterior mostrou que flexibilidade demais leva ao overfitting. A
 <strong>regularização</strong> é a forma mais elegante de conter isso: em vez de limitar o
@@ -532,6 +536,7 @@ O bom $\alpha$ fica no meio, e se escolhe por validação cruzada.
 <article id="02-regressao-05-regressao-logistica-md" class="topic">
 <div class="topic-num">2.5</div>
 <h1 class="topic-title">Regressão logística</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html" target="_blank" rel="noopener">scikit-learn · LogisticRegression<span class="ext">↗</span></a><a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.BCELoss.html" target="_blank" rel="noopener">PyTorch · BCELoss<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/02_regressao/05_regressao_logistica.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Apesar do nome, a regressão logística é um modelo de <strong>classificação</strong> — talvez o
 mais importante da estatística aplicada à saúde. Ela fecha o capítulo de regressão

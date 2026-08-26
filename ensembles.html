@@ -93,6 +93,7 @@
 <article id="04-ensembles-01-random-forest-md" class="topic">
 <div class="topic-num">4.1</div>
 <h1 class="topic-title">Bagging e Random Forests</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html" target="_blank" rel="noopener">scikit-learn · RandomForestClassifier<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/01_random_forest.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Uma árvore de decisão sozinha é instável: muda bastante se os dados mudam um
 pouco (variância alta). A ideia central deste capítulo é que <strong>muitos modelos
@@ -195,6 +196,7 @@ próprio treino, sem separar dados nem retreinar.
 <article id="04-ensembles-02-gradient-boosting-md" class="topic">
 <div class="topic-num">4.2</div>
 <h1 class="topic-title">Gradient Boosting</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html" target="_blank" rel="noopener">scikit-learn · GradientBoostingClassifier<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/02_gradient_boosting.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>A random forest treina árvores <strong>em paralelo</strong> e tira a média. O <em>boosting</em> faz o
 oposto: treina árvores <strong>em sequência</strong>, cada uma consertando o que a anterior
@@ -289,6 +291,7 @@ clássico compromisso entre desempenho e tempo de treino.
 <article id="04-ensembles-03-xgboost-md" class="topic">
 <div class="topic-num">4.3</div>
 <h1 class="topic-title">XGBoost e LightGBM</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html" target="_blank" rel="noopener">scikit-learn · HistGradientBoosting<span class="ext">↗</span></a><a href="https://xgboost.readthedocs.io/en/stable/" target="_blank" rel="noopener">XGBoost · docs<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/03_xgboost.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>O gradient boosting do capítulo anterior é a ideia; <strong>XGBoost</strong> e <strong>LightGBM</strong> são
 as implementações que a levaram ao estado da arte em dados tabulares. Por anos,
@@ -405,6 +408,7 @@ que generalizam melhor.
 <article id="04-ensembles-04-stacking-md" class="topic">
 <div class="topic-num">4.4</div>
 <h1 class="topic-title">Stacking e combinação de modelos</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.StackingClassifier.html" target="_blank" rel="noopener">scikit-learn · StackingClassifier<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/04_ensembles/04_stacking.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Até aqui combinamos muitos modelos <strong>do mesmo tipo</strong> (árvores). E se combinássemos
 modelos <strong>diferentes</strong> — uma regressão logística, uma SVM, uma floresta — para que

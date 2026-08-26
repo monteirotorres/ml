@@ -93,12 +93,22 @@
 <article id="05-nao-supervisionado-01-kmeans-md" class="topic">
 <div class="topic-num">5.1</div>
 <h1 class="topic-title">k-means clustering</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html" target="_blank" rel="noopener">scikit-learn · KMeans<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/01_kmeans.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Entramos na aprendizagem <strong>não supervisionada</strong>: agora não há rótulos $y$ para
 prever. O objetivo muda de "acertar a resposta" para "encontrar estrutura". O
 k-means é o algoritmo mais usado para isso — ele agrupa os dados em $k$
 conglomerados (clusters), colocando cada ponto no grupo cujo centro está mais
 perto.</p>
+<p>Antes de mergulhar no k-means, vale ver o panorama: existem <strong>muitos</strong> algoritmos
+de agrupamento, e cada um enxerga a "estrutura" de um jeito. A figura abaixo, da
+documentação do scikit-learn, aplica vários deles a conjuntos de formatos
+diferentes (círculos, luas, blobs…). Repare que <strong>nenhum acerta tudo</strong> — o k-means
+(primeira coluna), por supor grupos esféricos, falha nos formatos alongados que
+outros métodos capturam. Guarde essa imagem: ela resume por que a escolha do
+algoritmo depende da forma dos dados.</p>
+<p><img alt="Comparação de algoritmos de agrupamento do scikit-learn aplicados a conjuntos de formatos diferentes" src="assets/sklearn_cluster_comparison.png" /></p>
+<p><em>Comparação de métodos de agrupamento — <a href="https://scikit-learn.org/stable/auto_examples/cluster/plot_cluster_comparison.html">exemplo da documentação do scikit-learn</a> (licença BSD).</em></p>
 <h2>O que o k-means otimiza</h2>
 <p>O k-means busca $k$ centros (chamados <strong>centroides</strong>) que minimizem a soma das
 distâncias ao quadrado de cada ponto ao seu centro:</p>
@@ -200,6 +210,7 @@ essencial para que todas as variáveis pesem de forma comparável.
 <article id="05-nao-supervisionado-02-hierarquico-md" class="topic">
 <div class="topic-num">5.2</div>
 <h1 class="topic-title">Clustering hierárquico</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.AgglomerativeClustering.html" target="_blank" rel="noopener">scikit-learn · AgglomerativeClustering<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/02_hierarquico.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>O k-means exige que você diga <strong>quantos</strong> grupos existem. O clustering hierárquico
 não: ele constrói uma <strong>árvore de agrupamentos</strong> (o <strong>dendrograma</strong>) que revela
@@ -293,6 +304,7 @@ olham o grupo como um todo, são mais robustas a isso.
 <article id="05-nao-supervisionado-03-pca-md" class="topic">
 <div class="topic-num">5.3</div>
 <h1 class="topic-title">Análise de Componentes Principais (PCA)</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html" target="_blank" rel="noopener">scikit-learn · PCA<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/03_pca.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>Dados de alta dimensão — dezenas ou milhares de variáveis — são difíceis de
 visualizar e muitas vezes cheios de redundância (variáveis que dizem quase a mesma
@@ -391,6 +403,7 @@ escala. Padronizar coloca todas na mesma régua e evita esse artefato.
 <article id="05-nao-supervisionado-04-tsne-umap-md" class="topic">
 <div class="topic-num">5.4</div>
 <h1 class="topic-title">t-SNE e UMAP</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html" target="_blank" rel="noopener">scikit-learn · t-SNE<span class="ext">↗</span></a><a href="https://umap-learn.readthedocs.io/en/latest/" target="_blank" rel="noopener">UMAP · docs<span class="ext">↗</span></a></div>
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/05_nao_supervisionado/04_tsne_umap.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p>A PCA é <strong>linear</strong>: ela projeta os dados em um plano. Mas muita estrutura biológica
 é curva, enovelada — e uma projeção linear a achata. O <strong>t-SNE</strong> e o <strong>UMAP</strong> são

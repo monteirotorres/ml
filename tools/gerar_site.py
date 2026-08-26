@@ -51,6 +51,61 @@ WIDGETS = {
     "06_redes_neurais/03_ativacoes.md": ("ativ", "wActivation"),
 }
 
+# Mapa: arquivo .md → links de documentação (scikit-learn / PyTorch) do tópico.
+# Renderizados perto do topo de cada tópico, sempre no mesmo lugar.
+_SK = "https://scikit-learn.org/stable/"
+_PT = "https://docs.pytorch.org/docs/stable/"
+_PTT = "https://docs.pytorch.org/tutorials/"
+DOCS = {
+    "01_fundamentos/01_introducao_ml.md": [("scikit-learn · introdução", _SK + "getting_started.html")],
+    "01_fundamentos/02_tipos_aprendizagem.md": [("scikit-learn · guia do usuário", _SK + "user_guide.html")],
+    "01_fundamentos/03_representacao_dados.md": [("scikit-learn · pré-processamento", _SK + "modules/preprocessing.html")],
+    "01_fundamentos/04_generalizacao.md": [("scikit-learn · sub/sobreajuste", _SK + "auto_examples/model_selection/plot_underfitting_overfitting.html")],
+    "01_fundamentos/05_validacao_cruzada.md": [("scikit-learn · validação cruzada", _SK + "modules/cross_validation.html")],
+    "01_fundamentos/06_metricas_regressao.md": [("scikit-learn · métricas de regressão", _SK + "modules/model_evaluation.html#regression-metrics")],
+    "01_fundamentos/07_metricas_classificacao.md": [("scikit-learn · métricas de classificação", _SK + "modules/model_evaluation.html#classification-metrics")],
+    "01_fundamentos/08_preprocessamento.md": [("scikit-learn · ColumnTransformer", _SK + "modules/generated/sklearn.compose.ColumnTransformer.html")],
+    "01_fundamentos/09_ferramentas_sklearn_pytorch.md": [("scikit-learn · guia", _SK + "getting_started.html"), ("PyTorch · início", _PTT + "beginner/basics/intro.html")],
+    "02_regressao/01_regressao_linear.md": [("scikit-learn · LinearRegression", _SK + "modules/generated/sklearn.linear_model.LinearRegression.html")],
+    "02_regressao/02_regressao_multipla.md": [("scikit-learn · modelos lineares", _SK + "modules/linear_model.html")],
+    "02_regressao/03_regressao_polinomial.md": [("scikit-learn · PolynomialFeatures", _SK + "modules/generated/sklearn.preprocessing.PolynomialFeatures.html")],
+    "02_regressao/04_regularizacao.md": [("scikit-learn · Ridge", _SK + "modules/generated/sklearn.linear_model.Ridge.html"), ("scikit-learn · Lasso", _SK + "modules/generated/sklearn.linear_model.Lasso.html")],
+    "02_regressao/05_regressao_logistica.md": [("scikit-learn · LogisticRegression", _SK + "modules/generated/sklearn.linear_model.LogisticRegression.html"), ("PyTorch · BCELoss", _PT + "generated/torch.nn.BCELoss.html")],
+    "03_classificacao/01_knn.md": [("scikit-learn · KNeighborsClassifier", _SK + "modules/generated/sklearn.neighbors.KNeighborsClassifier.html")],
+    "03_classificacao/02_arvores_decisao.md": [("scikit-learn · DecisionTreeClassifier", _SK + "modules/generated/sklearn.tree.DecisionTreeClassifier.html")],
+    "03_classificacao/03_naive_bayes.md": [("scikit-learn · Naive Bayes", _SK + "modules/naive_bayes.html")],
+    "03_classificacao/04_svm.md": [("scikit-learn · SVC", _SK + "modules/generated/sklearn.svm.SVC.html")],
+    "04_ensembles/01_random_forest.md": [("scikit-learn · RandomForestClassifier", _SK + "modules/generated/sklearn.ensemble.RandomForestClassifier.html")],
+    "04_ensembles/02_gradient_boosting.md": [("scikit-learn · GradientBoostingClassifier", _SK + "modules/generated/sklearn.ensemble.GradientBoostingClassifier.html")],
+    "04_ensembles/03_xgboost.md": [("scikit-learn · HistGradientBoosting", _SK + "modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html"), ("XGBoost · docs", "https://xgboost.readthedocs.io/en/stable/")],
+    "04_ensembles/04_stacking.md": [("scikit-learn · StackingClassifier", _SK + "modules/generated/sklearn.ensemble.StackingClassifier.html")],
+    "05_nao_supervisionado/01_kmeans.md": [("scikit-learn · KMeans", _SK + "modules/generated/sklearn.cluster.KMeans.html")],
+    "05_nao_supervisionado/02_hierarquico.md": [("scikit-learn · AgglomerativeClustering", _SK + "modules/generated/sklearn.cluster.AgglomerativeClustering.html")],
+    "05_nao_supervisionado/03_pca.md": [("scikit-learn · PCA", _SK + "modules/generated/sklearn.decomposition.PCA.html")],
+    "05_nao_supervisionado/04_tsne_umap.md": [("scikit-learn · t-SNE", _SK + "modules/generated/sklearn.manifold.TSNE.html"), ("UMAP · docs", "https://umap-learn.readthedocs.io/en/latest/")],
+    "06_redes_neurais/01_perceptron.md": [("PyTorch · torch.nn", _PT + "nn.html"), ("scikit-learn · MLPClassifier", _SK + "modules/generated/sklearn.neural_network.MLPClassifier.html")],
+    "06_redes_neurais/02_backprop.md": [("PyTorch · autograd", _PT + "autograd.html"), ("PyTorch · optim", _PT + "optim.html")],
+    "06_redes_neurais/03_ativacoes.md": [("PyTorch · ativações", _PT + "nn.html#non-linear-activations-weighted-sum-nonlinearity")],
+    "06_redes_neurais/04_deep_learning.md": [("PyTorch · tutoriais", _PTT + "beginner/basics/intro.html")],
+    "07_exercicios/01_regressao.md": [("scikit-learn · modelos lineares", _SK + "modules/linear_model.html")],
+    "07_exercicios/02_classificacao.md": [("scikit-learn · métricas", _SK + "modules/model_evaluation.html")],
+    "07_exercicios/03_validacao.md": [("scikit-learn · validação cruzada", _SK + "modules/cross_validation.html"), ("scikit-learn · GridSearchCV", _SK + "modules/generated/sklearn.model_selection.GridSearchCV.html")],
+    "07_exercicios/04_clustering_pca.md": [("scikit-learn · clustering", _SK + "modules/clustering.html"), ("scikit-learn · PCA", _SK + "modules/generated/sklearn.decomposition.PCA.html")],
+    "07_exercicios/05_pipeline.md": [("scikit-learn · Pipeline", _SK + "modules/generated/sklearn.pipeline.Pipeline.html"), ("scikit-learn · ColumnTransformer", _SK + "modules/generated/sklearn.compose.ColumnTransformer.html")],
+    "08_aula_bioinfo/01_ml_bioinformatica.md": [("scikit-learn · RandomForestClassifier", _SK + "modules/generated/sklearn.ensemble.RandomForestClassifier.html"), ("PyTorch · torch.nn", _PT + "nn.html")],
+}
+
+
+def doc_links(path):
+    entradas = DOCS.get(path)
+    if not entradas:
+        return ""
+    itens = "".join(
+        f'<a href="{url}" target="_blank" rel="noopener">{label}<span class="ext">↗</span></a>'
+        for label, url in entradas)
+    return f'<div class="doc-links"><span class="doc-label">Documentação:</span>{itens}</div>'
+
+
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
 SECTION_FILES = {
     "Fundamentos":                      "fundamentos.html",
@@ -518,6 +573,9 @@ def write_section_page(idx, sections):
         out.append(f'<article id="{slug}" class="topic">')
         out.append(f'<div class="topic-num">{idx+1}.{ti}</div>')
         out.append(f'<h1 class="topic-title">{title}</h1>')
+        docs = doc_links(path)
+        if docs:
+            out.append(docs)
         if nb:
             out.append(f'<div class="nb-row">{nb}</div>')
         out.append(body)

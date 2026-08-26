@@ -188,6 +188,19 @@ a { color: var(--ink); }
 .nb-row { margin: 0 0 1.4rem; }
 .colab-link img { height: 30px; vertical-align: middle; }
 
+.doc-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 1.1rem; }
+.doc-links .doc-label { font-family: 'Courier New', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.doc-links a {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Courier New', monospace; font-size: 0.74rem;
+  text-decoration: none; color: var(--nav-text);
+  background: var(--sidebar-bg); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 12px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.doc-links a:hover { border-color: var(--brand); color: var(--ink); background: var(--sidebar-hover); }
+.doc-links .ext { font-size: 0.85em; opacity: 0.7; }
+
 .topic h2 {
   font-size: 1.25rem;
   font-weight: bold;
