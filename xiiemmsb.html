@@ -109,17 +109,7 @@
     gap: 20px;
     margin-top: 26px;
   }
-  .grid.tres { grid-template-columns: repeat(3, 1fr); }
-
-  /* card "em breve": presente mas desativado */
-  .card.em-breve { opacity: .6; }
-  .card.em-breve:hover { transform: none; box-shadow: var(--shadow); border-color: var(--line); }
-  .pill-breve {
-    align-self: flex-start; margin-top: 18px;
-    font-size: .74rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--muted); background: var(--bg-soft); border: 1px solid var(--line);
-    padding: 7px 13px; border-radius: 999px;
-  }
+  .grid.tres { grid-template-columns: repeat(3, 1fr); align-items: start; }
 
   .card {
     position: relative;
@@ -229,25 +219,31 @@
     <div class="grid tres">
 
       <!-- Aula 1 -->
-      <article class="card em-breve" style="--accent:#149fb8; --accent-soft:#e0f2f5;">
+      <article class="card" style="--accent:#149fb8; --accent-soft:#e0f2f5;">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>
         </div>
         <span class="tag">Dia 1</span>
-        <h3>Aula 1</h3>
-        <p class="desc">Slides desta aula em breve.</p>
-        <span class="pill-breve">Em breve</span>
+        <h3>Introdução à Inteligência Artificial</h3>
+        <p class="desc">O que é IA e aprendizado de máquina — das redes neurais à IA generativa e ao uso responsável.</p>
+        <a class="colab" href="xiiemmsb/EMMSB-2026-Introdu%C3%A7%C3%A3o.pdf" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/></svg>
+          Abrir os slides (PDF)
+        </a>
       </article>
 
       <!-- Aula 2 -->
-      <article class="card em-breve" style="--accent:#149fb8; --accent-soft:#e0f2f5;">
+      <article class="card" style="--accent:#149fb8; --accent-soft:#e0f2f5;">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>
         </div>
         <span class="tag">Dia 2</span>
-        <h3>Aula 2</h3>
-        <p class="desc">Slides desta aula em breve.</p>
-        <span class="pill-breve">Em breve</span>
+        <h3>Aprendizagem supervisionada</h3>
+        <p class="desc">Aprender com dados rotulados: viés e variância, seleção de modelos, árvores, florestas e SVM.</p>
+        <a class="colab" href="xiiemmsb/EMMSB-2026-Aula02-Supervisionada.pdf" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/></svg>
+          Abrir os slides (PDF)
+        </a>
       </article>
 
       <!-- Aula 3 -->
@@ -256,13 +252,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>
         </div>
         <span class="tag">Dia 3</span>
-        <h3>Aprendizagem não supervisionada e explicabilidade</h3>
-        <p class="desc">
-          Agrupamento (<i>clustering</i>) e como escolher o número de grupos
-          (Silhouette, Davies-Bouldin, Calinski-Harabasz), interpretação e
-          explicabilidade de modelos (XAI), e comentários sobre a maldição da
-          dimensionalidade e o viés do sobrevivente.
-        </p>
+        <h3>Não supervisionada e explicabilidade</h3>
+        <p class="desc">Agrupamento (<i>clustering</i>), como escolher o número de grupos e explicabilidade de modelos (XAI).</p>
         <a class="colab" href="xiiemmsb/EMMSB2026_Aula03_nao_supervisionada_explicabilidade.pdf" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/></svg>
           Abrir os slides (PDF)
