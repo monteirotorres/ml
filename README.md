@@ -34,23 +34,22 @@ ml/
 │   ├── widgets.js          demos interativas em canvas
 │   └── slides/             figuras dos decks reveal.js
 ├── tools/
-│   ├── gerar_site.py       gera o site a partir de SUMMARY.md + markdown
-│   ├── gerar_figuras.py    gera figuras dos slides (matplotlib)
-│   └── gerar_notebooks.py  gera os notebooks .ipynb
+│   ├── gerar_site.py             gera o site a partir de SUMMARY.md + markdown
+│   ├── gerar_notebooks_curso.py  gera os notebooks .ipynb (Plotly, sklearn + PyTorch)
+│   └── gerar_aula_notebooks.py   gera o notebook da aula de bioinformática
 ├── 01_fundamentos/ ... 07_exercicios/   conteúdo em markdown + notebooks
 └── *_slides.html           decks reveal.js (um por aula)
 ```
 
 ## Como regenerar o site
 
-Requer Python 3 com `markdown`, `nbformat`, `numpy` e `matplotlib`:
+Requer Python 3 com `markdown`, `nbformat` e `numpy`:
 
 ```bash
-pip install markdown nbformat numpy matplotlib
+pip install markdown nbformat numpy
 
-python tools/gerar_figuras.py     # gera as figuras dos slides
-python tools/gerar_notebooks.py   # gera os notebooks .ipynb
-python tools/gerar_site.py        # gera index.html e as páginas das seções
+python tools/gerar_notebooks_curso.py   # gera os notebooks .ipynb dos capítulos
+python tools/gerar_site.py              # gera index.html e as páginas das seções
 ```
 
 Depois de qualquer edição em um arquivo `.md`, rode `python tools/gerar_site.py`

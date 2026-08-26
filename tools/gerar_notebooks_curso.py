@@ -2229,8 +2229,392 @@ def nb_tsne_umap():
     escrever(nb, "05_nao_supervisionado/04_tsne_umap.ipynb")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+# Capítulo 1 — Fundamentos (padrão novo: Plotly, sem def, código explícito)
+# ══════════════════════════════════════════════════════════════════════════
+def nb_f_introducao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# O que é aprendizagem de máquina?\n\n"
+           "**Objetivo:** rodar o \"olá, mundo\" da aprendizagem supervisionada — "
+           "carregar o Iris, treinar um classificador em poucas linhas e medir seu "
+           "desempenho em dados que ele não viu. O ciclo mínimo: `dados → treino → "
+           "avaliação`."),
+        code(PREAMBULO),
+        md("## 1. Carregar os dados\n\n"
+           "O Iris tem 150 flores, 4 características e 3 espécies — o conjunto didático "
+           "mais famoso da área."),
+        code('from sklearn.datasets import load_iris\n\n'
+             'iris = load_iris(as_frame=True)\n'
+             'X, y = iris.data, iris.target\n'
+             'print(X.shape, "->", list(iris.target_names))\n'
+             'X.head()'),
+        md("## 2. Separar treino e teste\n\n"
+           "Avaliamos o modelo em dados **nunca vistos** durante o treino — a essência "
+           "da generalização."),
+        code('from sklearn.model_selection import train_test_split\n\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             'print("treino:", X_tr.shape[0], "| teste:", X_te.shape[0])'),
+        md("## 3. Treinar e avaliar\n\n"
+           "Um classificador k-NN em três linhas: `fit` aprende, `score` mede a "
+           "acurácia no teste."),
+        code('from sklearn.neighbors import KNeighborsClassifier\n\n'
+             'modelo = KNeighborsClassifier(n_neighbors=5)\n'
+             'modelo.fit(X_tr, y_tr)\n'
+             'print("acuracia no teste:", round(modelo.score(X_te, y_te), 3))'),
+        md("## Exercícios\n\n"
+           "**1.** Troque `n_neighbors` para 1 e 50 e relacione com overfitting/"
+           "underfitting.\n\n**2.** Substitua o k-NN por uma `LogisticRegression`."),
+        code('# @title Solução\n'
+             'for k in [1, 5, 50]:\n'
+             '    m = KNeighborsClassifier(n_neighbors=k).fit(X_tr, y_tr)\n'
+             '    print("k =", str(k).rjust(2), "| treino", round(m.score(X_tr, y_tr), 3),\n'
+             '          "| teste", round(m.score(X_te, y_te), 3))\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'lr = LogisticRegression(max_iter=500).fit(X_tr, y_tr)\n'
+             'print("LogReg teste:", round(lr.score(X_te, y_te), 3))'),
+    ]
+    escrever(nb, "01_fundamentos/01_introducao_ml.ipynb")
+
+
+def nb_f_tipos():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Tipos de aprendizagem\n\n"
+           "**Objetivo:** usar os mesmos dados para formular três problemas — "
+           "regressão, classificação e clustering — mostrando que o **tipo** vem da "
+           "pergunta, não dos dados."),
+        code(PREAMBULO),
+        md("## Dados simulados\n\nPacientes com idade, IMC e um marcador contínuo."),
+        code('n = 200\n'
+             'idade = np.random.uniform(20, 80, n)\n'
+             'imc = np.random.normal(26, 4, n)\n'
+             'marcador = 0.5 * idade + 1.2 * imc + np.random.normal(0, 5, n)\n'
+             'doente = (marcador > np.median(marcador)).astype(int)\n'
+             'df = pd.DataFrame({"idade": idade, "imc": imc, "marcador": marcador, "doente": doente})\n'
+             'df.head()'),
+        md("## 1. Regressão — prever o marcador (contínuo)"),
+        code('from sklearn.linear_model import LinearRegression\n'
+             'from sklearn.metrics import r2_score\n\n'
+             'reg = LinearRegression().fit(df[["idade", "imc"]], df["marcador"])\n'
+             'print("R2:", round(r2_score(df["marcador"], reg.predict(df[["idade","imc"]])), 3))'),
+        md("## 2. Classificação — prever doente (categórico)"),
+        code('from sklearn.linear_model import LogisticRegression\n\n'
+             'clf = LogisticRegression().fit(df[["idade", "imc"]], df["doente"])\n'
+             'print("acuracia:", round(clf.score(df[["idade", "imc"]], df["doente"]), 3))'),
+        md("## 3. Clustering — descobrir grupos (sem rótulo)"),
+        code('from sklearn.cluster import KMeans\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'Xk = StandardScaler().fit_transform(df[["idade", "imc"]])\n'
+             'grupos = KMeans(n_clusters=2, n_init=10, random_state=SEMENTE).fit_predict(Xk)\n\n'
+             'figura = go.Figure(go.Scatter(x=df["idade"], y=df["imc"], mode="markers",\n'
+             '                              marker=dict(color=grupos, colorscale="Bluered", size=7)))\n'
+             'figura.update_layout(title="k-means (k=2) sobre idade e IMC",\n'
+             '                     xaxis_title="idade", yaxis_title="imc", height=380,\n'
+             '                     showlegend=False, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercícios\n\n"
+           "**1.** Os grupos coincidem com `doente`? Calcule a concordância.\n\n"
+           "**2.** Como transformar \"prever internações\" em regressão? E em "
+           "classificação?"),
+        code('# @title Solução\n'
+             'from sklearn.metrics import adjusted_rand_score\n'
+             'print("ARI grupos vs doente:", round(adjusted_rand_score(df["doente"], grupos), 3))\n'
+             '# Regressao: prever o numero exato de internacoes (contagem).\n'
+             '# Classificacao: prever a categoria "0", "1-2", "3+" internacoes.'),
+    ]
+    escrever(nb, "01_fundamentos/02_tipos_aprendizagem.ipynb")
+
+
+def nb_f_representacao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Representação dos dados\n\n"
+           "**Objetivo:** montar a matriz de características $\\mathbf{X}$, identificar "
+           "tipos de coluna e aplicar one-hot encoding."),
+        code(PREAMBULO),
+        md("## Um DataFrame com tipos variados"),
+        code('df = pd.DataFrame({\n'
+             '    "idade":          [34, 51, 29, 62],\n'
+             '    "glicose":        [90, 145, 88, 130],\n'
+             '    "tipo_sanguineo": ["A", "O", "AB", "A"],\n'
+             '    "estagio":        ["I", "III", "I", "II"],\n'
+             '})\n'
+             'df'),
+        md("## Identificar os tipos\n\nNuméricas, categórica nominal (tipo sanguíneo) "
+           "e categórica ordinal (estágio)."),
+        code('print(df.dtypes)\n'
+             'print("\\nnominal :", ["tipo_sanguineo"])\n'
+             'print("ordinal :", ["estagio"])'),
+        md("## One-hot encoding da categórica nominal"),
+        code('df_oh = pd.get_dummies(df, columns=["tipo_sanguineo"], dtype=int)\n'
+             'df_oh'),
+        md("## Codificação ordinal (preserva a ordem)"),
+        code('ordem = {"I": 1, "II": 2, "III": 3}\n'
+             'df_oh["estagio"] = df_oh["estagio"].map(ordem)\n'
+             'df_oh'),
+        md("## Exercícios\n\n"
+           "**1.** Quantas colunas a matriz final tem? Por que o one-hot criou várias "
+           "para o tipo sanguíneo?\n\n**2.** Por que **não** faz sentido aplicar "
+           "`map({'A':1,'O':2,'AB':3})` ao tipo sanguíneo?"),
+        code('# @title Solução\n'
+             'print("colunas finais:", df_oh.shape[1], list(df_oh.columns))\n'
+             '# One-hot cria uma coluna por categoria porque nao ha ordem entre os tipos.\n'
+             '# Codificar A=1, O=2, AB=3 imporia uma ordem falsa (AB > O > A), sem sentido biologico.'),
+    ]
+    escrever(nb, "01_fundamentos/03_representacao_dados.ipynb")
+
+
+def nb_f_generalizacao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Generalização: overfitting e underfitting\n\n"
+           "**Objetivo:** reproduzir a experiência do widget do site — ajustar "
+           "polinômios de vários graus e ver o erro de treino cair enquanto o de teste "
+           "forma um 'U'."),
+        code(PREAMBULO),
+        md("## Dados: função verdadeira + ruído"),
+        code('x_tr = np.sort(np.random.uniform(0, 1, 15))\n'
+             'y_tr = np.sin(2*np.pi*x_tr) + np.random.normal(0, 0.25, x_tr.size)\n'
+             'x_te = np.sort(np.random.uniform(0, 1, 200))\n'
+             'y_te = np.sin(2*np.pi*x_te) + np.random.normal(0, 0.25, x_te.size)\n'
+             'print("treino:", x_tr.size, "| teste:", x_te.size)'),
+        md("## Ajustar polinômios de grau 1 a 12"),
+        code('from sklearn.metrics import mean_squared_error\n\n'
+             'graus = list(range(1, 13))\n'
+             'err_tr, err_te = [], []\n'
+             'for g in graus:\n'
+             '    coef = np.polyfit(x_tr, y_tr, g)\n'
+             '    err_tr.append(mean_squared_error(y_tr, np.polyval(coef, x_tr)))\n'
+             '    err_te.append(mean_squared_error(y_te, np.polyval(coef, x_te)))\n\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Scatter(x=graus, y=err_tr, mode="lines+markers",\n'
+             '                            line=dict(color=AZUL), name="treino"))\n'
+             'figura.add_trace(go.Scatter(x=graus, y=err_te, mode="lines+markers",\n'
+             '                            line=dict(color=VERMELHO), name="teste"))\n'
+             'figura.update_yaxes(type="log")\n'
+             'figura.update_layout(title="Erro de treino x teste (escala log)",\n'
+             '                     xaxis_title="grau do polinomio", yaxis_title="MSE",\n'
+             '                     height=360, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Visualizar três regimes"),
+        code('from plotly.subplots import make_subplots\n'
+             'xx = np.linspace(0, 1, 300)\n'
+             'figura = make_subplots(rows=1, cols=3,\n'
+             '                       subplot_titles=("grau 1 — underfitting", "grau 4 — equilibrio", "grau 12 — overfitting"))\n'
+             'coluna = 1\n'
+             'for g in [1, 4, 12]:\n'
+             '    coef = np.polyfit(x_tr, y_tr, g)\n'
+             '    figura.add_trace(go.Scatter(x=x_tr, y=y_tr, mode="markers",\n'
+             '                                marker=dict(color=VERMELHO, size=6), showlegend=False), row=1, col=coluna)\n'
+             '    figura.add_trace(go.Scatter(x=xx, y=np.sin(2*np.pi*xx), mode="lines",\n'
+             '                                line=dict(color=VERDE, dash="dash"), showlegend=False), row=1, col=coluna)\n'
+             '    figura.add_trace(go.Scatter(x=xx, y=np.polyval(coef, xx), mode="lines",\n'
+             '                                line=dict(color=AZUL), showlegend=False), row=1, col=coluna)\n'
+             '    coluna += 1\n'
+             'figura.update_yaxes(range=[-2, 2])\n'
+             'figura.update_layout(height=320, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercícios\n\n"
+           "**1.** Qual grau minimiza o erro de teste? Coincide com o do treino?\n\n"
+           "**2.** Aumente o treino para 150 pontos. O overfitting do grau 12 diminui?"),
+        code('# @title Solução\n'
+             'print("grau otimo (teste):", graus[int(np.argmin(err_te))])\n'
+             'print("grau otimo (treino):", graus[int(np.argmin(err_tr))], "-> o treino sempre melhora com mais grau")\n'
+             '# Com mais dados, o polinomio de grau alto tem menos liberdade para se colar\n'
+             '# ao ruido: o overfitting diminui.'),
+    ]
+    escrever(nb, "01_fundamentos/04_generalizacao.ipynb")
+
+
+def nb_f_validacao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Validação cruzada\n\n"
+           "**Objetivo:** comparar uma única divisão treino/teste com a validação "
+           "cruzada k-fold e ver por que a média do CV é mais confiável."),
+        code(PREAMBULO),
+        code('from sklearn.datasets import load_iris\n'
+             'X, y = load_iris(return_X_y=True)'),
+        md("## Uma divisão só varia bastante"),
+        code('from sklearn.model_selection import train_test_split\n'
+             'from sklearn.neighbors import KNeighborsClassifier\n\n'
+             'for s in range(5):\n'
+             '    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.3, random_state=s)\n'
+             '    acc = KNeighborsClassifier().fit(Xtr, ytr).score(Xte, yte)\n'
+             '    print("seed =", s, "-> acuracia =", round(acc, 3))'),
+        md("## k-fold: estimativa estável (com pipeline, sem vazamento)"),
+        code('from sklearn.model_selection import cross_val_score\n'
+             'from sklearn.pipeline import make_pipeline\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'modelo = make_pipeline(StandardScaler(), KNeighborsClassifier())\n'
+             'scores = cross_val_score(modelo, X, y, cv=5)\n'
+             'print("folds:", np.round(scores, 3))\n'
+             'print("CV:", round(scores.mean(), 3), "+/-", round(scores.std(), 3))'),
+        md("## Exercícios\n\n"
+           "**1.** Rode com cv=10. A média muda muito? E o desvio?\n\n"
+           "**2.** Use `StratifiedKFold` e confirme que cada fold preserva a proporção "
+           "das classes."),
+        code('# @title Solução\n'
+             's10 = cross_val_score(modelo, X, y, cv=10)\n'
+             'print("cv=10:", round(s10.mean(), 3), "+/-", round(s10.std(), 3))\n'
+             'from sklearn.model_selection import StratifiedKFold\n'
+             'skf = StratifiedKFold(n_splits=5)\n'
+             'for i, (_, te) in enumerate(skf.split(X, y)):\n'
+             '    vals, cnt = np.unique(y[te], return_counts=True)\n'
+             '    print("fold", i, ":", dict(zip(vals.tolist(), cnt.tolist())))'),
+    ]
+    escrever(nb, "01_fundamentos/05_validacao_cruzada.ipynb")
+
+
+def nb_f_metricas_reg():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Métricas de avaliação — regressão\n\n"
+           "**Objetivo:** calcular MAE, RMSE e R², e ver como um único outlier afeta o "
+           "RMSE muito mais que o MAE."),
+        code(PREAMBULO),
+        code('from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score\n\n'
+             'y_true = np.array([3.0, 5.0, 2.5, 7.0, 4.2, 6.1])\n'
+             'y_pred = np.array([2.8, 5.5, 2.0, 8.0, 4.0, 6.4])\n'
+             'print("MAE :", round(mean_absolute_error(y_true, y_pred), 3))\n'
+             'print("RMSE:", round(np.sqrt(mean_squared_error(y_true, y_pred)), 3))\n'
+             'print("R2  :", round(r2_score(y_true, y_pred), 3))'),
+        md("## O efeito de um outlier\n\nEstragamos uma única previsão."),
+        code('y_pred_out = y_pred.copy()\n'
+             'y_pred_out[3] = 20.0   # erro grosseiro em um ponto\n'
+             'print("MAE :", round(mean_absolute_error(y_true, y_pred_out), 3))\n'
+             'print("RMSE:", round(np.sqrt(mean_squared_error(y_true, y_pred_out)), 3))\n'
+             '# RMSE dispara; MAE sobe pouco.'),
+        md("## Exercícios\n\n"
+           "**1.** Um modelo prevê sempre a média de `y_true`. Qual o R²?\n\n"
+           "**2.** Quando preferir otimizar RMSE em vez de MAE?"),
+        code('# @title Solução\n'
+             'media = np.full_like(y_true, y_true.mean())\n'
+             'print("R2 prevendo a media:", round(r2_score(y_true, media), 3))   # = 0\n'
+             '# Prefira RMSE quando erros grandes sao desproporcionalmente perigosos —\n'
+             '# ex.: prever a dose de um medicamento de janela terapeutica estreita.'),
+    ]
+    escrever(nb, "01_fundamentos/06_metricas_regressao.ipynb")
+
+
+def nb_f_metricas_clf():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Métricas de avaliação — classificação\n\n"
+           "**Objetivo:** num conjunto **desbalanceado**, mostrar como a acurácia "
+           "engana, calcular a matriz de confusão e o `classification_report`, e "
+           "desenhar a curva ROC."),
+        code(PREAMBULO),
+        md("## Dados desbalanceados (5% de positivos)"),
+        code('from sklearn.datasets import make_classification\n'
+             'X, y = make_classification(n_samples=2000, weights=[0.95, 0.05],\n'
+             '                           n_informative=5, random_state=SEMENTE)\n'
+             'print("proporcao de positivos:", round(y.mean(), 3))'),
+        md("## O classificador trivial 'tudo negativo'"),
+        code('print("acuracia prevendo sempre 0:", round((y == 0).mean(), 3), " <- alta e inutil")'),
+        md("## Um modelo de verdade"),
+        code('from sklearn.model_selection import train_test_split\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score\n\n'
+             'Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.3, stratify=y, random_state=SEMENTE)\n'
+             'clf = LogisticRegression(max_iter=500).fit(Xtr, ytr)\n'
+             'pred = clf.predict(Xte)\n'
+             'print(confusion_matrix(yte, pred))\n'
+             'print(classification_report(yte, pred, digits=3))'),
+        md("## Curva ROC e AUC"),
+        code('from sklearn.metrics import roc_curve\n\n'
+             'proba = clf.predict_proba(Xte)[:, 1]\n'
+             'fpr, tpr, _ = roc_curve(yte, proba)\n'
+             'print("AUC:", round(roc_auc_score(yte, proba), 3))\n\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Scatter(x=fpr, y=tpr, mode="lines", line=dict(color=AZUL), name="LogReg"))\n'
+             'figura.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines",\n'
+             '                            line=dict(color=SUAVE, dash="dash"), name="aleatorio"))\n'
+             'figura.update_layout(title="Curva ROC", xaxis_title="taxa de falsos positivos",\n'
+             '                     yaxis_title="taxa de verdadeiros positivos", height=380,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercícios\n\n"
+           "**1.** Baixe o limiar para 0,2. O que acontece com recall e precisão da "
+           "classe positiva?\n\n**2.** Por que a AUC não muda ao alterar o limiar, mas "
+           "a acurácia muda?"),
+        code('# @title Solução\n'
+             'from sklearn.metrics import precision_score, recall_score\n'
+             'for thr in [0.5, 0.2]:\n'
+             '    p = (proba >= thr).astype(int)\n'
+             '    print("limiar", thr, ": recall", round(recall_score(yte, p), 3),\n'
+             '          "| precisao", round(precision_score(yte, p, zero_division=0), 3))\n'
+             '# A AUC integra TODOS os limiares, entao nao depende de um limiar especifico;\n'
+             '# acuracia, precisao e recall sao medidas em UM limiar.'),
+    ]
+    escrever(nb, "01_fundamentos/07_metricas_classificacao.ipynb")
+
+
+def nb_f_preprocessamento():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Pré-processamento de dados\n\n"
+           "**Objetivo:** partir de dados sujos (escalas diferentes, faltantes, "
+           "categorias em texto), montar um `ColumnTransformer` completo e medir o "
+           "impacto da padronização num modelo baseado em distância."),
+        code(PREAMBULO),
+        md("## Um conjunto de dados sujo"),
+        code('df = pd.DataFrame({\n'
+             '    "idade":      [34, 51, np.nan, 62, 45, 29],\n'
+             '    "colesterol": [190, 240, 210, np.nan, 260, 175],\n'
+             '    "sexo":       ["F", "M", "M", "F", np.nan, "F"],\n'
+             '    "risco":      [0, 1, 0, 1, 1, 0],\n'
+             '})\n'
+             'df'),
+        md("## Pipeline: imputação + escala (num) e imputação + one-hot (cat)"),
+        code('from sklearn.compose import ColumnTransformer\n'
+             'from sklearn.pipeline import Pipeline\n'
+             'from sklearn.preprocessing import StandardScaler, OneHotEncoder\n'
+             'from sklearn.impute import SimpleImputer\n\n'
+             'num = ["idade", "colesterol"]\n'
+             'cat = ["sexo"]\n'
+             'num_pipe = Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler())])\n'
+             'cat_pipe = Pipeline([("imp", SimpleImputer(strategy="most_frequent")), ("oh", OneHotEncoder())])\n'
+             'pre = ColumnTransformer([("num", num_pipe, num), ("cat", cat_pipe, cat)])\n'
+             'Xt = pre.fit_transform(df[num + cat])\n'
+             'print("matriz processada:\\n", np.round(Xt, 2))'),
+        md("## Padronização importa para o k-NN?\n\n"
+           "Comparamos a acurácia (validação cruzada) com e sem escala, no breast "
+           "cancer."),
+        code('from sklearn.neighbors import KNeighborsClassifier\n'
+             'from sklearn.model_selection import cross_val_score\n'
+             'from sklearn.datasets import load_breast_cancer\n\n'
+             'Xbc, ybc = load_breast_cancer(return_X_y=True)\n'
+             'sem = KNeighborsClassifier()\n'
+             'com = Pipeline([("sc", StandardScaler()), ("knn", KNeighborsClassifier())])\n'
+             'print("sem escala:", round(cross_val_score(sem, Xbc, ybc, cv=5).mean(), 3))\n'
+             'print("com escala:", round(cross_val_score(com, Xbc, ybc, cv=5).mean(), 3))'),
+        md("## Exercícios\n\n"
+           "**1.** De quanto foi o ganho da padronização? Por que ele aparece num "
+           "modelo de distância?\n\n**2.** Troque `StandardScaler` por `MinMaxScaler`. "
+           "Muda muito?"),
+        code('# @title Solução\n'
+             'from sklearn.preprocessing import MinMaxScaler\n'
+             'mm = Pipeline([("sc", MinMaxScaler()), ("knn", KNeighborsClassifier())])\n'
+             'print("min-max:", round(cross_val_score(mm, Xbc, ybc, cv=5).mean(), 3))\n'
+             '# O ganho aparece porque o k-NN soma distancias entre caracteristicas; sem\n'
+             '# escala, as de maior amplitude dominam. Standard e MinMax dao resultados parecidos aqui.'),
+    ]
+    escrever(nb, "01_fundamentos/08_preprocessamento.ipynb")
+
+
 CONSTRUTORES = [
     nb_ferramentas,
+    nb_f_introducao,
+    nb_f_tipos,
+    nb_f_representacao,
+    nb_f_generalizacao,
+    nb_f_validacao,
+    nb_f_metricas_reg,
+    nb_f_metricas_clf,
+    nb_f_preprocessamento,
     nb_reg_linear,
     nb_reg_multipla,
     nb_reg_polinomial,
