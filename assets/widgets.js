@@ -32,10 +32,10 @@ function pal() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   return {
     ...PAL,
-    ink: dark ? '#ebedd8' : PAL.ink,
-    muted: dark ? '#9aa07e' : PAL.muted,
-    line: dark ? '#4a5030' : PAL.line,
-    paper: dark ? '#1e1f16' : PAL.paper,
+    ink: dark ? '#e8eaec' : PAL.ink,
+    muted: dark ? '#989ba1' : PAL.muted,
+    line: dark ? '#3a3d42' : PAL.line,
+    paper: dark ? '#1e2022' : PAL.paper,
   };
 }
 
@@ -227,6 +227,119 @@ function wKfold(id) {
   $(id + '-k').addEventListener('input', draw);
   window.addEventListener('resize', draw);
   draw();
+}
+
+// ============================================================
+// Widget: mapa de estimadores do scikit-learn (versão enxuta)
+// ------------------------------------------------------------
+// Três controles (nº de amostras, tenho rótulos?, o que quero)
+// conduzem a uma família de modelos, no espírito do fluxograma
+// oficial "choosing the right estimator". Desenha os quatro
+// destinos e destaca o escolhido. Sem canvas de dados: é decisão.
+// ============================================================
+function wSklearnMap(id) {
+  const cv = $(id + '-cv');
+  const escala = [20, 100, 1000, 10000, 100000, 1000000];   // slider 1..6
+
+  function recomendar() {
+    const n = escala[(+$(id + '-n').value) - 1];
+    const temRotulo = $(id + '-lab').value;      // 'sim' | 'nao'
+    const objetivo = $(id + '-goal').value;      // 'cat' | 'num' | 'exp'
+    let alvo, familia, estimadores, nota;
+
+    if (n < 50) {
+      alvo = 'nada';
+      familia = 'Consiga mais dados';
+      estimadores = '—';
+      nota = 'Com menos de ~50 amostras o mapa recomenda coletar mais dados antes de tentar modelar.';
+    } else if (objetivo === 'num') {
+      alvo = 'reg';
+      familia = 'Regressão';
+      estimadores = n < 100000
+        ? 'Ridge/Lasso/ElasticNet, SVR, floresta/boosting'
+        : 'SGDRegressor (incremental)';
+      nota = n < 100000
+        ? 'Alvo numérico e contínuo: comece pelos modelos lineares regularizados e suba para floresta ou boosting.'
+        : 'Muitas amostras: prefira um estimador incremental como o SGDRegressor.';
+    } else if (objetivo === 'exp') {
+      alvo = 'dim';
+      familia = 'Redução de dimensionalidade';
+      estimadores = 'PCA; se não bastar, Isomap/t-SNE/UMAP';
+      nota = 'Sem alvo definido, o objetivo é enxergar estrutura: projete os dados em menos dimensões (PCA é o começo).';
+    } else {                                   // objetivo === 'cat'
+      if (temRotulo === 'sim') {
+        alvo = 'cls';
+        familia = 'Classificação';
+        estimadores = n < 100000
+          ? 'SVM linear, kNN, floresta aleatória, SVC'
+          : 'SGDClassifier, aproximação de kernel';
+        nota = n < 100000
+          ? 'Categoria com rótulos: comece por modelos lineares/kNN e suba para floresta ou SVC.'
+          : 'Muitas amostras rotuladas: prefira estimadores incrementais (SGD) ou aproximação de kernel.';
+      } else {
+        alvo = 'clu';
+        familia = 'Clustering';
+        estimadores = n < 10000
+          ? 'KMeans, clustering espectral, mistura de gaussianas'
+          : 'MiniBatchKMeans';
+        nota = 'Você quer categorias, mas não tem rótulos: o caminho é agrupar (não supervisionado).';
+      }
+    }
+
+    $(id + '-n-v').textContent = n.toLocaleString('pt-BR');
+    $(id + '-fam').textContent = familia;
+    $(id + '-est').textContent = estimadores;
+    $(id + '-note').textContent = nota;
+
+    // habilita/realça o controle de rótulos só quando faz diferença (categoria)
+    $(id + '-lab').parentElement.style.opacity = (objetivo === 'cat') ? '1' : '0.45';
+
+    desenhar(alvo);
+  }
+
+  function desenhar(alvo) {
+    const p = pal();
+    const W = 640, H = 150;
+    const ctx = setupCanvas(cv, W, H);
+    ctx.clearRect(0, 0, W, H);
+    const nos = [
+      { k: 'cls', rot: 'Classificação', cor: p.blue,  corF: p.blueF },
+      { k: 'reg', rot: 'Regressão',     cor: p.green, corF: p.greenF },
+      { k: 'clu', rot: 'Clustering',    cor: p.red,   corF: p.redF },
+      { k: 'dim', rot: 'Redução dim.',  cor: p.muted, corF: p.line },
+    ];
+    const larg = 138, alt = 62, gap = (W - nos.length * larg) / (nos.length + 1);
+    ctx.font = '600 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    nos.forEach((no, i) => {
+      const x = gap + i * (larg + gap), y = (H - alt) / 2;
+      const ativo = no.k === alvo;
+      ctx.globalAlpha = (alvo === 'nada') ? 0.5 : (ativo ? 1 : 0.35);
+      ctx.fillStyle = ativo ? no.corF : p.paper;
+      ctx.strokeStyle = no.cor;
+      ctx.lineWidth = ativo ? 3 : 1.2;
+      const r = 10;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + larg, y, x + larg, y + alt, r);
+      ctx.arcTo(x + larg, y + alt, x, y + alt, r); ctx.arcTo(x, y + alt, x, y, r);
+      ctx.arcTo(x, y, x + larg, y, r); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = no.cor;
+      ctx.fillText(no.rot, x + larg / 2, y + alt / 2);
+    });
+    ctx.globalAlpha = 1;
+    if (alvo === 'nada') {
+      ctx.fillStyle = p.ink;
+      ctx.font = 'italic 15px Georgia, serif';
+      ctx.fillText('amostras insuficientes — colete mais dados', W / 2, 18);
+    }
+  }
+
+  ['n', 'lab', 'goal'].forEach(k =>
+    $(id + '-' + k).addEventListener('input', recomendar));
+  window.addEventListener('resize', recomendar);
+  recomendar();
 }
 
 // ============================================================

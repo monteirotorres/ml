@@ -12,6 +12,7 @@
 * [Métricas de avaliação — regressão](01_fundamentos/06_metricas_regressao.md)
 * [Métricas de avaliação — classificação](01_fundamentos/07_metricas_classificacao.md)
 * [Pré-processamento de dados](01_fundamentos/08_preprocessamento.md)
+* [As ferramentas: scikit-learn e PyTorch](01_fundamentos/09_ferramentas_sklearn_pytorch.md)
 
 ## Regressão
 

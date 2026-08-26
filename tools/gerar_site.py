@@ -30,6 +30,7 @@ PAL_GREEN = "#1a7a4a"
 WIDGETS = {
     "01_fundamentos/04_generalizacao.md": ("overfit", "wOverfit"),
     "01_fundamentos/05_validacao_cruzada.md": ("kfold", "wKfold"),
+    "01_fundamentos/09_ferramentas_sklearn_pytorch.md": ("skmap", "wSklearnMap"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -96,6 +97,23 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wSklearnMap":
+        return f"""<div class="widget">
+  <div class="widget-title">Mapa de estimadores — por onde começar</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "n", "Número de amostras", 1, 6, 1, 3)}
+    <div class="ctrl-row"><span class="ctrl-label">Tenho rótulos (y conhecido)?</span>
+      <select class="ctrl-select" id="{wid}-lab"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Quero…</span>
+      <select class="ctrl-select" id="{wid}-goal"><option value="cat">prever uma categoria</option><option value="num">prever uma quantidade</option><option value="exp">só explorar / reduzir dimensão</option></select></div>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "fam", "Família recomendada", "para onde o mapa aponta", PAL_BLUE)}
+    {_card(wid, "est", "Estimadores sugeridos", "por onde começar no scikit-learn", PAL_GREEN)}
+    {_card(wid, "note", "Observação", "o porquê da recomendação")}
   </div>
 </div>"""
     return ""

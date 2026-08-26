@@ -30,6 +30,7 @@
 <li><a class="nav-link" data-target="01-fundamentos-06-metricas-regressao-md" href="#01-fundamentos-06-metricas-regressao-md"><span class="n">1.6</span>Métricas de avaliação — regressão</a></li>
 <li><a class="nav-link" data-target="01-fundamentos-07-metricas-classificacao-md" href="#01-fundamentos-07-metricas-classificacao-md"><span class="n">1.7</span>Métricas de avaliação — classificação</a></li>
 <li><a class="nav-link" data-target="01-fundamentos-08-preprocessamento-md" href="#01-fundamentos-08-preprocessamento-md"><span class="n">1.8</span>Pré-processamento de dados</a></li>
+<li><a class="nav-link" data-target="01-fundamentos-09-ferramentas-sklearn-pytorch-md" href="#01-fundamentos-09-ferramentas-sklearn-pytorch-md"><span class="n">1.9</span>As ferramentas: scikit-learn e PyTorch</a></li>
 </ul></div>
 <div class="nav-group">
 <div class="nav-group-title">2. Regressão</div>
@@ -1222,6 +1223,172 @@ validação cruzada.
 <li>Documentação do scikit-learn: <em>Preprocessing data</em> e <em>Pipelines</em>.</li>
 </ul>
 
+</article>
+<article id="01-fundamentos-09-ferramentas-sklearn-pytorch-md" class="topic">
+<div class="topic-num">1.9</div>
+<h1 class="topic-title">As ferramentas: scikit-learn e PyTorch</h1>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/01_fundamentos/09_ferramentas_sklearn_pytorch.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Até aqui falamos de ideias — tarefa, experiência, generalização. Agora vamos
+conhecer as duas ferramentas que usaremos para transformar essas ideias em
+código no resto do curso: o <strong>scikit-learn</strong> e o <strong>PyTorch</strong>. A boa notícia é que
+ambos foram projetados para que você escreva <em>pouco</em> e entenda <em>tudo</em>.</p>
+<p>A regra de bolso deste curso: <strong>use o scikit-learn para os modelos clássicos</strong>
+(regressão, árvores, florestas, k-means, PCA…) e <strong>use o PyTorch quando precisar
+construir e treinar uma rede neural por conta própria</strong>, vendo cada peça do
+mecanismo. Não são rivais — são camadas diferentes de abstração para propósitos
+diferentes.</p>
+<h2>scikit-learn: a mesma interface para tudo</h2>
+<p>O que torna o scikit-learn (Pedregosa et al., 2011) tão agradável é uma decisão
+de projeto simples e consistente: <strong>todo modelo é um objeto com os mesmos três
+métodos</strong>.</p>
+<ul>
+<li><code>.fit(X, y)</code> — <strong>ajusta</strong> (treina) o modelo aos dados;</li>
+<li><code>.predict(X)</code> — devolve as <strong>predições</strong> para novas entradas;</li>
+<li><code>.score(X, y)</code> — devolve uma <strong>medida de desempenho</strong> padrão.</li>
+</ul>
+<p>Isso vale para uma regressão linear, uma floresta aleatória ou um k-means: troca-se
+a classe e o resto do código continua igual. Essa uniformidade é o que permite
+comparar modelos de forma justa, trocando uma única linha.</p>
+<p>Os dados entram sempre no mesmo formato:</p>
+<div class="math-display">$$
+\mathbf{X} \in \mathbb{R}^{n \times p}, \qquad \mathbf{y} \in \mathbb{R}^{n}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$n$ é o número de <strong>exemplos</strong> (as linhas — cada flor, cada paciente, cada
+  molécula);</li>
+<li>$p$ é o número de <strong>características</strong> (as colunas — cada medida que descreve o
+  exemplo);</li>
+<li>$\mathbf{X}$ é a <strong>matriz de características</strong>, com um exemplo por linha;</li>
+<li>$\mathbf{y}$ é o <strong>vetor-alvo</strong>, com o valor que queremos prever para cada
+  exemplo (uma classe, na classificação; um número, na regressão).</li>
+</ul>
+<p>Guardar esse formato $(\mathbf{X}, \mathbf{y})$ na cabeça resolve metade dos erros
+de quem está começando.</p>
+<h3>Qual modelo escolher? O mapa do scikit-learn</h3>
+<p>Diante de tantos algoritmos, a pergunta inevitável é <em>"por onde começo?"</em>. A
+própria documentação do scikit-learn responde com um fluxograma famoso — o
+<a href="https://scikit-learn.org/1.3/tutorial/machine_learning_map/"><strong>mapa de estimadores</strong></a> —
+que parte de perguntas práticas (Tenho rótulos? Quantas amostras? Quero prever
+uma categoria ou uma quantidade?) e conduz a uma família de modelos.</p>
+<p>O widget abaixo é uma versão enxuta desse mapa: responda às perguntas nos
+controles e veja para qual família o fluxograma aponta. Não existe resposta
+única e mágica — o mapa é um <strong>ponto de partida sensato</strong>, não um oráculo —, mas
+ele organiza a decisão de um jeito que evita paralisia.</p>
+<h2>PyTorch: quando você quer abrir a caixa</h2>
+<p>O scikit-learn é ótimo enquanto o modelo que você quer já existe pronto. Quando o
+assunto é rede neural, porém, o valor didático está em <strong>montar o mecanismo peça
+por peça</strong> — e é aí que entra o PyTorch (Paszke et al., 2019). Ele oferece duas
+coisas essenciais:</p>
+<ol>
+<li><strong>Tensores</strong> — arranjos numéricos parecidos com os do NumPy, mas que também
+   rodam em GPU;</li>
+<li><strong>Diferenciação automática</strong> (<em>autograd</em>) — o PyTorch registra as operações que
+   você faz e calcula sozinho as derivadas de que o treino precisa.</li>
+</ol>
+<p>Treinar uma rede é, no fundo, minimizar uma função de custo ajustando parâmetros.
+O método é o <strong>gradiente descendente</strong>: a cada passo, empurramos cada parâmetro na
+direção que mais reduz o custo. A atualização de um parâmetro é</p>
+<div class="math-display">$$
+\boldsymbol\theta \;\leftarrow\; \boldsymbol\theta \;-\; \eta \, \nabla_{\!\boldsymbol\theta}\, \mathcal{L}(\boldsymbol\theta)
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\boldsymbol\theta$ são os <strong>parâmetros</strong> do modelo (os pesos que ele aprende);</li>
+<li>$\mathcal{L}(\boldsymbol\theta)$ é a <strong>função de custo</strong> (o quão erradas estão as
+  predições; queremos o menor valor possível);</li>
+<li>$\nabla_{\!\boldsymbol\theta}\,\mathcal{L}$ é o <strong>gradiente</strong> do custo — o vetor
+  que aponta na direção de maior <em>aumento</em> do custo (por isso o sinal de menos:
+  andamos no sentido contrário, o de maior <em>redução</em>);</li>
+<li>$\eta$ (a letra grega <em>eta</em>) é a <strong>taxa de aprendizado</strong> — o tamanho do passo. Se
+  for grande demais, o treino oscila e diverge; pequena demais, ele engatinha. É o
+  hiperparâmetro que você mais vai ajustar.</li>
+</ul>
+<p>O papel do <em>autograd</em> é justamente entregar $\nabla_{\!\boldsymbol\theta}\,\mathcal{L}$
+sem que você precise derivar nada à mão. No notebook, todo treino de rede segue
+sempre o mesmo ciclo de quatro passos, escrito de forma explícita:</p>
+<div class="math-display">$$
+\underbrace{\hat{\mathbf{y}} = f(\mathbf{X};\boldsymbol\theta)}_{\text{1. forward}}
+\;\rightarrow\;
+\underbrace{\mathcal{L}(\hat{\mathbf{y}}, \mathbf{y})}_{\text{2. custo}}
+\;\rightarrow\;
+\underbrace{\nabla_{\!\boldsymbol\theta}\mathcal{L}}_{\text{3. backward}}
+\;\rightarrow\;
+\underbrace{\boldsymbol\theta \leftarrow \boldsymbol\theta - \eta\nabla_{\!\boldsymbol\theta}\mathcal{L}}_{\text{4. passo}}
+$$</div>
+<p>Repetir esse ciclo muitas vezes <strong>é</strong> treinar uma rede. Todo o resto são detalhes.</p>
+<h2>NumPy e pandas: o chão de fábrica</h2>
+<p>Por baixo dos dois, estão as ferramentas com que já trabalhamos: o <strong>NumPy</strong>
+(Harris et al., 2020), que dá os arranjos numéricos vetorizados, e o <strong>pandas</strong>
+(McKinney, 2010), que dá as tabelas (<code>DataFrame</code>) para carregar e limpar dados. O
+scikit-learn aceita tanto arranjos NumPy quanto <code>DataFrame</code>s do pandas — é comum
+carregar e tratar os dados no pandas e passar direto para o <code>.fit</code>.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>09_ferramentas_sklearn_pytorch.ipynb</code> percorre, lado a lado, os dois
+caminhos sobre o mesmo problema (classificar flores do conjunto Iris):</p>
+<ul>
+<li>o <strong>caminho scikit-learn</strong>: <code>fit</code> / <code>predict</code> / <code>score</code> em três linhas, e o
+  mesmo código trocando o modelo;</li>
+<li>o <strong>caminho PyTorch</strong>: um tensor, um exemplo de <em>autograd</em> calculando uma
+  derivada, e um laço de treino explícito (forward → custo → backward → passo)
+  cujo custo cai a cada época, tudo visualizado com Plotly.</li>
+</ul>
+<p>Abra-o no Colab e rode célula a célula — os dois estilos ficam lado a lado para
+você sentir quando usar cada um.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Um colega tem uma tabela com 200 pacientes, 8 exames por paciente (as
+colunas) e uma coluna dizendo se cada um tem ou não a doença. Ele quer prever a
+doença em novos pacientes. Quais são $n$, $p$ e o que é $\mathbf{y}$? Qual método
+do scikit-learn ele chama primeiro?</p>
+<details><summary>Ver solução</summary>
+
+- $n = 200$ (exemplos/pacientes, as linhas);
+- $p = 8$ (características/exames, as colunas);
+- $\mathbf{y}$ é o vetor com o rótulo de cada paciente (tem/não tem a doença) —
+  como é uma **categoria**, trata-se de um problema de **classificação**;
+- o primeiro método é `.fit(X, y)`, para ajustar o modelo aos dados de treino.
+  Depois, `.predict(X_novos)` para os novos pacientes.
+
+</details>
+
+<p><strong>2.</strong> No gradiente descendente, o que acontece se a taxa de aprendizado $\eta$ for
+grande demais? E pequena demais?</p>
+<details><summary>Ver solução</summary>
+
+- $\eta$ **grande demais**: cada passo ultrapassa o mínimo, o custo oscila e pode
+  até **divergir** (crescer sem parar) em vez de cair.
+- $\eta$ **pequena demais**: cada passo reduz muito pouco o custo, e o treino fica
+  **lento**, precisando de um número enorme de épocas para chegar perto do mínimo.
+- Na prática, busca-se um valor intermediário — e é comum reduzir $\eta$ ao longo
+  do treino. É o hiperparâmetro que mais recompensa o ajuste cuidadoso.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Pedregosa, F. et al. (2011). <em>Scikit-learn: Machine Learning in Python</em>. Journal of Machine Learning Research, 12, 2825–2830.</li>
+<li>Paszke, A. et al. (2019). <em>PyTorch: An Imperative Style, High-Performance Deep Learning Library</em>. Advances in Neural Information Processing Systems (NeurIPS), 32.</li>
+<li>Harris, C. R. et al. (2020). <em>Array programming with NumPy</em>. Nature, 585, 357–362.</li>
+<li>McKinney, W. (2010). <em>Data Structures for Statistical Computing in Python</em>. Proceedings of the 9th Python in Science Conference.</li>
+<li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>. Springer. Livro aberto: https://www.statlearning.com/</li>
+<li>Documentação do scikit-learn: <em>Choosing the right estimator</em> — https://scikit-learn.org/1.3/tutorial/machine_learning_map/</li>
+</ul>
+<div class="widget" data-widget="wSklearnMap" data-id="skmap_1_9">
+  <div class="widget-title">Mapa de estimadores — por onde começar</div>
+  <canvas id="skmap_1_9-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de amostras</span><input type="range" min="1" max="6" step="1" value="3" id="skmap_1_9-n"><span class="ctrl-val" id="skmap_1_9-n-v">3</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Tenho rótulos (y conhecido)?</span>
+      <select class="ctrl-select" id="skmap_1_9-lab"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Quero…</span>
+      <select class="ctrl-select" id="skmap_1_9-goal"><option value="cat">prever uma categoria</option><option value="num">prever uma quantidade</option><option value="exp">só explorar / reduzir dimensão</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Família recomendada</div><div class="sval" id="skmap_1_9-fam" style="color:#3266ad;">—</div><div class="sdesc">para onde o mapa aponta</div></div>
+    <div class="stat-card"><div class="slabel">Estimadores sugeridos</div><div class="sval" id="skmap_1_9-est" style="color:#1a7a4a;">—</div><div class="sdesc">por onde começar no scikit-learn</div></div>
+    <div class="stat-card"><div class="slabel">Observação</div><div class="sval" id="skmap_1_9-note">—</div><div class="sdesc">o porquê da recomendação</div></div>
+  </div>
+</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
