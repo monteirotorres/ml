@@ -1301,6 +1301,332 @@ def nb_stacking():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+def nb_ex_regressao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Exercícios — Regressão e métricas\n\n"
+           "Resolva no papel antes de abrir cada solução. As células de solução vêm "
+           "recolhidas (`# @title`)."),
+        code(PREAMBULO),
+        md("## Exercício 1 — RMSE e R² na mão e no sklearn\n\n"
+           "Regressão linear de `bmi` no `diabetes`; RMSE e R² no teste, à mão e com o "
+           "scikit-learn."),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_diabetes\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.linear_model import LinearRegression\n'
+             'from sklearn.metrics import mean_squared_error, r2_score\n\n'
+             'd = load_diabetes()\n'
+             'X = d.data[:, [2]]   # bmi\n'
+             'y = d.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=SEMENTE)\n'
+             'modelo = LinearRegression().fit(X_tr, y_tr)\n'
+             'previsto = modelo.predict(X_te)\n'
+             '# na mao\n'
+             'rmse_mao = np.sqrt(np.mean((y_te - previsto) ** 2))\n'
+             'r2_mao = 1 - np.sum((y_te - previsto)**2) / np.sum((y_te - y_te.mean())**2)\n'
+             'print("RMSE (mao):", round(rmse_mao, 2), "| sklearn:", round(np.sqrt(mean_squared_error(y_te, previsto)), 2))\n'
+             'print("R2   (mao):", round(r2_mao, 3), "| sklearn:", round(r2_score(y_te, previsto), 3))'),
+        md("## Exercício 2 — Escolher o grau do polinômio"),
+        code('# @title Solução\n'
+             'from sklearn.preprocessing import PolynomialFeatures\n'
+             'from sklearn.pipeline import make_pipeline\n\n'
+             'x = np.linspace(0, 1, 60)\n'
+             'y = np.sin(2*np.pi*x) + np.random.normal(0, 0.25, size=x.shape)\n'
+             'xtr, xte, ytr, yte = train_test_split(x, y, test_size=0.4, random_state=SEMENTE)\n'
+             'melhor, melhor_erro = None, 1e9\n'
+             'for grau in range(1, 16):\n'
+             '    m = make_pipeline(PolynomialFeatures(grau), LinearRegression()).fit(xtr.reshape(-1,1), ytr)\n'
+             '    erro = mean_squared_error(yte, m.predict(xte.reshape(-1,1)))\n'
+             '    if erro < melhor_erro: melhor, melhor_erro = grau, erro\n'
+             'print("grau que minimiza o erro de validacao:", melhor, "| MSE:", round(melhor_erro, 3))'),
+        md("## Exercício 3 — Ridge, Lasso e esparsidade"),
+        code('# @title Solução\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.linear_model import Ridge, Lasso\n\n'
+             'X = d.data; y = d.target\n'
+             'ridge = make_pipeline(StandardScaler(), Ridge(alpha=1.0)).fit(X, y)\n'
+             'lasso = make_pipeline(StandardScaler(), Lasso(alpha=1.0)).fit(X, y)\n'
+             'nz_ridge = int(np.sum(np.abs(ridge.named_steps["ridge"].coef_) > 1e-6))\n'
+             'nz_lasso = int(np.sum(np.abs(lasso.named_steps["lasso"].coef_) > 1e-6))\n'
+             'print("coeficientes != 0 -> Ridge:", nz_ridge, "de 10 | Lasso:", nz_lasso, "de 10")\n'
+             'print("a Ridge nao zera nenhum; o Lasso zera varios (seleciona variaveis).")'),
+        md("## Exercício 4 — Interpretar um coeficiente"),
+        code('# @title Solução\n'
+             'modelo = make_pipeline(StandardScaler(), LinearRegression()).fit(X, y)\n'
+             'coefs = modelo.named_steps["linearregression"].coef_\n'
+             'j = int(np.argmax(coefs))\n'
+             'print("maior coeficiente positivo:", d.feature_names[j], "=", round(coefs[j], 1))\n'
+             'print("Leitura: +1 desvio-padrao em", d.feature_names[j],\n'
+             '      "-> +", round(coefs[j], 1), "na progressao prevista, mantidos os demais fixos.")'),
+    ]
+    escrever(nb, "07_exercicios/01_regressao.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_ex_classificacao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Exercícios — Classificação\n\nSoluções recolhidas em `# @title`."),
+        code(PREAMBULO),
+        md("## Exercício 1 — Escolher o k do k-NN"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_wine\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.neighbors import KNeighborsClassifier\n'
+             'from sklearn.pipeline import make_pipeline\n'
+             'from sklearn.model_selection import cross_val_score\n\n'
+             'w = load_wine()\n'
+             'melhor, melhor_ac = None, 0\n'
+             'for k in range(1, 30, 2):\n'
+             '    ac = cross_val_score(make_pipeline(StandardScaler(), KNeighborsClassifier(k)), w.data, w.target, cv=5).mean()\n'
+             '    if ac > melhor_ac: melhor, melhor_ac = k, ac\n'
+             'print("melhor k:", melhor, "| acuracia CV:", round(melhor_ac, 3))'),
+        md("## Exercício 2 — Ler uma matriz de confusão"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.metrics import confusion_matrix\n\n'
+             'bc = load_breast_cancer()\n'
+             'y = 1 - bc.target   # 1 = maligno\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(bc.data, y, test_size=0.3, random_state=SEMENTE, stratify=y)\n'
+             'esc = StandardScaler().fit(X_tr)\n'
+             'modelo = LogisticRegression(max_iter=5000).fit(esc.transform(X_tr), y_tr)\n'
+             'proba = modelo.predict_proba(esc.transform(X_te))[:, 1]\n'
+             'previsto = (proba > 0.5).astype(int)\n'
+             'vn, fp, fn, vp = confusion_matrix(y_te, previsto).ravel()\n'
+             'print("VP", vp, "FP", fp, "FN", fn, "VN", vn)\n'
+             'print("precisao:", round(vp/(vp+fp), 3), "| recall:", round(vp/(vp+fn), 3))\n'
+             'print("num rastreio, o falso negativo (maligno dito benigno) e o mais grave.")'),
+        md("## Exercício 3 — Ajustar o limiar de decisão"),
+        code('# @title Solução\n'
+             'for limiar in [0.5, 0.3, 0.2, 0.1]:\n'
+             '    prev = (proba > limiar).astype(int)\n'
+             '    vn, fp, fn, vp = confusion_matrix(y_te, prev).ravel()\n'
+             '    rec = vp/(vp+fn); prec = vp/(vp+fp) if (vp+fp) else 0\n'
+             '    print("limiar", limiar, "-> recall", round(rec, 3), "| precisao", round(prec, 3))\n'
+             'print("baixar o limiar sobe o recall (pega mais malignos) e baixa a precisao.")'),
+        md("## Exercício 4 — Linear × não linear (o valor do kernel)"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import make_circles\n'
+             'from sklearn.svm import SVC\n\n'
+             'Xc, yc = make_circles(n_samples=300, factor=0.4, noise=0.12, random_state=SEMENTE)\n'
+             'for nome, m in [("logistica", LogisticRegression()),\n'
+             '                ("SVM linear", SVC(kernel="linear")),\n'
+             '                ("SVM RBF", SVC(kernel="rbf", gamma=1.0))]:\n'
+             '    ac = cross_val_score(m, Xc, yc, cv=5).mean()\n'
+             '    print(nome.ljust(11), "acuracia CV:", round(ac, 3))\n'
+             'print("so a RBF resolve: o kernel torna o anel separavel.")'),
+    ]
+    escrever(nb, "07_exercicios/02_classificacao.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_ex_validacao():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Exercícios — Validação e seleção de modelos\n\nSoluções em `# @title`."),
+        code(PREAMBULO),
+        md("## Exercício 1 — O vazamento da seleção de variáveis\n\n"
+           "Com muitas variáveis e poucas informativas, selecionar as \"melhores\" "
+           "usando **todos** os dados antes de validar vaza o teste. Comparamos com a "
+           "seleção feita **dentro** do pipeline."),
+        code('# @title Solução\n'
+             'from sklearn.datasets import make_classification\n'
+             'from sklearn.feature_selection import SelectKBest, f_classif\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.pipeline import make_pipeline\n'
+             'from sklearn.model_selection import cross_val_score\n\n'
+             '# 1000 variaveis, so 5 informativas\n'
+             'X, y = make_classification(n_samples=200, n_features=1000, n_informative=5,\n'
+             '                           n_redundant=0, random_state=SEMENTE)\n'
+             '# ERRADO: escolhe as 20 melhores usando TODOS os dados, depois valida\n'
+             'X_sel = SelectKBest(f_classif, k=20).fit_transform(X, y)\n'
+             'ac_errado = cross_val_score(LogisticRegression(max_iter=5000), X_sel, y, cv=5).mean()\n'
+             '# CERTO: selecao DENTRO do pipeline (so no treino de cada dobra)\n'
+             'ac_certo = cross_val_score(make_pipeline(SelectKBest(f_classif, k=20),\n'
+             '                                         LogisticRegression(max_iter=5000)), X, y, cv=5).mean()\n'
+             'print("estimativa com vazamento (selecao fora):", round(ac_errado, 3))\n'
+             'print("estimativa correta (selecao no pipeline):", round(ac_certo, 3))\n'
+             'print("o vazamento infla: a selecao espiou o teste ao escolher as variaveis.")'),
+        md("## Exercício 2 — Grid search com validação cruzada"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_wine\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.pipeline import make_pipeline\n'
+             'from sklearn.svm import SVC\n'
+             'from sklearn.model_selection import GridSearchCV\n\n'
+             'w = load_wine()\n'
+             'grade = {"svc__C": [0.1, 1, 10], "svc__gamma": [0.001, 0.01, 0.1]}\n'
+             'busca = GridSearchCV(make_pipeline(StandardScaler(), SVC()), grade, cv=5)\n'
+             'busca.fit(w.data, w.target)\n'
+             'print("melhores parametros:", busca.best_params_)\n'
+             'print("acuracia CV do melhor:", round(busca.best_score_, 3))\n'
+             'print("esse numero e otimista (max sobre muitas combinacoes); use um teste separado.")'),
+        md("## Exercício 3 — Curva de aprendizado"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_digits\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.pipeline import make_pipeline\n'
+             'from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.model_selection import learning_curve\n\n'
+             'dig = load_digits()\n'
+             'tam, tr, val = learning_curve(make_pipeline(StandardScaler(), LogisticRegression(max_iter=5000)),\n'
+             '                              dig.data, dig.target, cv=5,\n'
+             '                              train_sizes=np.linspace(0.1, 1.0, 6))\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Scatter(x=tam, y=tr.mean(axis=1), mode="lines+markers",\n'
+             '                            line=dict(color=AZUL), name="treino"))\n'
+             'figura.add_trace(go.Scatter(x=tam, y=val.mean(axis=1), mode="lines+markers",\n'
+             '                            line=dict(color=VERMELHO), name="validacao"))\n'
+             'figura.update_layout(title="Curva de aprendizado (digits)", xaxis_title="tamanho do treino",\n'
+             '                     yaxis_title="acuracia", height=360, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()\n'
+             'print("lacuna grande = overfitting (mais dados ajudam); convergir baixo = underfitting.")'),
+        md("## Exercício 4 — Estratificar importa"),
+        code('# @title Solução\n'
+             'from sklearn.model_selection import KFold, StratifiedKFold\n'
+             'from sklearn.tree import DecisionTreeClassifier\n\n'
+             '# alvo desbalanceado: digito 3 vs resto\n'
+             'y_binario = (dig.target == 3).astype(int)\n'
+             'modelo = DecisionTreeClassifier(max_depth=5, random_state=SEMENTE)\n'
+             'for nome, cv in [("KFold", KFold(5, shuffle=True, random_state=SEMENTE)),\n'
+             '                 ("StratifiedKFold", StratifiedKFold(5, shuffle=True, random_state=SEMENTE))]:\n'
+             '    scores = cross_val_score(modelo, dig.data, y_binario, cv=cv)\n'
+             '    print(nome.ljust(16), "acuracia", round(scores.mean(), 3), "| desvio", round(scores.std(), 4))\n'
+             'print("o estratificado costuma ter menor desvio: dobras com proporcao de classes preservada.")'),
+    ]
+    escrever(nb, "07_exercicios/03_validacao.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_ex_clustering_pca():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Exercícios — Clustering e PCA\n\nSoluções em `# @title`."),
+        code(PREAMBULO),
+        md("## Exercício 1 — Cotovelo e silhueta"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_wine\n'
+             'from sklearn.preprocessing import StandardScaler\n'
+             'from sklearn.cluster import KMeans\n'
+             'from sklearn.metrics import silhouette_score\n\n'
+             'w = load_wine()\n'
+             'X = StandardScaler().fit_transform(w.data)\n'
+             'for k in range(2, 9):\n'
+             '    km = KMeans(n_clusters=k, n_init=10, random_state=SEMENTE).fit(X)\n'
+             '    print("k", k, "| inercia", round(km.inertia_, 1), "| silhueta", round(silhouette_score(X, km.labels_), 3))'),
+        md("## Exercício 2 — Padronizar antes de agrupar"),
+        code('# @title Solução\n'
+             'from sklearn.metrics import adjusted_rand_score\n\n'
+             'g_cru = KMeans(n_clusters=3, n_init=10, random_state=SEMENTE).fit_predict(w.data)\n'
+             'g_pad = KMeans(n_clusters=3, n_init=10, random_state=SEMENTE).fit_predict(X)\n'
+             'print("ARI sem padronizar:", round(adjusted_rand_score(w.target, g_cru), 3))\n'
+             'print("ARI com padronizar:", round(adjusted_rand_score(w.target, g_pad), 3))\n'
+             'print("variaveis de escala grande (ex.: proline) dominam a distancia sem padronizacao.")'),
+        md("## Exercício 3 — Quantas componentes reter?"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_breast_cancer\n'
+             'from sklearn.decomposition import PCA\n\n'
+             'bc = load_breast_cancer()\n'
+             'Xbc = StandardScaler().fit_transform(bc.data)\n'
+             'acum = np.cumsum(PCA().fit(Xbc).explained_variance_ratio_)\n'
+             'n95 = int(np.argmax(acum >= 0.95)) + 1\n'
+             'print("componentes para 95% da variancia:", n95, "de 30")\n'
+             'print("compressao de", round(30/n95, 1), "x perdendo so 5% da variacao.")'),
+        md("## Exercício 4 — PCA antes do t-SNE"),
+        code('# @title Solução\n'
+             'from sklearn.datasets import load_digits\n'
+             'from sklearn.manifold import TSNE\n'
+             'import time\n\n'
+             'dig = load_digits()\n'
+             'rng = np.random.RandomState(SEMENTE)\n'
+             'sel = rng.choice(len(dig.data), 500, replace=False)\n'
+             'Xd = dig.data[sel]\n'
+             't0 = time.time()\n'
+             'TSNE(n_components=2, init="random", random_state=SEMENTE).fit_transform(Xd)\n'
+             'direto = time.time() - t0\n'
+             't0 = time.time()\n'
+             'X20 = PCA(n_components=20).fit_transform(Xd)\n'
+             'TSNE(n_components=2, init="random", random_state=SEMENTE).fit_transform(X20)\n'
+             'com_pca = time.time() - t0\n'
+             'print("t-SNE direto (64 dims):", round(direto, 2), "s")\n'
+             'print("PCA(20) + t-SNE:       ", round(com_pca, 2), "s")\n'
+             'print("distancias entre grupos no mapa NAO sao confiaveis (so vizinhanca local).")'),
+    ]
+    escrever(nb, "07_exercicios/04_clustering_pca.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_ex_pipeline():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Exercícios — Pipeline completo\n\n"
+           "Um projeto de ponta a ponta com dados de tipos mistos e valores faltantes, "
+           "sem vazamento. Soluções em `# @title`."),
+        code(PREAMBULO),
+        md("## Preparação — um conjunto realista (numérico + categórico + faltantes)"),
+        code('# @title Solução\n'
+             'rng = np.random.RandomState(SEMENTE)\n'
+             'n = 500\n'
+             'idade = rng.normal(50, 12, n)\n'
+             'pressao = rng.normal(125, 16, n)\n'
+             'grupo = rng.choice(["A", "B", "C"], n)\n'
+             'logito = 0.04*(idade-50) + 0.03*(pressao-125) + (grupo=="C")*1.0 + rng.normal(0, 0.6, n)\n'
+             'y = (logito > np.median(logito)).astype(int)\n'
+             '# injeta valores faltantes nas numericas\n'
+             'idade[rng.rand(n) < 0.12] = np.nan\n'
+             'pressao[rng.rand(n) < 0.08] = np.nan\n'
+             'df = pd.DataFrame({"idade": idade, "pressao": pressao, "grupo": grupo})\n'
+             'print("faltantes por coluna:\\n", df.isna().sum())'),
+        md("## Exercício 1 — Montar o ColumnTransformer"),
+        code('# @title Solução\n'
+             'from sklearn.compose import ColumnTransformer\n'
+             'from sklearn.pipeline import Pipeline\n'
+             'from sklearn.impute import SimpleImputer\n'
+             'from sklearn.preprocessing import StandardScaler, OneHotEncoder\n'
+             'from sklearn.linear_model import LogisticRegression\n\n'
+             'num = ["idade", "pressao"]\n'
+             'cat = ["grupo"]\n'
+             'prep = ColumnTransformer([\n'
+             '    ("num", Pipeline([("imp", SimpleImputer(strategy="mean")), ("esc", StandardScaler())]), num),\n'
+             '    ("cat", Pipeline([("imp", SimpleImputer(strategy="most_frequent")), ("oh", OneHotEncoder())]), cat),\n'
+             '])\n'
+             'modelo = Pipeline([("prep", prep), ("clf", LogisticRegression(max_iter=5000))])\n'
+             'print("pipeline montado. A imputacao fica DENTRO, ajustada so no treino de cada dobra.")'),
+        md("## Exercício 2 — Comparar modelos com o mesmo pipeline"),
+        code('# @title Solução\n'
+             'from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier\n'
+             'from sklearn.model_selection import cross_val_score\n\n'
+             'for nome, clf in [("logistica", LogisticRegression(max_iter=5000)),\n'
+             '                  ("random forest", RandomForestClassifier(n_estimators=200, random_state=SEMENTE)),\n'
+             '                  ("grad. boosting", GradientBoostingClassifier(random_state=SEMENTE))]:\n'
+             '    pipe = Pipeline([("prep", prep), ("clf", clf)])\n'
+             '    ac = cross_val_score(pipe, df, y, cv=5).mean()\n'
+             '    print(nome.ljust(15), "acuracia CV:", round(ac, 3))'),
+        md("## Exercício 3 — Estimativa final honesta"),
+        code('# @title Solução\n'
+             'from sklearn.model_selection import train_test_split, GridSearchCV\n\n'
+             'df_tr, df_te, y_tr, y_te = train_test_split(df, y, test_size=0.25, random_state=SEMENTE, stratify=y)\n'
+             'pipe = Pipeline([("prep", prep), ("clf", RandomForestClassifier(random_state=SEMENTE))])\n'
+             'grade = {"clf__n_estimators": [100, 300], "clf__max_depth": [None, 5]}\n'
+             'busca = GridSearchCV(pipe, grade, cv=5).fit(df_tr, y_tr)\n'
+             'print("melhor CV (otimista):", round(busca.best_score_, 3))\n'
+             'print("acuracia no TESTE separado (honesta):", round(busca.score(df_te, y_te), 3))'),
+        md("## Exercício 4 — Reprodutibilidade"),
+        code('# @title Solução\n'
+             'import joblib\n'
+             'joblib.dump(busca.best_estimator_, "modelo_final.joblib")\n'
+             'recarregado = joblib.load("modelo_final.joblib")\n'
+             'print("modelo salvo e recarregado; previsoes identicas:",\n'
+             '      np.array_equal(busca.best_estimator_.predict(df_te), recarregado.predict(df_te)))\n'
+             'print("semente fixa + random_state em tudo + modelo salvo = resultado verificavel e reusavel.")'),
+    ]
+    escrever(nb, "07_exercicios/05_pipeline.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
 def nb_perceptron():
     nb = nbf.v4.new_notebook()
     nb.cells = [
@@ -1926,6 +2252,11 @@ CONSTRUTORES = [
     nb_backprop,
     nb_ativacoes,
     nb_deep_learning,
+    nb_ex_regressao,
+    nb_ex_classificacao,
+    nb_ex_validacao,
+    nb_ex_clustering_pca,
+    nb_ex_pipeline,
 ]
 
 if __name__ == "__main__":

@@ -93,61 +93,334 @@
 <article id="07-exercicios-01-regressao-md" class="topic">
 <div class="topic-num">7.1</div>
 <h1 class="topic-title">Regressão e métricas</h1>
-<p>Esta lista consolida os conceitos de regressão: ajuste de modelos lineares e polinomiais, interpretação de coeficientes e cálculo de métricas como RMSE e $R^2$. Cada questão vem com solução em Python usando scikit-learn.</p>
-<p>Recomenda-se resolver primeiro no papel/notebook e só então conferir a solução. Os exercícios usam conjuntos de dados clássicos e simulações reprodutíveis.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/07_exercicios/01_regressao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Esta lista consolida a regressão: ajuste linear e polinomial, interpretação de
+coeficientes, regularização e as métricas RMSE e $R^2$. Resolva primeiro no papel
+ou no notebook e só então confira. O notebook <code>01_regressao.ipynb</code> traz a solução
+executável de cada questão.</p>
+<p>Duas métricas aparecem o tempo todo:</p>
+<div class="math-display">$$
+\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2},
+\qquad
+R^2 = 1 - \frac{\sum_i (y_i - \hat{y}_i)^2}{\sum_i (y_i - \bar{y})^2}
+$$</div>
+<p>Onde $y_i$ é o valor real, $\hat{y}_i$ a predição, $\bar{y}$ a média de $y$ e $n$ o
+número de exemplos. O <strong>RMSE</strong> está nas unidades de $y$ (quanto menor, melhor); o
+$R^2$ é a fração da variância explicada (1 é perfeito; 0 é prever a média).</p>
+<h2>Exercício 1 — RMSE e R² na mão e no sklearn</h2>
+<p>Com o conjunto <code>diabetes</code>, ajuste uma regressão linear usando o preditor <code>bmi</code>.
+Calcule o RMSE e o $R^2$ no conjunto de teste — primeiro com NumPy, depois
+conferindo com <code>mean_squared_error</code> e <code>r2_score</code>.</p>
+<details><summary>Ver resposta</summary>
+
+Os dois caminhos batem. O $R^2$ de um único preditor fica em torno de 0,2–0,35: o
+`bmi` sozinho explica só parte da progressão da doença. O RMSE fica nas unidades do
+alvo. Veja o cálculo completo no notebook.
+
+</details>
+
+<h2>Exercício 2 — Escolher o grau do polinômio</h2>
+<p>Gere dados de uma função com curvatura mais ruído. Ajuste polinômios de graus 1 a
+15 e escolha o grau pelo <strong>erro de validação</strong>, não pelo de treino. Qual grau
+vence, e por quê não o de maior grau?</p>
+<details><summary>Ver resposta</summary>
+
+O erro de treino cai sempre com o grau, mas o de validação faz um U — o grau ótimo
+fica no fundo desse U (em geral entre 3 e 6 para uma senoide com ruído moderado, a
+depender do sorteio). Graus maiores sobreajustam: ajustam o ruído do treino e pioram
+em dados novos.
+
+</details>
+
+<h2>Exercício 3 — Ridge, Lasso e esparsidade</h2>
+<p>Ajuste Ridge e Lasso ao <code>diabetes</code> (padronizados, dentro de um <code>Pipeline</code>) com um
+$\alpha$ moderado. Quantos coeficientes cada um zera? O que isso diz sobre os dois
+métodos?</p>
+<details><summary>Ver resposta</summary>
+
+A **Ridge** não zera nenhum coeficiente (encolhe todos suavemente); o **Lasso**
+zera vários, entregando um modelo esparso. Confirma a diferença $\ell_2$ × $\ell_1$:
+Lasso faz seleção de variáveis, Ridge só regulariza.
+
+</details>
+
+<h2>Exercício 4 — Interpretar um coeficiente</h2>
+<p>No modelo múltiplo do <code>diabetes</code> (preditores padronizados), o coeficiente de <code>bmi</code>
+é o maior positivo. Escreva, em uma frase, o que ele significa — lembrando que os
+preditores estão padronizados.</p>
+<details><summary>Ver resposta</summary>
+
+Mantidos os demais preditores fixos, um aumento de **um desvio-padrão** no `bmi`
+está associado a um aumento de (o valor do coeficiente) unidades na progressão
+prevista da doença. Como os dados estão padronizados, a comparação entre coeficientes
+indica importância relativa; a leitura é associativa, não causal.
+
+</details>
 
 </article>
 <article id="07-exercicios-02-classificacao-md" class="topic">
 <div class="topic-num">7.2</div>
 <h1 class="topic-title">Classificação</h1>
-<p>Problemas envolvendo k-NN, árvores, Naive Bayes, SVM e regressão logística. O foco é treinar a escolha do modelo, a leitura de fronteiras de decisão e a avaliação com matriz de confusão, precisão, recall e AUC.</p>
-<p>As soluções mostram o pipeline completo — do pré-processamento à avaliação — em scikit-learn, reforçando as boas práticas vistas no capítulo de fundamentos.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/07_exercicios/02_classificacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Problemas com k-NN, árvores, Naive Bayes, SVM e regressão logística. O foco é
+escolher o modelo, ler fronteiras de decisão e avaliar com matriz de confusão,
+precisão, recall e AUC. As soluções executáveis estão em <code>02_classificacao.ipynb</code>.</p>
+<p>Lembrete das métricas, a partir de verdadeiros/falsos positivos e negativos (VP,
+FP, VN, FN):</p>
+<div class="math-display">$$
+\text{precisão} = \frac{\text{VP}}{\text{VP} + \text{FP}},
+\qquad
+\text{recall} = \frac{\text{VP}}{\text{VP} + \text{FN}}
+$$</div>
+<p>Onde a <strong>precisão</strong> responde "dos que classifiquei como positivos, quantos eram?" e
+o <strong>recall</strong> responde "dos positivos reais, quantos peguei?". A <strong>AUC</strong> resume o
+desempenho em todos os limiares de decisão (0,5 = aleatório; 1 = perfeito).</p>
+<h2>Exercício 1 — Escolher o k do k-NN</h2>
+<p>No <code>wine</code>, use validação cruzada para escolher o melhor $k$ do k-NN (com
+padronização). O que acontece com a acurácia para $k$ muito pequeno e muito grande?</p>
+<details><summary>Ver resposta</summary>
+
+A acurácia sobe, atinge um platô num $k$ intermediário e depois cai. $k$ muito
+pequeno superajusta (fronteira recortada, sensível a ruído); $k$ grande demais
+suaviza excessivamente, aproximando-se de prever a classe majoritária. Sem
+padronizar, o resultado piora.
+
+</details>
+
+<h2>Exercício 2 — Ler uma matriz de confusão</h2>
+<p>Treine uma regressão logística no <code>breast cancer</code> (com o maligno como classe
+positiva) e monte a matriz de confusão. Calcule precisão e recall à mão a partir
+dela e diga qual erro é mais grave num rastreio.</p>
+<details><summary>Ver resposta</summary>
+
+Num rastreio de câncer, o **falso negativo** (deixar passar um maligno) é mais
+grave que o falso positivo (um alarme que leva a exames extras). Por isso costuma-se
+priorizar o **recall** da classe maligna, mesmo à custa de precisão — baixando o
+limiar de decisão abaixo de 0,5.
+
+</details>
+
+<h2>Exercício 3 — Ajustar o limiar de decisão</h2>
+<p>Ainda no <code>breast cancer</code>, em vez do limiar padrão 0,5, escolha um limiar que
+aumente o recall dos malignos para pelo menos 0,98. O que acontece com a precisão?</p>
+<details><summary>Ver resposta</summary>
+
+Baixar o limiar (por exemplo para 0,2–0,3) captura mais malignos (recall sobe), mas
+classifica como maligno mais casos benignos (precisão cai). É o compromisso
+precisão–recall: em rastreio, aceitamos mais falsos positivos para não perder
+verdadeiros positivos. A curva precisão–recall mostra o trade-off inteiro.
+
+</details>
+
+<h2>Exercício 4 — Linear × não linear (o valor do kernel)</h2>
+<p>Nos dados <code>make_circles</code>, compare a acurácia de uma regressão logística, de uma SVM
+linear e de uma SVM com kernel RBF. Explique o resultado.</p>
+<details><summary>Ver resposta</summary>
+
+A logística e a SVM linear falham (acurácia perto de 50–60%): não há reta que
+separe um anel de seu núcleo. A **SVM RBF** acerta quase tudo, porque o kernel
+projeta os dados para um espaço onde eles ficam linearmente separáveis. É a
+demonstração de quando vale sair do linear.
+
+</details>
 
 </article>
 <article id="07-exercicios-03-validacao-md" class="topic">
 <div class="topic-num">7.3</div>
 <h1 class="topic-title">Validação e seleção de modelos</h1>
-<p>Exercícios sobre validação cruzada, ajuste de hiperparâmetros (grid/random search), curvas de aprendizado e o compromisso viés–variância. O objetivo é estimar desempenho de forma honesta e evitar vazamento de dados.</p>
-<p>Cada solução destaca um erro comum de metodologia e como corrigi-lo — a parte mais importante e menos glamourosa da prática de ML.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/07_exercicios/03_validacao.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Exercícios sobre validação cruzada, ajuste de hiperparâmetros, curvas de
+aprendizado e — o mais importante — <strong>evitar vazamento de dados</strong>. Cada solução no
+notebook <code>03_validacao.ipynb</code> destaca um erro comum de metodologia e como
+corrigi-lo. Esta é a parte menos glamourosa e mais decisiva da prática de ML.</p>
+<h2>Exercício 1 — O vazamento da seleção de variáveis</h2>
+<p>Com muitas variáveis e poucas informativas, alguém selecionou as $k$ "melhores"
+usando o conjunto <strong>inteiro</strong> antes de validar. Explique por que isso vaza
+informação e mostre a diferença ao fazer a seleção <strong>dentro</strong> da validação cruzada,
+com <code>Pipeline</code>.</p>
+<details><summary>Ver resposta</summary>
+
+Escolher as variáveis com treino e teste juntos deixa a seleção "ver" o teste: entre
+1000 variáveis, algumas parecem boas **por acaso** no conjunto inteiro, inclusive nas
+dobras de teste. O modelo é então avaliado com uma vantagem que não teria em
+produção, e a estimativa fica **inflada** (no notebook, ~0,81 contra ~0,66 corretos).
+O certo é encapsular o `SelectKBest` num `Pipeline`, para que a seleção use **só** o
+treino de cada dobra. Vale para qualquer pré-processamento que aprende dos dados —
+padronização, imputação, seleção.
+
+</details>
+
+<h2>Exercício 2 — Grid search com validação cruzada</h2>
+<p>Ajuste os hiperparâmetros de uma SVM RBF ($C$ e $\gamma$) no <code>wine</code> com
+<code>GridSearchCV</code>. Reporte os melhores parâmetros e a acurácia de validação cruzada —
+e explique por que <strong>não</strong> se deve reportar a acurácia do próprio grid como
+estimativa final.</p>
+<details><summary>Ver resposta</summary>
+
+O `GridSearchCV` escolhe os hiperparâmetros que maximizam a acurácia de validação;
+esse máximo é, por construção, **otimista** (escolhemos o melhor entre muitos). Para
+uma estimativa honesta do desempenho final, avalia-se em um conjunto de teste
+**separado** desde o início, ou usa-se validação cruzada **aninhada**.
+
+</details>
+
+<h2>Exercício 3 — Curva de aprendizado</h2>
+<p>Trace a curva de aprendizado (desempenho × tamanho do treino) de um modelo no
+<code>digits</code>. As curvas de treino e validação convergem? O que a distância entre elas
+indica?</p>
+<details><summary>Ver resposta</summary>
+
+Uma **lacuna grande** entre treino (alto) e validação (baixo) indica **overfitting**
+(variância alta) — mais dados tendem a ajudar. Curvas que convergem para um valor
+**baixo** indicam **underfitting** (viés alto) — mais dados não ajudam; é preciso um
+modelo mais expressivo ou melhores atributos. A forma das curvas orienta a próxima
+ação.
+
+</details>
+
+<h2>Exercício 4 — Estratificar importa</h2>
+<p>Num conjunto desbalanceado, compare a variância da acurácia entre <code>KFold</code> comum e
+<code>StratifiedKFold</code>. Por que estratificar reduz a variância da estimativa?</p>
+<details><summary>Ver resposta</summary>
+
+O `StratifiedKFold` mantém a **proporção das classes** em cada dobra. Sem isso, uma
+dobra pode calhar com pouquíssimos exemplos da classe rara, gerando estimativas
+instáveis de uma dobra para outra. Preservar a proporção torna as dobras comparáveis
+e a estimativa de desempenho mais **estável** (menor variância).
+
+</details>
 
 </article>
 <article id="07-exercicios-04-clustering-pca-md" class="topic">
 <div class="topic-num">7.4</div>
 <h1 class="topic-title">Clustering e PCA</h1>
-<p>Lista de aprendizagem não supervisionada: aplicar k-means e clustering hierárquico, escolher o número de grupos, reduzir dimensionalidade com PCA e visualizar com t-SNE.</p>
-<p>As soluções enfatizam a interpretação dos resultados — clusters não vêm com rótulos, e cabe ao analista dar-lhes sentido no contexto do problema.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/07_exercicios/04_clustering_pca.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Lista de aprendizagem não supervisionada: k-means, clustering hierárquico, escolha
+do número de grupos, redução de dimensionalidade com PCA e visualização. As
+soluções em <code>04_clustering_pca.ipynb</code> enfatizam a <strong>interpretação</strong> — clusters não
+vêm com rótulos, e cabe ao analista dar-lhes sentido.</p>
+<h2>Exercício 1 — Cotovelo e silhueta</h2>
+<p>No <code>wine</code> (padronizado), trace a curva do cotovelo e a silhueta média para $k$ de 2
+a 8. Os dois métodos concordam? Qual $k$ você escolheria?</p>
+<details><summary>Ver resposta</summary>
+
+A inércia cai sempre; procura-se o "joelho". A silhueta tem um pico. Eles nem sempre
+concordam exatamente — quando divergem, vale inspecionar os grupos e usar
+conhecimento do domínio. No `wine`, que tem 3 cultivares, um $k$ próximo de 3 costuma
+ser defensável.
+
+</details>
+
+<h2>Exercício 2 — Padronizar antes de agrupar</h2>
+<p>Rode o k-means no <code>wine</code> <strong>sem</strong> padronizar e depois <strong>com</strong> padronização. Compare
+os grupos com os rótulos reais (índice de Rand ajustado). Por que a diferença é
+grande?</p>
+<details><summary>Ver resposta</summary>
+
+Sem padronizar, variáveis de escala grande (como `proline`, na casa dos milhares)
+dominam a distância euclidiana, e os grupos se formam quase só por elas — ARI baixo.
+Padronizando, todas as variáveis pesam de forma comparável e os grupos passam a
+refletir a estrutura real — ARI bem maior. Em métodos de distância, padronizar não é
+opcional.
+
+</details>
+
+<h2>Exercício 3 — Quantas componentes reter?</h2>
+<p>Aplique PCA ao <code>breast cancer</code> (padronizado) e descubra quantas componentes são
+necessárias para reter 95% da variância. Compare com as 30 variáveis originais.</p>
+<details><summary>Ver resposta</summary>
+
+Tipicamente cerca de **10 componentes** retêm 95% da variância das 30 originais — uma
+compressão de 3× perdendo só 5% da variação. Mostra o quanto há de redundância
+(variáveis correlacionadas) nos dados, e por que a PCA é útil antes de métodos
+sensíveis à dimensão.
+
+</details>
+
+<h2>Exercício 4 — PCA antes do t-SNE</h2>
+<p>No <code>digits</code>, compare visualizar com t-SNE aplicado (a) direto nas 64 dimensões e
+(b) após reduzir para ~20 componentes com PCA. O que muda? E por que <strong>não</strong> se deve
+medir distâncias entre grupos no mapa t-SNE?</p>
+<details><summary>Ver resposta</summary>
+
+Aplicar PCA antes acelera o t-SNE e costuma remover ruído, com um mapa de qualidade
+parecida ou melhor. Quanto às distâncias: o t-SNE preserva **vizinhança local**, não
+distâncias globais — grupos afastados no mapa não são necessariamente mais
+diferentes, e o tamanho dos grupos é artefato. O mapa serve para levantar hipóteses,
+não para quantificar.
+
+</details>
 
 </article>
 <article id="07-exercicios-05-pipeline-md" class="topic">
 <div class="topic-num">7.5</div>
 <h1 class="topic-title">Pipeline completo</h1>
-<p>Um projeto integrador de ponta a ponta: carregar dados reais, tratar valores faltantes, pré-processar, treinar e comparar vários modelos, validar corretamente e reportar o resultado final de forma reprodutível.</p>
-<p>Este exercício amarra todo o curso, usando <code>Pipeline</code> e <code>ColumnTransformer</code> do scikit-learn para garantir que nenhuma etapa vaze informação do conjunto de teste.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<p>O notebook associado trará exemplos práticos em Python (scikit-learn), com dados reproduzíveis e exercícios resolvidos.</p>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/07_exercicios/05_pipeline.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Um projeto integrador de ponta a ponta, que amarra o curso inteiro: carregar dados
+com valores faltantes e variáveis de tipos diferentes, pré-processar <strong>sem vazar</strong>,
+treinar e comparar modelos, validar corretamente e reportar. A solução em
+<code>05_pipeline.ipynb</code> usa <code>Pipeline</code> e <code>ColumnTransformer</code> do scikit-learn para
+garantir que nenhuma etapa toque o conjunto de teste antes da hora.</p>
+<p>O <code>ColumnTransformer</code> aplica transformações <strong>diferentes</strong> a colunas diferentes
+(imputação + padronização nas numéricas; imputação + <em>one-hot</em> nas categóricas), e o
+<code>Pipeline</code> encadeia tudo até o modelo — de modo que cada etapa é ajustada só no
+treino de cada dobra da validação. É a forma canônica de evitar vazamento.</p>
+<h2>Exercício 1 — Montar o ColumnTransformer</h2>
+<p>Sobre um conjunto com colunas numéricas (algumas com valores faltantes) e uma
+coluna categórica, monte um <code>ColumnTransformer</code> que impute e padronize as numéricas
+e impute e faça <em>one-hot</em> na categórica. Por que a imputação precisa estar <strong>dentro</strong>
+do pipeline?</p>
+<details><summary>Ver resposta</summary>
+
+Se a imputação (por exemplo, preencher faltantes com a média) for feita **fora**,
+sobre os dados inteiros, a média usada terá visto o teste — vazamento. Dentro do
+`Pipeline`/`ColumnTransformer`, a média é calculada **só no treino** de cada dobra e
+aplicada ao teste, replicando o que aconteceria em produção. A estimativa fica
+honesta.
+
+</details>
+
+<h2>Exercício 2 — Comparar modelos com o mesmo pipeline</h2>
+<p>Encaixe três modelos (regressão logística, random forest e gradient boosting) <strong>no
+mesmo</strong> pré-processamento e compare por validação cruzada. Qual vence, e o esforço
+extra do melhor compensa?</p>
+<details><summary>Ver resposta</summary>
+
+Trocar só o passo final do pipeline mantém a comparação **justa** (mesmo
+pré-processamento, mesmas dobras). Em dados tabulares, o gradient boosting e a random
+forest costumam liderar; a logística serve de linha de base. Se a diferença for
+pequena, o modelo mais simples e interpretável pode ser preferível — desempenho não
+é o único critério.
+
+</details>
+
+<h2>Exercício 3 — Estimativa final honesta</h2>
+<p>Depois de escolher o melhor modelo e ajustar hiperparâmetros com <code>GridSearchCV</code>,
+reporte o desempenho em um conjunto de <strong>teste separado desde o início</strong>. Por que
+esse número é mais confiável que a melhor acurácia do grid?</p>
+<details><summary>Ver resposta</summary>
+
+A acurácia do grid é o **máximo** sobre muitas combinações — otimista por seleção. O
+conjunto de teste, nunca tocado durante treino nem ajuste, dá uma estimativa
+**imparcial** do desempenho em dados novos. Reportar o teste separado (ou usar
+validação cruzada aninhada) é o que separa um resultado confiável de um número
+inflado.
+
+</details>
+
+<h2>Exercício 4 — Reprodutibilidade</h2>
+<p>Torne o projeto inteiro reprodutível: semente fixa, <code>random_state</code> em tudo que é
+aleatório, e o pipeline salvo com <code>joblib</code>. Por que reprodutibilidade é parte da
+metodologia, não um luxo?</p>
+<details><summary>Ver resposta</summary>
+
+Sem semente fixa, dois autores (ou o mesmo autor amanhã) obtêm números diferentes, e
+não se sabe se uma mudança de desempenho veio do código ou do acaso. Fixar toda a
+aleatoriedade (`SEMENTE` propagada, `random_state` nos estimadores e nas divisões) e
+**salvar** o pipeline treinado garantem que o resultado possa ser **verificado e
+reusado** — condição para confiar em qualquer conclusão.
+
+</details>
 
 </article>
 </div>
