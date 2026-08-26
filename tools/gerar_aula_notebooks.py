@@ -2891,9 +2891,96 @@ except Exception as erro:
 # ══════════════════════════════════════════════════════════════════════════
 # CONSTRUÇÃO DOS DOIS NOTEBOOKS
 # ══════════════════════════════════════════════════════════════════════════
+# Título curto de cada célula de código, na ordem em que aparecem (1..N).
+# Vira o cabeçalho "# Célula NN — <título>" no topo da célula.
+TITULOS_CELULAS = {
+    1:  "Instalação dos pacotes ausentes (rdkit, plotly, ChEMBL)",
+    2:  "Importações agrupadas por finalidade",
+    3:  "Versões das bibliotecas e semente reprodutível",
+    4:  "Carrega o CSV de dados (URL com fallback local)",
+    5:  "Extração opcional do ChEMBL pela API (desligada por padrão)",
+    6:  "Primeiro olhar: contagens e amostra dos dados brutos",
+    7:  "Infraestrutura da proveniência (lista + função registrar_etapa)",
+    8:  "Curadoria: remove SMILES ausentes ou inválidos",
+    9:  "Curadoria: filtra validade e tipo de ensaio",
+    10: "Inspeção das unidades de medida",
+    11: "Curadoria: converte as unidades para nM",
+    12: "Curadoria: descarta medidas de limite '<'",
+    13: "Calcula o pIC50 e agrega duplicatas por molécula",
+    14: "Monta a tabela de proveniência e o funil",
+    15: "Converte SMILES em moléculas e calcula os 9 descritores",
+    16: "Fingerprint de Morgan de uma molécula, ilustrado",
+    17: "Desenha os bits de Morgan sobre a molécula",
+    18: "Mostra o folding do fingerprint (identificador % N_BITS)",
+    19: "Rótulo FORTE/FRACO e matriz de fingerprints",
+    20: "Monta X (descritores + fingerprint) e y",
+    21: "Balanço das classes FORTE e FRACO",
+    22: "Extrai os esqueletos de Bemis-Murcko",
+    23: "Partição aleatória × por esqueleto (treino/calibração/teste)",
+    24: "Diagramas da partição e da validação cruzada",
+    25: "Projeção PCA do espaço químico das duas divisões",
+    26: "Similaridade de Tanimoto média ao treino (a separação medida)",
+    27: "Recorta X e y de treino, calibração e teste",
+    28: "Ilustração da sigmoide da regressão logística",
+    29: "Treina a regressão logística",
+    30: "SVM em dados circulares (o truque do kernel, ilustrado)",
+    31: "Treina a SVM (com subamostragem do treino)",
+    32: "Árvore rasa para visualizar o mecanismo",
+    33: "Treina a floresta aleatória",
+    34: "Treina a rede neural (MLP do scikit-learn)",
+    35: "Prepara tensores e treina a mesma rede em PyTorch",
+    36: "Instala o torchview e desenha a arquitetura da rede",
+    37: "Prepara a pasta de logs do TensorBoard",
+    38: "Abre o painel do TensorBoard no Colab",
+    39: "Curva de perda da rede (réplica em Plotly)",
+    40: "Treina a rede com três taxas de aprendizado",
+    41: "Reabre o TensorBoard com as três taxas",
+    42: "Compara as curvas de perda por taxa (Plotly)",
+    43: "Loga o MCC da floresta por nº de árvores no TensorBoard",
+    44: "Reabre o TensorBoard com a curva da floresta",
+    45: "Curva MCC × nº de árvores (réplica em Plotly)",
+    46: "Rede melhorada: validação interna e parada antecipada",
+    47: "Avalia a rede melhorada e imprime as métricas",
+    48: "Avalia todos os modelos com o mesmo código",
+    49: "Tabela comparativa das métricas",
+    50: "Curvas ROC e precisão-revocação sobrepostas",
+    51: "Matrizes de confusão lado a lado",
+    52: "Regressão do pIC50 contínuo",
+    53: "Dispersão observado × previsto do pIC50",
+    54: "Correlação tamanho × potência (confundimento)",
+    55: "Modelo-controle de uma única feature (tamanho)",
+    56: "Importância por permutação (descritores × fingerprint)",
+    57: "SHAP sobre a floresta",
+    58: "Explicações SHAP de moléculas individuais",
+    59: "Dependência parcial (MW, LogP, TPSA)",
+    60: "Controle negativo: rótulos embaralhados",
+    61: "Carrega o dump de % de inibição (reforço da classe FRACO)",
+    62: "Seleciona inativos novos, fora dos esqueletos de teste",
+    63: "Compara o treino com e sem os inativos de reforço",
+    64: "Efeito de lote: classificador tenta adivinhar a fonte",
+    65: "Curva de aprendizado: subamostragem do treino × MCC/AUC",
+    66: "Plota a curva de aprendizado (MCC e AUC)",
+    67: "Fingerprints do RDKit para o domínio de aplicabilidade",
+    68: "Histograma da similaridade máxima ao treino",
+    69: "Varredura do percentil do domínio: cobertura × acerto",
+    70: "Plota cobertura × acerto por percentil",
+    71: "Desempenho dentro × fora do domínio",
+    72: "Predição conformal (opcional)",
+    73: "A função classificar(smiles), com abstenção",
+    74: "Galeria de moléculas de teste",
+    75: "Triagem virtual sobre fármacos aprovados (world)",
+    76: "Passa cada fármaco pelo classificador",
+    77: "Sanidade: recuperamos os inibidores já conhecidos?",
+    78: "Os candidatos novos da triagem",
+    79: "Persistência do modelo e exercícios",
+    80: "Controle interativo (slider) da margem de abstenção",
+}
+
+
 def construir():
     """Gera o unico notebook da aula (completo): perguntas com resposta e celulas de
-    codigo preenchidas. Cada celula de codigo recebe o comentario '# Celula NN'."""
+    codigo preenchidas. Cada celula de codigo recebe o comentario
+    '# Celula NN - <titulo>' (o titulo vem de TITULOS_CELULAS)."""
     nb = nbf.v4.new_notebook()
     celulas = []
     numero_codigo = 0                     # numera as celulas de codigo
@@ -2908,7 +2995,14 @@ def construir():
             # codex tras (codigo, instrucao); aqui usamos so o codigo preenchido
             fonte = item[1]
             numero_codigo += 1
-            celulas.append(nbf.v4.new_code_cell("# Célula %02d\n%s" % (numero_codigo, fonte)))
+            titulo = TITULOS_CELULAS.get(numero_codigo)
+            if titulo:
+                cabecalho = "# Célula %02d — %s" % (numero_codigo, titulo)
+            else:
+                # avisa em vez de emitir uma celula sem titulo silenciosamente
+                print("AVISO: sem titulo para a celula", numero_codigo)
+                cabecalho = "# Célula %02d" % numero_codigo
+            celulas.append(nbf.v4.new_code_cell("%s\n%s" % (cabecalho, fonte)))
     nb.cells = celulas
     nb.metadata["language_info"] = {"name": "python"}
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
