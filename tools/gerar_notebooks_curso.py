@@ -1301,6 +1301,326 @@ def nb_stacking():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+def nb_perceptron():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Perceptron e redes neurais simples\n\n"
+           "**Objetivo:** treinar um único neurônio (em PyTorch) num problema "
+           "linearmente separável, ver que ele **falha** no XOR, e que uma rede com "
+           "**uma camada oculta** resolve o XOR."),
+        code(PREAMBULO + '\nimport torch'),
+        md("## 1. Um neurônio num problema separável\n\n"
+           "Um neurônio é `Linear(2,1)` seguido de sigmoide — literalmente uma regressão "
+           "logística. Treinamos com o laço explícito de sempre."),
+        code('from sklearn.datasets import make_blobs\n\n'
+             'X, y = make_blobs(n_samples=200, centers=[[-2, -2], [2, 2]], cluster_std=1.2,\n'
+             '                  random_state=SEMENTE)\n'
+             'ent = torch.tensor(X, dtype=torch.float32)\n'
+             'alvo = torch.tensor(y, dtype=torch.float32).reshape(-1, 1)\n\n'
+             'torch.manual_seed(SEMENTE)\n'
+             'neuronio = torch.nn.Sequential(torch.nn.Linear(2, 1), torch.nn.Sigmoid())\n'
+             'custo_fn = torch.nn.BCELoss()\n'
+             'oti = torch.optim.SGD(neuronio.parameters(), lr=0.1)\n'
+             'for epoca in range(300):\n'
+             '    perda = custo_fn(neuronio(ent), alvo)\n'
+             '    oti.zero_grad(); perda.backward(); oti.step()\n'
+             'with torch.no_grad():\n'
+             '    acc = (((neuronio(ent) > 0.5).float() == alvo).float().mean()).item()\n'
+             'print("acuracia do neuronio (dados separaveis):", round(acc, 3))'),
+        code('# fronteira de decisao do neuronio\n'
+             'passo = 0.05\n'
+             'gx, gy = np.meshgrid(np.arange(X[:,0].min()-1, X[:,0].max()+1, passo),\n'
+             '                     np.arange(X[:,1].min()-1, X[:,1].max()+1, passo))\n'
+             'with torch.no_grad():\n'
+             '    zz = neuronio(torch.tensor(np.c_[gx.ravel(), gy.ravel()], dtype=torch.float32)).numpy().reshape(gx.shape)\n'
+             'figura = go.Figure()\n'
+             'figura.add_trace(go.Contour(x=gx[0], y=gy[:,0], z=zz, showscale=False,\n'
+             '                            colorscale=[[0,"#dce7f4"],[1,"#f6dedb"]], opacity=0.6,\n'
+             '                            contours=dict(start=0.5, end=0.5, size=1, coloring="lines")))\n'
+             'figura.add_trace(go.Scatter(x=X[:,0], y=X[:,1], mode="markers",\n'
+             '                            marker=dict(color=y, colorscale="Bluered", size=6)))\n'
+             'figura.update_layout(title="Um neuronio: fronteira linear", height=380,\n'
+             '                     showlegend=False, margin=dict(l=10,r=10,t=50,b=10))\n'
+             'figura.show()'),
+        md("## 2. O XOR quebra o neurônio\n\n"
+           "No XOR, a classe é 1 quando as entradas **diferem**. Não há reta que "
+           "separe — geramos uma versão ruidosa e treinamos o mesmo neurônio."),
+        code('rng = np.random.RandomState(SEMENTE)\n'
+             'centros = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=float)\n'
+             'rotulos = np.array([0,1,1,0])   # XOR\n'
+             'Xx = np.repeat(centros, 60, axis=0) + rng.normal(0, 0.12, size=(240,2))\n'
+             'yy = np.repeat(rotulos, 60)\n'
+             'entx = torch.tensor(Xx, dtype=torch.float32)\n'
+             'alvox = torch.tensor(yy, dtype=torch.float32).reshape(-1,1)\n\n'
+             'torch.manual_seed(SEMENTE)\n'
+             'neuronio2 = torch.nn.Sequential(torch.nn.Linear(2,1), torch.nn.Sigmoid())\n'
+             'oti = torch.optim.Adam(neuronio2.parameters(), lr=0.05)\n'
+             'for epoca in range(400):\n'
+             '    perda = custo_fn(neuronio2(entx), alvox)\n'
+             '    oti.zero_grad(); perda.backward(); oti.step()\n'
+             'with torch.no_grad():\n'
+             '    acc1 = (((neuronio2(entx)>0.5).float()==alvox).float().mean()).item()\n'
+             'print("acuracia de UM neuronio no XOR:", round(acc1, 3), "(preso perto de 0.5-0.75)")'),
+        md("## 3. Uma camada oculta resolve\n\n"
+           "Agora `Linear(2,8) → ReLU → Linear(8,1) → Sigmoide`: a camada oculta cria "
+           "representações que tornam o XOR separável. Mesmo laço, rede um pouco maior."),
+        code('torch.manual_seed(SEMENTE)\n'
+             'rede = torch.nn.Sequential(\n'
+             '    torch.nn.Linear(2, 8), torch.nn.ReLU(),\n'
+             '    torch.nn.Linear(8, 1), torch.nn.Sigmoid())\n'
+             'oti = torch.optim.Adam(rede.parameters(), lr=0.05)\n'
+             'for epoca in range(400):\n'
+             '    perda = custo_fn(rede(entx), alvox)\n'
+             '    oti.zero_grad(); perda.backward(); oti.step()\n'
+             'with torch.no_grad():\n'
+             '    acc2 = (((rede(entx)>0.5).float()==alvox).float().mean()).item()\n'
+             'print("acuracia de UM neuronio no XOR:", round(acc1, 3))\n'
+             'print("acuracia da rede com camada oculta:", round(acc2, 3))'),
+        md("## Exercício\n\n"
+           "Compare `acc1` e `acc2`. Por que acrescentar uma camada oculta (com ReLU) "
+           "muda tão radicalmente o resultado no XOR?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Um neurônio só traça **uma reta**, e o XOR não é linearmente separável — daí "
+           "`acc1` travar longe de 100%. A camada oculta com ReLU cria **várias** "
+           "fronteiras lineares e as combina de forma **não linear**, construindo uma "
+           "representação em que as classes do XOR passam a ser separáveis pela camada "
+           "final. É a não linearidade da camada oculta que quebra a limitação — `acc2` "
+           "chega perto de 100%.\n\n</details>"),
+    ]
+    escrever(nb, "06_redes_neurais/01_perceptron.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_backprop():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Backpropagation e gradiente descendente\n\n"
+           "**Objetivo:** ver o *autograd* calcular gradientes, e comparar as curvas de "
+           "perda de **full-batch, mini-batch e SGD** na mesma rede — tornando visível o "
+           "ruído de cada estratégia."),
+        code(PREAMBULO + '\nimport torch'),
+        md("## 1. O autograd calcula o gradiente\n\n"
+           "Definimos um peso, uma perda simples $\\mathcal{L} = (w \\cdot 3 - 6)^2$ e "
+           "pedimos `.backward()`. A derivada é $2(3w-6)\\cdot 3$; em $w=1$ vale "
+           "$2(-3)(3) = -18$. O autograd confere."),
+        code('w = torch.tensor(1.0, requires_grad=True)\n'
+             'perda = (w * 3 - 6) ** 2\n'
+             'perda.backward()\n'
+             'print("perda em w=1:", perda.item())\n'
+             'print("dL/dw (autograd):", w.grad.item(), "| esperado 2*(3w-6)*3 =", 2*(3*1-6)*3)'),
+        md("## 2. Full-batch × mini-batch × SGD\n\n"
+           "Treinamos a **mesma** rede num problema de duas luas, mudando só **quantos "
+           "exemplos** cada passo usa. Registramos a perda por época; um laço explícito "
+           "fatia os mini-lotes à mão."),
+        code('from sklearn.datasets import make_moons\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'X, y = make_moons(n_samples=400, noise=0.2, random_state=SEMENTE)\n'
+             'X = StandardScaler().fit_transform(X)\n'
+             'ent = torch.tensor(X, dtype=torch.float32)\n'
+             'alvo = torch.tensor(y, dtype=torch.float32).reshape(-1, 1)\n'
+             'custo_fn = torch.nn.BCELoss()\n\n'
+             'curvas = {}\n'
+             'for nome, tam_lote in [("full-batch", 400), ("mini-batch (32)", 32), ("SGD (1)", 1)]:\n'
+             '    torch.manual_seed(SEMENTE)\n'
+             '    rede = torch.nn.Sequential(torch.nn.Linear(2,16), torch.nn.ReLU(),\n'
+             '                               torch.nn.Linear(16,1), torch.nn.Sigmoid())\n'
+             '    oti = torch.optim.SGD(rede.parameters(), lr=0.1)\n'
+             '    perdas = []\n'
+             '    for epoca in range(60):\n'
+             '        ordem = torch.randperm(len(ent))\n'
+             '        for i in range(0, len(ent), tam_lote):\n'
+             '            idx = ordem[i:i+tam_lote]\n'
+             '            perda = custo_fn(rede(ent[idx]), alvo[idx])\n'
+             '            oti.zero_grad(); perda.backward(); oti.step()\n'
+             '        with torch.no_grad():\n'
+             '            perdas.append(custo_fn(rede(ent), alvo).item())\n'
+             '    curvas[nome] = perdas\n'
+             '    print(nome.ljust(16), "perda final:", round(perdas[-1], 4))'),
+        code('figura = go.Figure()\n'
+             'for nome, cor in [("full-batch", AZUL), ("mini-batch (32)", VERDE), ("SGD (1)", VERMELHO)]:\n'
+             '    figura.add_trace(go.Scatter(y=curvas[nome], mode="lines", line=dict(color=cor), name=nome))\n'
+             'figura.update_layout(title="Perda por epoca: full-batch (suave) x mini-batch x SGD (ruidoso)",\n'
+             '                     xaxis_title="epoca", yaxis_title="perda (BCE)", height=380,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## Exercício\n\n"
+           "Olhando as curvas, o SGD costuma cair mais rápido nas primeiras épocas mas "
+           "com mais oscilação; o full-batch é suave e mais lento. Explique os dois "
+           "efeitos com base no número de atualizações por época."),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "O **SGD** faz **uma atualização por exemplo** — com 400 exemplos, são 400 "
+           "passos por época, daí cair rápido no começo; mas cada passo usa um gradiente "
+           "ruidoso (um só exemplo), o que gera a **oscilação**. O **full-batch** faz "
+           "**um único** passo por época, com o gradiente exato (todos os exemplos): "
+           "trajetória **suave**, porém poucos passos, logo mais lenta. O mini-batch fica "
+           "no meio — vários passos por época com ruído moderado —, por isso é o padrão.\n\n</details>"),
+    ]
+    escrever(nb, "06_redes_neurais/02_backprop.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_ativacoes():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Funções de ativação\n\n"
+           "**Objetivo:** desenhar as ativações e suas derivadas, treinar a mesma rede "
+           "com sigmoide e com ReLU, e **medir** o gradiente que desaparece nas primeiras "
+           "camadas de uma rede profunda."),
+        code(PREAMBULO + '\nimport torch'),
+        md("## 1. As funções e suas derivadas\n\n"
+           "O que a backpropagation multiplica é a **derivada**. Repare como a da "
+           "sigmoide e a da tanh somem longe do zero, enquanto a da ReLU é 1 para "
+           "$z>0$."),
+        code('z = np.linspace(-6, 6, 300)\n'
+             'sig = 1/(1+np.exp(-z)); d_sig = sig*(1-sig)\n'
+             'th = np.tanh(z); d_th = 1 - th**2\n'
+             'relu = np.maximum(0, z); d_relu = (z > 0).astype(float)\n\n'
+             'from plotly.subplots import make_subplots\n'
+             'figura = make_subplots(rows=1, cols=2, subplot_titles=("f(z)", "derivada f\'(z)"))\n'
+             'for nome, curva, cor in [("sigmoide", sig, AZUL), ("tanh", th, VERDE), ("ReLU", relu, VERMELHO)]:\n'
+             '    figura.add_trace(go.Scatter(x=z, y=curva, mode="lines", line=dict(color=cor), name=nome), row=1, col=1)\n'
+             'for nome, curva, cor in [("sigmoide", d_sig, AZUL), ("tanh", d_th, VERDE), ("ReLU", d_relu, VERMELHO)]:\n'
+             '    figura.add_trace(go.Scatter(x=z, y=curva, mode="lines", line=dict(color=cor), name=nome, showlegend=False), row=1, col=2)\n'
+             'figura.update_layout(height=340, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()\n'
+             'print("derivada maxima da sigmoide:", round(d_sig.max(), 3), "(em z=0)")'),
+        md("## 2. Sigmoide × ReLU no mesmo problema\n\n"
+           "Treinamos a mesma rede de duas luas trocando só a ativação oculta. A ReLU "
+           "costuma convergir mais rápido."),
+        code('from sklearn.datasets import make_moons\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'X, y = make_moons(n_samples=400, noise=0.2, random_state=SEMENTE)\n'
+             'X = StandardScaler().fit_transform(X)\n'
+             'ent = torch.tensor(X, dtype=torch.float32)\n'
+             'alvo = torch.tensor(y, dtype=torch.float32).reshape(-1, 1)\n'
+             'custo_fn = torch.nn.BCELoss()\n\n'
+             'figura = go.Figure()\n'
+             'for nome, ativacao, cor in [("sigmoide", torch.nn.Sigmoid(), AZUL), ("ReLU", torch.nn.ReLU(), VERMELHO)]:\n'
+             '    torch.manual_seed(SEMENTE)\n'
+             '    rede = torch.nn.Sequential(torch.nn.Linear(2,16), ativacao,\n'
+             '                               torch.nn.Linear(16,1), torch.nn.Sigmoid())\n'
+             '    oti = torch.optim.SGD(rede.parameters(), lr=0.1)\n'
+             '    perdas = []\n'
+             '    for epoca in range(200):\n'
+             '        perda = custo_fn(rede(ent), alvo)\n'
+             '        oti.zero_grad(); perda.backward(); oti.step()\n'
+             '        perdas.append(perda.item())\n'
+             '    figura.add_trace(go.Scatter(y=perdas, mode="lines", line=dict(color=cor), name=nome))\n'
+             '    print(nome.ljust(9), "perda final:", round(perdas[-1], 4))\n'
+             'figura.update_layout(title="Convergencia: sigmoide x ReLU", xaxis_title="epoca",\n'
+             '                     yaxis_title="perda", height=360, margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. O gradiente que desaparece, medido\n\n"
+           "Montamos uma rede **profunda** (6 camadas) e, após um único `backward`, "
+           "medimos a magnitude do gradiente em cada camada. Com sigmoide, os gradientes "
+           "das **primeiras** camadas são minúsculos; com ReLU, sobrevivem."),
+        code('for nome, ativacao in [("sigmoide", torch.nn.Sigmoid), ("ReLU", torch.nn.ReLU)]:\n'
+             '    torch.manual_seed(SEMENTE)\n'
+             '    camadas = []\n'
+             '    for c in range(6):\n'
+             '        camadas.append(torch.nn.Linear(16 if c else 2, 16))\n'
+             '        camadas.append(ativacao())\n'
+             '    camadas.append(torch.nn.Linear(16, 1)); camadas.append(torch.nn.Sigmoid())\n'
+             '    rede = torch.nn.Sequential(*camadas)\n'
+             '    perda = custo_fn(rede(ent), alvo)\n'
+             '    rede.zero_grad(); perda.backward()\n'
+             '    normas = []\n'
+             '    for camada in rede:\n'
+             '        if isinstance(camada, torch.nn.Linear):\n'
+             '            normas.append(camada.weight.grad.norm().item())\n'
+             '    print(nome.ljust(9), "norma do gradiente por camada (entrada -> saida):")\n'
+             '    print("   ", [round(v, 5) for v in normas])'),
+        md("## Exercício\n\n"
+           "No item 3, compare a norma do gradiente da **primeira** camada entre "
+           "sigmoide e ReLU. O que esse número mostra sobre por que a ReLU virou padrão?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Com **sigmoide**, a norma do gradiente na primeira camada é ordens de "
+           "grandeza **menor** que nas últimas — o gradiente praticamente **desapareceu** "
+           "ao atravessar as camadas, porque cada uma multiplicou por uma derivada < 1. "
+           "Com **ReLU**, a derivada é 1 na região ativa, então o gradiente chega às "
+           "primeiras camadas com magnitude útil e elas **conseguem aprender**. É "
+           "exatamente por isso que a ReLU destravou o treino de redes profundas.\n\n</details>"),
+    ]
+    escrever(nb, "06_redes_neurais/03_ativacoes.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def nb_deep_learning():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Introdução ao deep learning\n\n"
+           "**Objetivo:** treinar uma pequena rede densa em PyTorch para classificar "
+           "**dígitos manuscritos** (imagens), comparar com uma regressão logística e "
+           "discutir, com números, o que a profundidade acrescentou."),
+        code(PREAMBULO + '\nimport torch'),
+        code('from sklearn.datasets import load_digits\n'
+             'from sklearn.model_selection import train_test_split\n'
+             'from sklearn.preprocessing import StandardScaler\n\n'
+             'digitos = load_digits()\n'
+             'X = StandardScaler().fit_transform(digitos.data)   # 64 pixels (8x8)\n'
+             'y = digitos.target                                 # 0 a 9\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             'print("treino:", X_tr.shape, "| 10 classes de digitos")'),
+        md("## 1. Uma linha de base linear\n\n"
+           "Antes da rede, uma regressão logística — para sabermos o que a profundidade "
+           "precisa superar."),
+        code('from sklearn.linear_model import LogisticRegression\n'
+             'from sklearn.metrics import accuracy_score\n\n'
+             'base = LogisticRegression(max_iter=5000).fit(X_tr, y_tr)\n'
+             'print("acuracia da regressao logistica:", round(base.score(X_te, y_te), 3))'),
+        md("## 2. A rede densa em PyTorch\n\n"
+           "`64 → 64 → 32 → 10`, com ReLU nas ocultas. Para 10 classes usamos "
+           "`CrossEntropyLoss` (que já embute o softmax). Laço de treino explícito, em "
+           "mini-lotes."),
+        code('ent_tr = torch.tensor(X_tr, dtype=torch.float32)\n'
+             'alvo_tr = torch.tensor(y_tr, dtype=torch.long)\n'
+             'ent_te = torch.tensor(X_te, dtype=torch.float32)\n\n'
+             'torch.manual_seed(SEMENTE)\n'
+             'rede = torch.nn.Sequential(\n'
+             '    torch.nn.Linear(64, 64), torch.nn.ReLU(),\n'
+             '    torch.nn.Linear(64, 32), torch.nn.ReLU(),\n'
+             '    torch.nn.Linear(32, 10))\n'
+             'custo_fn = torch.nn.CrossEntropyLoss()\n'
+             'oti = torch.optim.Adam(rede.parameters(), lr=0.01)\n\n'
+             'perdas = []\n'
+             'for epoca in range(80):\n'
+             '    ordem = torch.randperm(len(ent_tr))\n'
+             '    for i in range(0, len(ent_tr), 64):\n'
+             '        idx = ordem[i:i+64]\n'
+             '        perda = custo_fn(rede(ent_tr[idx]), alvo_tr[idx])\n'
+             '        oti.zero_grad(); perda.backward(); oti.step()\n'
+             '    perdas.append(perda.item())\n\n'
+             'with torch.no_grad():\n'
+             '    previsto = rede(ent_te).argmax(dim=1).numpy()\n'
+             'print("acuracia da rede densa:", round(accuracy_score(y_te, previsto), 3))'),
+        code('figura = go.Figure(go.Scatter(y=perdas, mode="lines", line=dict(color=VERDE)))\n'
+             'figura.update_layout(title="Perda do treino da rede densa (dígitos)",\n'
+             '                     xaxis_title="epoca", yaxis_title="CrossEntropy", height=320,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 3. O que a profundidade acrescentou?\n\n"
+           "O resultado é honesto e instrutivo: a rede densa **empata** com a regressão "
+           "logística — aqui, fica até um fio atrás. Nos dígitos 8×8, já quase linearmente "
+           "separáveis, a profundidade **não** traz vantagem, exatamente o ponto do "
+           "texto. O deep learning **decola** mesmo em imagens grandes e cruas (com CNNs) "
+           "e em texto; numa base pequena e simples, um bom modelo clássico iguala ou "
+           "supera a rede, com muito menos esforço."),
+        md("## Exercício\n\n"
+           "A rede **empatou** (ou perdeu por pouco) para a regressão logística. Em que "
+           "cenário o deep learning teria vantagem **clara**?"),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "Quando os dados são **imagens grandes e cruas** (não 8×8, mas centenas de "
+           "milhares de pixels), **texto** ou **áudio**, e há **muitos** exemplos. Aí a "
+           "capacidade do deep learning de aprender **representações hierárquicas** "
+           "(bordas → partes → objetos), tipicamente com **CNNs** ou **Transformers**, "
+           "supera de longe qualquer modelo linear sobre pixels crus. Nos dígitos 8×8, "
+           "quase separáveis, sobra pouco espaço para essa vantagem aparecer.\n\n</details>"),
+    ]
+    escrever(nb, "06_redes_neurais/04_deep_learning.ipynb")
+
+
+# ══════════════════════════════════════════════════════════════════════════
 def nb_kmeans():
     nb = nbf.v4.new_notebook()
     nb.cells = [
@@ -1602,6 +1922,10 @@ CONSTRUTORES = [
     nb_hierarquico,
     nb_pca,
     nb_tsne_umap,
+    nb_perceptron,
+    nb_backprop,
+    nb_ativacoes,
+    nb_deep_learning,
 ]
 
 if __name__ == "__main__":

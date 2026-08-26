@@ -46,6 +46,9 @@ WIDGETS = {
     "05_nao_supervisionado/01_kmeans.md": ("kmeans", "wKmeans"),
     "05_nao_supervisionado/02_hierarquico.md": ("dendro", "wDendro"),
     "05_nao_supervisionado/03_pca.md": ("pca", "wPca"),
+    "06_redes_neurais/01_perceptron.md": ("perc", "wPerceptron"),
+    "06_redes_neurais/02_backprop.md": ("grad", "wGradDescent"),
+    "06_redes_neurais/03_ativacoes.md": ("ativ", "wActivation"),
 }
 
 # Mapa: nome da seção (idêntico ao ## do SUMMARY.md) → arquivo HTML de saída
@@ -112,6 +115,52 @@ def _widget_body(wid, fn):
   <div class="stat-grid">
     {_card(wid, "nmod", "Modelos treinados", "um por rodada", PAL_BLUE)}
     {_card(wid, "frac", "Fração de teste", "por rodada", PAL_RED)}
+  </div>
+</div>"""
+    if fn == "wPerceptron":
+        return f"""<div class="widget">
+  <div class="widget-title">Um neurônio traça uma reta — e o XOR não cabe nela</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Problema</span>
+      <select class="ctrl-select" id="{wid}-prob"><option value="and">E (AND)</option><option value="or">OU (OR)</option><option value="xor">XOR (ou-exclusivo)</option></select></div>
+    {_slider(wid, "w1", "Peso w₁", -3, 3, 0.1, 1)}
+    {_slider(wid, "w2", "Peso w₂", -3, 3, 0.1, 1)}
+    {_slider(wid, "b", "Viés b", -4, 4, 0.1, -1.5)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "acc", "Acertos", "dos 4 casos", PAL_BLUE)}
+    {_card(wid, "sep", "Separável por uma reta?", "capacidade do neurônio")}
+  </div>
+</div>"""
+    if fn == "wGradDescent":
+        return f"""<div class="widget">
+  <div class="widget-title">Gradiente descendente — a bolinha desce a perda</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "lr", "Taxa de aprendizado η", 0.01, 1.2, 0.01, 0.1)}
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="{wid}-passo">Um passo</button>
+    <button class="btn" id="{wid}-run">Rodar</button>
+    <button class="btn" id="{wid}-reset">Reiniciar</button>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "perda", "Perda atual", "altura na superfície", PAL_RED)}
+    {_card(wid, "reg", "Comportamento", "efeito da taxa")}
+  </div>
+</div>"""
+    if fn == "wActivation":
+        return f"""<div class="widget">
+  <div class="widget-title">Ativações e suas derivadas — de onde vem o gradiente que desaparece</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Função de ativação</span>
+      <select class="ctrl-select" id="{wid}-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="leaky">Leaky ReLU</option></select></div>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "dmax", "Derivada máxima", "maior valor de f'(z)", PAL_BLUE)}
+    {_card(wid, "satura", "Satura?", "derivada some longe do zero")}
   </div>
 </div>"""
     if fn == "wKmeans":

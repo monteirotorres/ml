@@ -1021,6 +1021,106 @@ function wPca(id) {
 }
 
 // ============================================================
+// Widget: perceptron — uma reta resolve E/OU, mas não o XOR
+// ============================================================
+function wPerceptron(id) {
+  const cv = $(id + '-cv'); const pontos = [[0, 0], [0, 1], [1, 0], [1, 1]];
+  function rotulos(prob) {
+    return pontos.map(pt => { const a = pt[0], b = pt[1]; if (prob === 'and') return (a && b) ? 1 : 0; if (prob === 'or') return (a || b) ? 1 : 0; return (a ^ b) ? 1 : 0; });
+  }
+  function draw() {
+    const p = pal(), prob = $(id + '-prob').value, w1 = +$(id + '-w1').value, w2 = +$(id + '-w2').value, b = +$(id + '-b').value;
+    ['w1', 'w2', 'b'].forEach(k => $(id + '-' + k + '-v').textContent = (+$(id + '-' + k).value).toFixed(1));
+    const lab = rotulos(prob);
+    const W = 640, H = 340, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 40, padR = 40, padT = 20, padB = 26, xmin = -0.6, xmax = 1.6, ymin = -0.6, ymax = 1.6;
+    const X = x => padL + (x - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    const N = 60;
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const x0 = xmin + (xmax - xmin) * i / N, x1 = xmin + (xmax - xmin) * (i + 1) / N;
+      const y0 = ymin + (ymax - ymin) * j / N, y1 = ymin + (ymax - ymin) * (j + 1) / N;
+      ctx.fillStyle = (w1 * (x0 + x1) / 2 + w2 * (y0 + y1) / 2 + b) >= 0 ? p.redF : p.blueF;
+      ctx.fillRect(X(x0), Y(y1), X(x1) - X(x0) + 1, Y(y0) - Y(y1) + 1);
+    }
+    ctx.strokeStyle = p.ink; ctx.lineWidth = 2; ctx.beginPath();
+    if (Math.abs(w2) > 1e-6) { ctx.moveTo(X(xmin), Y(-(w1 * xmin + b) / w2)); ctx.lineTo(X(xmax), Y(-(w1 * xmax + b) / w2)); }
+    else if (Math.abs(w1) > 1e-6) { const xv = -b / w1; ctx.moveTo(X(xv), Y(ymin)); ctx.lineTo(X(xv), Y(ymax)); }
+    ctx.stroke();
+    let acc = 0;
+    pontos.forEach((pt, i) => {
+      const pred = (w1 * pt[0] + w2 * pt[1] + b) >= 0 ? 1 : 0; if (pred === lab[i]) acc++;
+      ctx.fillStyle = lab[i] ? p.red : p.blue; ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 10, 0, 7); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = pred === lab[i] ? p.green : p.red;
+      ctx.beginPath(); ctx.arc(X(pt[0]), Y(pt[1]), 15, 0, 7); ctx.stroke();
+    });
+    $(id + '-acc').textContent = acc + ' / 4';
+    $(id + '-sep').textContent = prob === 'xor' ? 'Não — nenhuma reta separa' : 'Sim';
+  }
+  ['prob', 'w1', 'w2', 'b'].forEach(k => $(id + '-' + k).addEventListener('input', draw));
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: gradiente descendente numa superfície de perda 1D
+// ============================================================
+function wGradDescent(id) {
+  const cv = $(id + '-cv'); let x = -2.5, rodando = false, timer = null;
+  const L = z => 0.15 * z * z * z * z - 0.5 * z * z + 0.2 * z + 1;
+  const dL = z => 0.6 * z * z * z - z + 0.2;
+  function passo() { const lr = +$(id + '-lr').value; x = x - lr * dL(x); if (!isFinite(x) || Math.abs(x) > 6) x = Math.sign(x || 1) * 6; }
+  function draw() {
+    const p = pal(), lr = +$(id + '-lr').value; $(id + '-lr-v').textContent = lr.toFixed(2);
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 30, padR = 16, padT = 16, padB = 26, xmin = -3, xmax = 3, ymin = 0, ymax = 3;
+    const X = z => padL + (z - xmin) / (xmax - xmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (let g = 0; g <= 160; g++) { const z = xmin + (xmax - xmin) * g / 160, y = Math.min(ymax, L(z)); g ? ctx.lineTo(X(z), Y(y)) : ctx.moveTo(X(z), Y(y)); } ctx.stroke();
+    const bx = Math.max(xmin, Math.min(xmax, x));
+    ctx.fillStyle = p.red; ctx.strokeStyle = p.paper; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(bx), Y(Math.min(ymax, L(x))), 8, 0, 7); ctx.fill(); ctx.stroke();
+    $(id + '-perda').textContent = L(x).toFixed(3);
+    $(id + '-reg').textContent = lr <= 0.15 ? 'passos pequenos: desce devagar' : lr >= 0.9 ? 'passo grande: pode saltar/divergir' : 'taxa equilibrada';
+  }
+  function anim() { if (!rodando) return; passo(); draw(); if (Math.abs(dL(x)) < 1e-3 || Math.abs(x) >= 6) { rodando = false; return; } timer = setTimeout(anim, 70); }
+  $(id + '-lr').addEventListener('input', draw);
+  $(id + '-passo').addEventListener('click', () => { passo(); draw(); });
+  $(id + '-run').addEventListener('click', () => { if (rodando) return; rodando = true; anim(); });
+  $(id + '-reset').addEventListener('click', () => { rodando = false; if (timer) clearTimeout(timer); x = -2.5; draw(); });
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: funções de ativação e suas derivadas
+// ============================================================
+function wActivation(id) {
+  const cv = $(id + '-cv');
+  function f(z, k) { if (k === 'sigmoid') return 1 / (1 + Math.exp(-z)); if (k === 'tanh') return Math.tanh(z); if (k === 'relu') return Math.max(0, z); return Math.max(0.1 * z, z); }
+  function df(z, k) { if (k === 'sigmoid') { const s = 1 / (1 + Math.exp(-z)); return s * (1 - s); } if (k === 'tanh') { const t = Math.tanh(z); return 1 - t * t; } if (k === 'relu') return z > 0 ? 1 : 0; return z > 0 ? 1 : 0.1; }
+  function draw() {
+    const p = pal(), k = $(id + '-fn').value;
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const padL = 34, padR = 16, padT = 16, padB = 26, zmin = -6, zmax = 6, ymin = -1.2, ymax = 2.2;
+    const X = z => padL + (z - zmin) / (zmax - zmin) * (W - padL - padR);
+    const Y = y => H - padB - (y - ymin) / (ymax - ymin) * (H - padT - padB);
+    ctx.strokeStyle = p.line; ctx.beginPath(); ctx.moveTo(X(zmin), Y(0)); ctx.lineTo(X(zmax), Y(0)); ctx.moveTo(X(0), Y(ymin)); ctx.lineTo(X(0), Y(ymax)); ctx.stroke();
+    ctx.strokeStyle = p.blue; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (let g = 0; g <= 200; g++) { const z = zmin + (zmax - zmin) * g / 200, y = Math.max(ymin, Math.min(ymax, f(z, k))); g ? ctx.lineTo(X(z), Y(y)) : ctx.moveTo(X(z), Y(y)); } ctx.stroke();
+    ctx.strokeStyle = p.red; ctx.lineWidth = 2; ctx.setLineDash([5, 3]); ctx.beginPath();
+    for (let g = 0; g <= 200; g++) { const z = zmin + (zmax - zmin) * g / 200, y = Math.max(ymin, Math.min(ymax, df(z, k))); g ? ctx.lineTo(X(z), Y(y)) : ctx.moveTo(X(z), Y(y)); } ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '13px Georgia, serif'; ctx.textAlign = 'left';
+    ctx.fillStyle = p.blue; ctx.fillText('f(z)', X(zmax) - 66, Y(ymax) + 8);
+    ctx.fillStyle = p.red; ctx.fillText("f '(z)", X(zmax) - 66, Y(ymax) + 26);
+    let dmax = 0; for (let g = 0; g <= 200; g++) { const z = zmin + (zmax - zmin) * g / 200; dmax = Math.max(dmax, df(z, k)); }
+    $(id + '-dmax').textContent = dmax.toFixed(2);
+    $(id + '-satura').textContent = (k === 'sigmoid' || k === 'tanh') ? 'Sim — deriv. → 0 nas pontas' : 'Não — deriv. constante p/ z>0';
+  }
+  $(id + '-fn').addEventListener('change', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {

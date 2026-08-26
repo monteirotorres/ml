@@ -93,117 +93,399 @@
 <article id="06-redes-neurais-01-perceptron-md" class="topic">
 <div class="topic-num">6.1</div>
 <h1 class="topic-title">Perceptron e redes neurais simples</h1>
-<p>O perceptron é a unidade básica das redes neurais: uma combinação linear das entradas seguida de uma função de ativação. Empilhando e conectando muitos perceptrons em camadas, obtemos redes capazes de aproximar funções complexas.</p>
-<p>Partiremos do neurônio isolado até uma rede rasa (multilayer perceptron), estabelecendo a notação de pesos, vieses e camadas que sustenta todo o deep learning moderno.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Neurônio artificial</td>
-<td>pesos, viés e ativação</td>
-</tr>
-<tr>
-<td>Do perceptron ao MLP</td>
-<td>camadas ocultas e não linearidade</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/01_perceptron.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Toda rede neural, por maior que seja, é feita da mesma peça minúscula: o
+<strong>neurônio artificial</strong>, ou perceptron. Entender essa peça — e por que ela sozinha
+é limitada — é entender de onde vem a força das redes profundas.</p>
+<h2>O neurônio: soma ponderada + ativação</h2>
+<p>Um neurônio recebe as entradas, faz uma <strong>combinação linear</strong> delas e passa o
+resultado por uma <strong>função de ativação</strong>:</p>
+<div class="math-display">$$
+z = \mathbf{w}^\top \mathbf{x} + b = \sum_{j=1}^{p} w_j x_j + b,
+\qquad a = f(z)
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\mathbf{x}$ é o <strong>vetor de entradas</strong> e $x_j$ a $j$-ésima entrada;</li>
+<li>$\mathbf{w}$ é o <strong>vetor de pesos</strong> — quanto cada entrada influencia o neurônio —
+  e $w_j$ o peso da entrada $j$;</li>
+<li>$b$ é o <strong>viés</strong> (bias), que desloca o limiar de ativação;</li>
+<li>$z$ é a <strong>pré-ativação</strong> (a soma ponderada);</li>
+<li>$f$ é a <strong>função de ativação</strong> (uma não linearidade — próximo tópico) e $a$ a
+  <strong>saída</strong> do neurônio.</li>
+</ul>
+<p>Repare que, com $f$ sendo a sigmoide, um neurônio é <strong>exatamente</strong> uma regressão
+logística. A novidade não é o neurônio isolado — é conectá-los.</p>
+<h2>De um neurônio a uma rede</h2>
+<p>Uma <strong>rede neural</strong> (multilayer perceptron, MLP) organiza neurônios em <strong>camadas</strong>:
+a saída de uma camada é a entrada da próxima. Uma rede rasa tem três partes:</p>
+<ul>
+<li>a <strong>camada de entrada</strong> — os dados $\mathbf{x}$;</li>
+<li>uma ou mais <strong>camadas ocultas</strong> — neurônios que criam representações intermediárias;</li>
+<li>a <strong>camada de saída</strong> — a predição final.</li>
+</ul>
+<p>Cada camada tem sua própria matriz de pesos e seu vetor de vieses. Empilhar camadas
+com ativações não lineares é o que dá à rede o poder de aproximar funções
+complicadas — um resultado formalizado pelo <strong>teorema da aproximação universal</strong>:
+uma rede com uma camada oculta suficientemente larga pode aproximar qualquer função
+contínua.</p>
+<h2>Por que um neurônio não basta: o XOR</h2>
+<p>Um único neurônio traça uma <strong>fronteira linear</strong> (uma reta, no plano). Isso resolve
+funções como o <strong>E</strong> (AND) e o <strong>OU</strong> (OR), que são linearmente separáveis. Mas
+falha no <strong>OU-exclusivo</strong> (XOR): não existe reta que separe os casos de XOR, então
+nenhum neurônio isolado o aprende — o limite chega a impossibilitar mais de 75% de
+acerto. Foi essa limitação, apontada nos anos 1960, que "congelou" a área até a
+chegada das redes de múltiplas camadas, que <strong>resolvem</strong> o XOR combinando várias
+fronteiras.</p>
+<p>O widget abaixo deixa isso na mão: ajuste os pesos e o viés de um neurônio e escolha
+o problema (E, OU, XOR). Para o E e o OU você encontra uma reta que separa tudo;
+para o XOR, verá que <strong>nenhuma</strong> reta acerta os quatro casos.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>01_perceptron.ipynb</code> implementa um neurônio à mão em PyTorch, treina-o
+num problema linearmente separável, mostra que ele <strong>falha</strong> no XOR — e que uma rede
+com <strong>uma camada oculta</strong> resolve o XOR, tudo com o laço de treino explícito.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Escreva pesos $w_1, w_2$ e viés $b$ para um neurônio (com ativação degrau,
+saída 1 se $z \ge 0$) que compute a função <strong>E</strong> (AND), onde as entradas são 0 ou 1.</p>
+<details><summary>Ver solução</summary>
 
+Uma solução: $w_1 = w_2 = 1$ e $b = -1{,}5$. Então $z = x_1 + x_2 - 1{,}5$, que é
+$\ge 0$ **apenas** quando $x_1 = x_2 = 1$ ($z = 0{,}5$); nos outros três casos $z <
+0$. Logo a saída é 1 só para (1,1) — exatamente o AND. (Para o OU, bastaria
+$b = -0{,}5$.)
+
+</details>
+
+<p><strong>2.</strong> Por que empilhar camadas <strong>sem</strong> função de ativação não adianta nada?</p>
+<details><summary>Ver solução</summary>
+
+Porque a composição de transformações **lineares** ainda é linear. Se cada camada só
+faz $\mathbf{W}\mathbf{x} + \mathbf{b}$, então duas camadas dão
+$\mathbf{W}_2(\mathbf{W}_1\mathbf{x} + \mathbf{b}_1) + \mathbf{b}_2 =
+\mathbf{W}'\mathbf{x} + \mathbf{b}'$ — uma única transformação linear equivalente. A
+rede inteira colapsa em um modelo linear, incapaz de resolver o XOR. É a **não
+linearidade** da ativação que quebra esse colapso e dá poder à profundidade.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Rosenblatt, F. (1958). <em>The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain</em>. Psychological Review, 65(6), 386–408.</li>
+<li>Minsky, M. &amp; Papert, S. (1969). <em>Perceptrons</em>. MIT Press — o livro que expôs a limitação do XOR.</li>
+<li>Cybenko, G. (1989). <em>Approximation by Superpositions of a Sigmoidal Function</em>. Mathematics of Control, Signals and Systems, 2, 303–314 (aproximação universal).</li>
+</ul>
+<div class="widget" data-widget="wPerceptron" data-id="perc_6_1">
+  <div class="widget-title">Um neurônio traça uma reta — e o XOR não cabe nela</div>
+  <canvas id="perc_6_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Problema</span>
+      <select class="ctrl-select" id="perc_6_1-prob"><option value="and">E (AND)</option><option value="or">OU (OR)</option><option value="xor">XOR (ou-exclusivo)</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w1"><span class="ctrl-val" id="perc_6_1-w1-v">1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₂</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w2"><span class="ctrl-val" id="perc_6_1-w2-v">1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Viés b</span><input type="range" min="-4" max="4" step="0.1" value="-1.5" id="perc_6_1-b"><span class="ctrl-val" id="perc_6_1-b-v">-1.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acertos</div><div class="sval" id="perc_6_1-acc" style="color:#3266ad;">—</div><div class="sdesc">dos 4 casos</div></div>
+    <div class="stat-card"><div class="slabel">Separável por uma reta?</div><div class="sval" id="perc_6_1-sep">—</div><div class="sdesc">capacidade do neurônio</div></div>
+  </div>
+</div>
 </article>
 <article id="06-redes-neurais-02-backprop-md" class="topic">
 <div class="topic-num">6.2</div>
 <h1 class="topic-title">Backpropagation e gradiente descendente</h1>
-<p>O gradiente descendente ajusta os pesos da rede na direção que mais reduz a perda. A backpropagation é o algoritmo que calcula esses gradientes de forma eficiente, propagando o erro da saída para as camadas anteriores pela regra da cadeia.</p>
-<p>Este é o motor de aprendizado de todas as redes neurais. Veremos a intuição do gradiente, o papel da taxa de aprendizado e variantes como o gradiente descendente estocástico (SGD) e mini-batches.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Regra da cadeia</td>
-<td>como o erro retropropaga</td>
-</tr>
-<tr>
-<td>Taxa de aprendizado</td>
-<td>convergência, divergência e SGD</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/02_backprop.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Uma rede aprende ajustando seus pesos para reduzir o erro. Duas peças fazem isso
+acontecer: o <strong>gradiente descendente</strong>, que diz <em>em que direção</em> mexer os pesos, e a
+<strong>backpropagation</strong>, que calcula esse gradiente de forma eficiente. Juntas, são o
+motor de aprendizado de toda rede neural.</p>
+<h2>Gradiente descendente: descer a montanha</h2>
+<p>Imagine a perda como uma superfície montanhosa sobre o espaço dos pesos. Queremos o
+ponto mais baixo. O <strong>gradiente</strong> aponta na direção de subida mais íngreme, então
+andamos no sentido <strong>oposto</strong>:</p>
+<div class="math-display">$$
+\mathbf{w} \leftarrow \mathbf{w} - \eta \, \nabla_{\!\mathbf{w}} \mathcal{L}
+$$</div>
+<p>Onde:</p>
+<ul>
+<li>$\mathbf{w}$ são os <strong>pesos</strong> da rede;</li>
+<li>$\mathcal{L}$ é a <strong>perda</strong> (o erro que queremos minimizar);</li>
+<li>$\nabla_{\!\mathbf{w}}\mathcal{L}$ é o <strong>gradiente</strong> da perda — o vetor de derivadas
+  parciais $\partial\mathcal{L}/\partial w_j$, apontando para onde a perda mais cresce;</li>
+<li>$\eta$ é a <strong>taxa de aprendizado</strong> — o tamanho do passo (a mesma $\eta$ do tópico
+  de ferramentas).</li>
+</ul>
+<p>Repetindo esse passo, descemos a superfície até um mínimo. O widget abaixo mostra
+uma bolinha descendo uma superfície de perda: ajuste a taxa de aprendizado e veja o
+compromisso — pequena demais engatinha; grande demais salta o mínimo e pode
+<strong>divergir</strong>.</p>
+<h2>Backpropagation: a regra da cadeia, organizada</h2>
+<p>Uma rede profunda tem os pesos escondidos atrás de várias camadas. Como calcular
+$\partial\mathcal{L}/\partial w_j$ de um peso lá no começo, se ele afeta a perda só
+depois de passar por tudo? Pela <strong>regra da cadeia</strong> do cálculo. A backpropagation é
+a aplicação organizada dessa regra: ela calcula o erro na saída e o <strong>propaga de
+volta</strong>, camada por camada, reaproveitando os cálculos. Para um peso na camada
+$\ell$, o gradiente é o produto encadeado das derivadas locais desde a saída até ele.</p>
+<p>A boa notícia prática: <strong>você não faz isso à mão</strong>. O <em>autograd</em> do PyTorch registra
+cada operação do passo para frente e, ao chamar <code>.backward()</code>, executa a
+backpropagation automaticamente. Entender o mecanismo importa; implementá-lo, não.</p>
+<h2>Full-batch, estocástico e mini-batch</h2>
+<p>Quanto dos dados usar para estimar o gradiente a cada passo?</p>
+<ul>
+<li><strong>Full-batch</strong> — usa <strong>todos</strong> os exemplos por passo. Gradiente exato, mas caro e
+  lento por passo.</li>
+<li><strong>Estocástico (SGD)</strong> — usa <strong>um</strong> exemplo por passo. Barato e ruidoso; o ruído
+  até ajuda a escapar de mínimos ruins, mas a trajetória zigue-zagueia.</li>
+<li><strong>Mini-batch</strong> — usa um <strong>pequeno lote</strong> (32, 64, 128…) por passo. O meio-termo
+  que domina a prática: aproveita a vetorização do hardware e suaviza o ruído.</li>
+</ul>
+<p>Uma passagem completa por todos os dados é chamada de <strong>época</strong> (epoch); o treino
+costuma levar muitas épocas.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>02_backprop.ipynb</code> mostra o <em>autograd</em> calculando gradientes de um
+exemplo simples, treina uma rede com o laço explícito (forward → perda → backward →
+passo) e compara as curvas de perda de <strong>full-batch, mini-batch e SGD</strong>, tornando
+visível o ruído de cada estratégia.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Por que o gradiente descendente anda no sentido <strong>oposto</strong> ao gradiente?</p>
+<details><summary>Ver solução</summary>
 
+Por definição, o gradiente $\nabla_{\!\mathbf{w}}\mathcal{L}$ aponta na direção em que
+a perda **mais aumenta**. Como queremos **reduzir** a perda, andamos no sentido
+contrário, $-\nabla_{\!\mathbf{w}}\mathcal{L}$ — a direção de descida mais íngreme.
+Daí o sinal de menos na regra de atualização.
+
+</details>
+
+<p><strong>2.</strong> O SGD tem uma trajetória bem mais ruidosa que o full-batch. Cite uma
+<strong>vantagem</strong> desse ruído.</p>
+<details><summary>Ver solução</summary>
+
+O ruído do SGD pode ajudar a **escapar de mínimos locais ruins** e de pontos de sela:
+como cada passo usa só um exemplo, a direção varia bastante, e essa variação pode
+tirar o otimizador de uma região onde o gradiente exato ficaria preso. Além disso,
+passos baratos permitem **muitas** atualizações por época. O preço é a trajetória
+zigue-zagueante — por isso o mini-batch, que reduz o ruído sem perder eficiência, é
+o padrão.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Rumelhart, D., Hinton, G. &amp; Williams, R. (1986). <em>Learning Representations by Back-Propagating Errors</em>. Nature, 323, 533–536 — o artigo que popularizou a backpropagation.</li>
+<li>Robbins, H. &amp; Monro, S. (1951). <em>A Stochastic Approximation Method</em>. Annals of Mathematical Statistics, 22(3), 400–407 (origem do SGD).</li>
+<li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>, cap. 6 e 8. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
+</ul>
+<div class="widget" data-widget="wGradDescent" data-id="grad_6_2">
+  <div class="widget-title">Gradiente descendente — a bolinha desce a perda</div>
+  <canvas id="grad_6_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado η</span><input type="range" min="0.01" max="1.2" step="0.01" value="0.1" id="grad_6_2-lr"><span class="ctrl-val" id="grad_6_2-lr-v">0.1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="grad_6_2-passo">Um passo</button>
+    <button class="btn" id="grad_6_2-run">Rodar</button>
+    <button class="btn" id="grad_6_2-reset">Reiniciar</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Perda atual</div><div class="sval" id="grad_6_2-perda" style="color:#c0392b;">—</div><div class="sdesc">altura na superfície</div></div>
+    <div class="stat-card"><div class="slabel">Comportamento</div><div class="sval" id="grad_6_2-reg">—</div><div class="sdesc">efeito da taxa</div></div>
+  </div>
+</div>
 </article>
 <article id="06-redes-neurais-03-ativacoes-md" class="topic">
 <div class="topic-num">6.3</div>
 <h1 class="topic-title">Funções de ativação</h1>
-<p>As funções de ativação introduzem não linearidade — sem elas, uma rede profunda colapsaria em um único modelo linear. A escolha da ativação afeta diretamente a capacidade de aprendizado e a estabilidade do treino.</p>
-<p>Compararemos sigmoide, tanh e ReLU (e suas variantes), discutindo o problema do gradiente que desaparece e por que a ReLU se tornou o padrão nas camadas ocultas das redes modernas.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Sigmoide, tanh, ReLU</td>
-<td>formas, derivadas e saturação</td>
-</tr>
-<tr>
-<td>Gradiente que desaparece</td>
-<td>por que a ReLU ajuda</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/03_ativacoes.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>A função de ativação é a peça que dá <strong>não linearidade</strong> ao neurônio — e, como
+vimos, sem ela uma rede profunda colapsa em um único modelo linear. A escolha da
+ativação parece um detalhe, mas afeta diretamente a velocidade do treino e até se a
+rede <strong>consegue</strong> aprender.</p>
+<h2>As três clássicas</h2>
+<p><strong>Sigmoide</strong> — espreme qualquer número no intervalo $(0, 1)$:</p>
+<div class="math-display">$$
+\sigma(z) = \frac{1}{1 + e^{-z}}, \qquad \sigma'(z) = \sigma(z)\,(1 - \sigma(z))
+$$</div>
+<p><strong>Tangente hiperbólica (tanh)</strong> — parecida, mas centrada em zero, saída em
+$(-1, 1)$:</p>
+<div class="math-display">$$
+\tanh(z) = \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}}, \qquad \tanh'(z) = 1 - \tanh^2(z)
+$$</div>
+<p><strong>ReLU</strong> (unidade linear retificada) — simplesmente zera os negativos:</p>
+<div class="math-display">$$
+\text{ReLU}(z) = \max(0, z), \qquad \text{ReLU}'(z) = \begin{cases} 1 & z > 0 \\ 0 & z < 0 \end{cases}
+$$</div>
+<p>Onde, em todas:</p>
+<ul>
+<li>$z$ é a <strong>pré-ativação</strong> (a soma ponderada de entradas);</li>
+<li>$f'(z)$ é a <strong>derivada</strong> da ativação — e é ela que a backpropagation multiplica ao
+  propagar o gradiente. Guarde isso: <strong>onde a derivada é pequena, o gradiente
+  encolhe</strong>.</li>
+</ul>
+<p>O widget abaixo desenha cada ativação e a sua <strong>derivada</strong>. Repare no que acontece
+com a derivada da sigmoide e da tanh longe do zero — ela some.</p>
+<h2>O gradiente que desaparece</h2>
+<p>Na sigmoide e na tanh, quando $z$ é muito positivo ou muito negativo, a função
+<strong>satura</strong> (fica quase plana) e sua derivada vai a <strong>quase zero</strong>. Numa rede
+profunda, a backpropagation multiplica muitas dessas derivadas em cadeia; se cada uma
+é menor que 1, o produto encolhe exponencialmente e o gradiente que chega às
+primeiras camadas é <strong>praticamente nulo</strong>. Elas param de aprender. É o problema do
+<strong>gradiente que desaparece</strong> (<em>vanishing gradient</em>), que por muito tempo travou o
+treino de redes profundas.</p>
+<h2>Por que a ReLU venceu</h2>
+<p>A ReLU resolve isso na região positiva: para $z > 0$, sua derivada é <strong>exatamente
+1</strong>, então o gradiente passa <strong>sem encolher</strong>. Ela é também baratíssima de calcular
+(um simples "corte no zero"). Por isso a ReLU virou o <strong>padrão</strong> nas camadas ocultas
+das redes modernas. Seu único defeito — neurônios que "morrem" ao ficar presos na
+região negativa (derivada 0) — é atenuado por variantes como a <strong>Leaky ReLU</strong>, que
+deixa passar uma pequena inclinação para os negativos:
+$\text{LeakyReLU}(z) = \max(\alpha z, z)$, com $\alpha$ pequeno (ex.: 0,01).</p>
+<p>Uma nota: na <strong>saída</strong>, a ativação segue a tarefa — sigmoide para probabilidade
+binária, <em>softmax</em> para várias classes, e nenhuma (linear) para regressão. O
+problema do gradiente que desaparece é sobre as camadas <strong>ocultas</strong>.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>03_ativacoes.ipynb</code> desenha as ativações e suas derivadas com Plotly,
+treina a mesma rede com sigmoide e com ReLU num problema não linear (comparando a
+velocidade de convergência) e <strong>mede</strong> a magnitude do gradiente nas primeiras camadas
+de uma rede profunda, tornando o <em>vanishing gradient</em> um número, não só uma história.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> A derivada máxima da sigmoide é $0{,}25$ (em $z = 0$). Numa rede de 10 camadas
+com sigmoides, estime o fator pelo qual o gradiente encolhe, no melhor caso, ao
+chegar à primeira camada.</p>
+<details><summary>Ver solução</summary>
 
+No melhor caso, cada camada multiplica o gradiente por, no máximo, $0{,}25$. Em 10
+camadas, o fator é $0{,}25^{10} \approx 9{,}5 \times 10^{-7}$ — o gradiente chega à
+primeira camada cerca de **um milhão de vezes menor**. E isso é o *melhor* caso
+(longe do zero, encolhe ainda mais). Fica claro por que redes profundas com sigmoide
+quase não treinam as camadas iniciais — e por que a ReLU, com derivada 1, é tão
+melhor.
+
+</details>
+
+<p><strong>2.</strong> Por que a ReLU <strong>não</strong> sofre do gradiente que desaparece na região positiva,
+mas ainda assim pode ter neurônios "mortos"?</p>
+<details><summary>Ver solução</summary>
+
+Para $z > 0$, a derivada da ReLU é exatamente **1**: o gradiente passa sem encolher,
+então não há desvanecimento por saturação nessa região. Mas para $z < 0$ a derivada
+é **0**; se um neurônio, por um peso ou viés infeliz, passa a receber sempre $z < 0$,
+seu gradiente é sempre zero e ele **nunca mais se atualiza** — está "morto". A Leaky
+ReLU evita isso dando uma pequena inclinação (derivada $\alpha > 0$) aos negativos.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>Nair, V. &amp; Hinton, G. (2010). <em>Rectified Linear Units Improve Restricted Boltzmann Machines</em>. ICML.</li>
+<li>Glorot, X. &amp; Bengio, Y. (2010). <em>Understanding the Difficulty of Training Deep Feedforward Neural Networks</em>. AISTATS (sobre o gradiente que desaparece).</li>
+<li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>, cap. 6. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
+</ul>
+<div class="widget" data-widget="wActivation" data-id="ativ_6_3">
+  <div class="widget-title">Ativações e suas derivadas — de onde vem o gradiente que desaparece</div>
+  <canvas id="ativ_6_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Função de ativação</span>
+      <select class="ctrl-select" id="ativ_6_3-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="leaky">Leaky ReLU</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Derivada máxima</div><div class="sval" id="ativ_6_3-dmax" style="color:#3266ad;">—</div><div class="sdesc">maior valor de f'(z)</div></div>
+    <div class="stat-card"><div class="slabel">Satura?</div><div class="sval" id="ativ_6_3-satura">—</div><div class="sdesc">derivada some longe do zero</div></div>
+  </div>
+</div>
 </article>
 <article id="06-redes-neurais-04-deep-learning-md" class="topic">
 <div class="topic-num">6.4</div>
 <h1 class="topic-title">Introdução ao deep learning</h1>
-<p>Deep learning é o uso de redes neurais com muitas camadas, capazes de aprender representações hierárquicas diretamente dos dados brutos. É a tecnologia por trás de visão computacional, processamento de linguagem e análise de imagens médicas.</p>
-<p>Faremos um panorama das arquiteturas principais (CNNs para imagens, RNNs/Transformers para sequências), do papel dos frameworks (PyTorch/Keras) e de quando o deep learning realmente supera métodos clássicos — e quando não.</p>
-<blockquote>
-<p><strong>Em construção.</strong> Este tópico terá conteúdo completo, notebook interativo e
-slides em breve. Abaixo, o que o material cobrirá.</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>O notebook cobrirá</th>
-<th>Detalhe</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Panorama de arquiteturas</td>
-<td>CNN, RNN, Transformer</td>
-</tr>
-<tr>
-<td>Quando usar deep learning</td>
-<td>dados, custo e alternativas</td>
-</tr>
-</tbody>
-</table>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/04_deep_learning.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p><em>Deep learning</em> é, em uma frase, o uso de redes neurais com <strong>muitas camadas</strong>. Mas
+a profundidade não é só "mais do mesmo": ela muda qualitativamente o que a rede
+aprende. Este tópico fecha o capítulo com um panorama — o que a profundidade traz,
+as arquiteturas principais e, honestamente, <strong>quando</strong> o deep learning compensa e
+quando não.</p>
+<h2>O que a profundidade traz: representações hierárquicas</h2>
+<p>Em métodos clássicos, nós escolhíamos as características à mão (os descritores, os
+fingerprints). A grande virada do deep learning é aprender as características
+<strong>diretamente dos dados brutos</strong>, em uma <strong>hierarquia</strong>:</p>
+<ul>
+<li>as primeiras camadas aprendem padrões <strong>simples</strong> (bordas, em imagens; fonemas, em
+  áudio);</li>
+<li>as camadas seguintes <strong>combinam</strong> os simples em padrões mais <strong>complexos</strong> (olhos,
+  rodas; sílabas, palavras);</li>
+<li>as últimas montam os conceitos de <strong>alto nível</strong> (um rosto, um carro; uma frase).</li>
+</ul>
+<p>Cada camada constrói sobre a representação da anterior. Essa <strong>composição</strong> de
+representações é o que dá ao deep learning sua força em dados de altíssima dimensão —
+e é por isso que ele dispensa boa parte da engenharia manual de características.</p>
+<h2>As arquiteturas principais</h2>
+<p>A rede densa (MLP) deste capítulo é a base. Sobre ela, arquiteturas especializadas
+exploram a <strong>estrutura</strong> de cada tipo de dado:</p>
+<ul>
+<li><strong>CNNs</strong> (redes convolucionais) — para <strong>imagens</strong>. Aplicam os mesmos filtros por
+  toda a imagem, aproveitando que um padrão (uma borda) é o mesmo em qualquer
+  posição. São a base da visão computacional e da análise de imagens médicas.</li>
+<li><strong>RNNs</strong> e, hoje, <strong>Transformers</strong> — para <strong>sequências</strong> (texto, séries temporais,
+  proteínas). O Transformer, com seu mecanismo de <strong>atenção</strong>, é a arquitetura por
+  trás dos grandes modelos de linguagem.</li>
+</ul>
+<p>O denominador comum: todas treinam pelo mesmo motor — gradiente descendente e
+backpropagation — sobre os mesmos frameworks (<strong>PyTorch</strong>, Keras/TensorFlow).</p>
+<h2>Quando o deep learning compensa (e quando não)</h2>
+<p>Esta é a parte que a empolgação costuma esconder. Deep learning <strong>brilha</strong> quando:</p>
+<ul>
+<li>há <strong>muitos dados</strong> (dezenas de milhares de exemplos ou mais);</li>
+<li>os dados são de <strong>alta dimensão e pouco estruturados</strong> — imagens, texto, áudio,
+  sinais brutos;</li>
+<li>vale investir em <strong>computação</strong> (GPUs) e ajuste.</li>
+</ul>
+<p>E <strong>não</strong> compensa — ou até perde — quando:</p>
+<ul>
+<li>os dados são <strong>tabulares</strong> e em quantidade modesta: aqui, um <strong>gradient boosting</strong>
+  (capítulo 4) costuma igualar ou superar uma rede, com muito menos esforço;</li>
+<li>há <strong>poucos exemplos</strong>: redes profundas têm parâmetros demais e sobreajustam;</li>
+<li>a <strong>interpretabilidade</strong> é essencial: uma rede é uma caixa mais fechada que uma
+  regressão ou uma árvore.</li>
+</ul>
+<p>A lição do curso inteiro vale aqui: o melhor modelo é o que <strong>se encaixa no problema
+e nos dados</strong>, não o mais na moda. Deep learning é uma ferramenta poderosa para o
+tipo certo de problema — não uma resposta universal.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>04_deep_learning.ipynb</code> treina uma pequena rede densa em PyTorch para
+classificar <strong>dígitos manuscritos</strong> (imagens), compara seu desempenho com o de uma
+regressão logística e discute, com números, o que a profundidade acrescentou — e a
+que custo.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Você tem uma planilha com 800 pacientes e 15 exames, e quer prever um
+desfecho binário. Deep learning é a melhor escolha? Justifique.</p>
+<details><summary>Ver solução</summary>
+
+Provavelmente **não**. São dados **tabulares** e em quantidade **modesta** (800
+linhas) — exatamente o cenário em que um **gradient boosting** ou uma **random
+forest** costumam igualar ou superar uma rede neural, com muito menos ajuste e risco
+de overfitting, além de mais interpretabilidade. Deep learning renderia mais se
+fossem imagens, texto ou dezenas de milhares de exemplos.
+
+</details>
+
+<p><strong>2.</strong> O que significa dizer que uma CNN aprende "representações hierárquicas" de uma
+imagem?</p>
+<details><summary>Ver solução</summary>
+
+Significa que as camadas aprendem padrões em **níveis crescentes de complexidade**,
+cada um construído sobre o anterior: as primeiras camadas detectam **bordas** e
+texturas simples; as intermediárias combinam bordas em **partes** (um olho, uma
+roda); as finais combinam partes em **objetos** inteiros (um rosto, um carro). A rede
+constrói sozinha essa escada de representações, a partir dos pixels brutos, sem que
+ninguém defina à mão o que é uma borda ou um olho.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>LeCun, Y., Bengio, Y. &amp; Hinton, G. (2015). <em>Deep Learning</em>. Nature, 521, 436–444.</li>
+<li>Krizhevsky, A., Sutskever, I. &amp; Hinton, G. (2012). <em>ImageNet Classification with Deep Convolutional Neural Networks</em> (AlexNet). NeurIPS.</li>
+<li>Vaswani, A. et al. (2017). <em>Attention Is All You Need</em> (Transformer). NeurIPS.</li>
+<li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
+</ul>
 
 </article>
 </div>
