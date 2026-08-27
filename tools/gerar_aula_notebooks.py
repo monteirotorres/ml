@@ -1561,11 +1561,18 @@ amostra_shap = gerador_perm.choice(len(X_teste), n_amostra_shap, replace=False)
 # DataFrame com nomes das features: o SHAP os usa nos rotulos dos graficos
 X_shap = pd.DataFrame(X_teste[amostra_shap], columns=nomes_features)
 
-# TreeExplainer: rapido e exato para florestas. O objeto Explanation traz, para
-# classificacao binaria, uma dimensao por classe -> ficamos com a classe FORTE (1).
-explicador = shap.TreeExplainer(modelo_floresta)
-explicacao = explicador(X_shap, check_additivity=False)
-explicacao_forte = explicacao[:, :, 1]
+# IMPORTANTE: usamos feature_perturbation="interventional" + model_output="probability",
+# com um "fundo" (amostra do treino). E a combinacao que garante valores SHAP na
+# escala de PROBABILIDADE (0 a 1) e passa a checagem de aditividade (deixada LIGADA).
+# O modo padrao (tree_path_dependent) esta quebrado em versoes recentes do
+# scikit-learn e produziria valores fora de escala (milhares em vez de ~0-1).
+fundo_shap = X_treino[gerador_perm.choice(len(X_treino),
+                                          min(100, len(X_treino)), replace=False)]
+explicador = shap.TreeExplainer(modelo_floresta, data=fundo_shap,
+                                feature_perturbation="interventional",
+                                model_output="probability")
+explicacao = explicador(X_shap)                 # checagem de aditividade ligada (default)
+explicacao_forte = explicacao[:, :, 1]          # contribuicoes para a classe FORTE
 
 # colapsa os 2048 bits do fingerprint num UNICO eixo: soma as contribuicoes SHAP
 # (aditivas) e usa o numero de bits ligados como "valor" para a cor. Sobram 10
