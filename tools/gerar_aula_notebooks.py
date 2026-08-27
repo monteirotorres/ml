@@ -1581,26 +1581,23 @@ O SHAP atribui a cada feature, para cada molécula, o quanto ela empurrou a pred
 para FORTE ou FRACO — com uma base teórica (valores de Shapley) que reparte a
 predição de forma justa entre as features.
 
-Aqui um cuidado com a **representação** faz toda a diferença. O *beeswarm* clássico
-colore cada ponto pelo **valor** da feature (baixo → azul, alto → vermelho). Isso é
-ótimo para features **contínuas**, mas enganoso para os **2048 bits do fingerprint**:
-como eles são binários e esparsos (quase toda molécula tem cada bit em 0), um
-beeswarm dos bits vira um mar de pontos "azuis" (valor 0) e a cor deixa de informar.
-Por isso usamos **duas vistas**:
+Aqui um cuidado com a **representação** faz toda a diferença. Os gráficos de SHAP
+mostram uma linha por feature; com os **2048 bits do fingerprint** isso vira um
+paredão ilegível de barras `fp_1358`, `fp_746`… — e, pior, no *beeswarm* a cor é o
+**valor** da feature, que nos bits binários e esparsos é quase sempre 0 (tudo azul).
+A saída é **colapsar o fingerprint num único eixo**: como o SHAP é **aditivo**,
+somamos as contribuições dos 2048 bits e obtemos a contribuição do **bloco inteiro**
+por molécula. Ficamos com **10 features legíveis** — os 9 descritores mais o
+fingerprint agregado — e as mostramos em duas vistas, **uma por célula**:
 
-1. um **gráfico de barras** com a importância média (|SHAP| médio) — sem cor por
-   valor, funciona igualmente bem para bits binários e descritores contínuos;
-2. um **beeswarm** com os 9 descritores contínuos **mais o fingerprint colapsado
-   num único eixo** — somamos as contribuições SHAP dos 2048 bits (o SHAP é
-   aditivo, então a soma é a contribuição do bloco inteiro) e o colorimos pelo
-   número de bits ligados. Nos descritores a cor (valor baixo → alto) conta a
-   história direcional (por exemplo, se moléculas maiores tendem a FORTE); o eixo
-   do fingerprint mede o peso do bloco — e, como esperado, ele **costuma dominar** a
-   figura, ecoando o resultado da importância por permutação (6.2).
+1. um **gráfico de barras** com a importância média (|SHAP| médio) de cada uma;
+2. um **beeswarm** das mesmas 10: nos descritores a cor (valor baixo → alto) conta a
+   direção do efeito (por exemplo, se moléculas maiores tendem a FORTE); no eixo do
+   fingerprint o "valor" é o número de bits ligados, e ele **costuma dominar** o
+   espalhamento — ecoando a importância por permutação (6.2).
 
 Depois abrimos duas moléculas individualmente com o **gráfico de cascata**
-(*waterfall*) do próprio SHAP, que soma as contribuições do valor-base até a
-predição final. Restringimos a uma amostra do teste porque o SHAP é custoso.""")
+(*waterfall*). Restringimos a uma amostra do teste porque o SHAP é custoso.""")
 
 code(r'''import shap
 
@@ -1615,25 +1612,28 @@ explicador = shap.TreeExplainer(modelo_floresta)
 explicacao = explicador(X_shap, check_additivity=False)
 explicacao_forte = explicacao[:, :, 1]
 
-# (1) ranking global por |SHAP| medio: uma barra por feature, SEM cor por valor.
-#     E a vista honesta para os 2048 bits binarios (o beeswarm os deixaria quase
-#     todos "azuis", pois o valor e 0 na imensa maioria das moleculas).
-shap.plots.bar(explicacao_forte, max_display=15, show=True)
-
-# (2) beeswarm com os 9 descritores continuos + o fingerprint COLAPSADO num eixo so:
-#     somamos as contribuicoes SHAP dos 2048 bits (o SHAP e aditivo, entao a soma e
-#     a contribuicao do bloco inteiro) e colorimos pelo numero de bits ligados.
-#     Nos descritores a cor (baixo->alto) mostra a direcao; o eixo do fingerprint
-#     mede o peso do bloco -- e costuma dominar, como a permutacao (6.2) ja indicou.
-valores_desc = explicacao_forte.values[:, 0:9]
-valores_fp = explicacao_forte.values[:, 9:].sum(axis=1, keepdims=True)
-dados_desc = explicacao_forte.data[:, 0:9]
-dados_fp = explicacao_forte.data[:, 9:].sum(axis=1, keepdims=True)   # nº de bits ligados
+# colapsa os 2048 bits do fingerprint num UNICO eixo: soma as contribuicoes SHAP
+# (aditivas) e usa o numero de bits ligados como "valor" para a cor. Sobram 10
+# features legiveis (9 descritores + o fingerprint agregado).
+valores_agrupados = np.hstack([
+    explicacao_forte.values[:, 0:9],
+    explicacao_forte.values[:, 9:].sum(axis=1, keepdims=True)])
+dados_agrupados = np.hstack([
+    explicacao_forte.data[:, 0:9],
+    explicacao_forte.data[:, 9:].sum(axis=1, keepdims=True)])   # nº de bits ligados
 explicacao_agrupada = shap.Explanation(
-    values=np.hstack([valores_desc, valores_fp]),
-    base_values=explicacao_forte.base_values,
-    data=np.hstack([dados_desc, dados_fp]),
+    values=valores_agrupados, base_values=explicacao_forte.base_values,
+    data=dados_agrupados,
     feature_names=nomes_features[:9] + ["fingerprint (Σ 2048 bits)"])
+
+# vista 1 -- barra: importancia media |SHAP| das 10 features agrupadas
+shap.plots.bar(explicacao_agrupada, max_display=10, show=True)''')
+
+md("""E a mesma informação num **beeswarm** das 10 features (uma célula só para ela): cada
+ponto é uma molécula; a posição é a contribuição SHAP e a cor é o valor da feature —
+informativa nos descritores, e igual ao número de bits ligados no eixo do fingerprint.""")
+
+code(r'''# vista 2 -- beeswarm das mesmas 10 features agrupadas
 shap.plots.beeswarm(explicacao_agrupada, max_display=10, show=True)''')
 
 md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata**: as barras
@@ -2089,19 +2089,20 @@ TITULOS_CELULAS = {
     44: 'Correlação tamanho × potência (confundimento)',
     45: 'Modelo-controle de uma única feature (tamanho)',
     46: 'Importância por permutação (descritores × fingerprint)',
-    47: 'SHAP sobre a floresta (importância global + beeswarm agrupado)',
-    48: 'Explicações SHAP individuais (waterfall)',
-    49: 'Fingerprints do RDKit para o domínio de aplicabilidade',
-    50: 'Histograma da similaridade máxima ao treino',
-    51: 'Varredura do percentil do domínio: cobertura × acerto',
-    52: 'Plota cobertura × acerto por percentil',
-    53: 'A função classificar(smiles), com abstenção',
-    54: 'Galeria de moléculas de teste',
-    55: 'Triagem virtual sobre fármacos aprovados (world)',
-    56: 'Passa cada fármaco pelo classificador',
-    57: 'Sanidade: recuperamos os inibidores já conhecidos?',
-    58: 'Os candidatos novos da triagem',
-    59: 'Persistência do modelo',
+    47: 'SHAP: importância das features agrupadas (barra)',
+    48: 'SHAP: beeswarm das features agrupadas',
+    49: 'Explicações SHAP individuais (waterfall)',
+    50: 'Fingerprints do RDKit para o domínio de aplicabilidade',
+    51: 'Histograma da similaridade máxima ao treino',
+    52: 'Varredura do percentil do domínio: cobertura × acerto',
+    53: 'Plota cobertura × acerto por percentil',
+    54: 'A função classificar(smiles), com abstenção',
+    55: 'Galeria de moléculas de teste',
+    56: 'Triagem virtual sobre fármacos aprovados (world)',
+    57: 'Passa cada fármaco pelo classificador',
+    58: 'Sanidade: recuperamos os inibidores já conhecidos?',
+    59: 'Os candidatos novos da triagem',
+    60: 'Persistência do modelo',
 }
 
 
