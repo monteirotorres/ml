@@ -701,20 +701,11 @@ plt.show()''')
 
 md("""## Seção 4 — Partição, com representação gráfica
 
-Para estimar honestamente o desempenho, separamos os dados em três papéis:
-**treino** (ajusta o modelo), **calibração** e **teste** (tocado só no fim).
-
-Um esclarecimento que confunde muita gente: **não há aqui um conjunto de
-"validação" no sentido usual.** Um conjunto de validação separado serve para
-**escolher hiperparâmetros** ou comparar modelos durante o desenvolvimento —
-e nesta aula não fazemos busca de hiperparâmetros. Quando precisamos comparar de
-forma robusta, usamos **validação cruzada** (o segundo diagrama abaixo), que
-valida *sem* reservar um bloco fixo. Duas ressalvas: a rede neural cria
-internamente uma fração de validação **a partir do próprio treino** para decidir
-quando parar (early stopping) — não é um quarto bloco; e o terceiro bloco aqui, a
-**calibração**, é um hold-out extra, mantido separado do treino e do teste, útil
-para passos opcionais como calibrar probabilidades. Os modelos desta aula não o
-utilizam; se quiser, pode devolvê-lo ao treino.
+Para estimar honestamente o desempenho, separamos os dados em dois papéis:
+**treino** (ajusta o modelo) e **teste** (tocado só no fim, para medir). Não há um
+terceiro bloco de "validação": nesta aula não fazemos busca de hiperparâmetros, e a
+única rede que precisa parar cedo (early stopping) recorta a própria fração de
+validação **de dentro do treino** — não é um bloco à parte.
 
 *Como* separamos importa mais do que o tamanho de cada parte.
 
@@ -742,10 +733,10 @@ print("moleculas:", len(agregados), "| esqueletos distintos:", agregados["esquel
 md("""### 4.1 — As duas divisões
 
 Implementamos as duas com laços explícitos. Na divisão por esqueleto, ordenamos os
-grupos do maior para o menor e vamos preenchendo treino, calibração e teste até
-atingir as proporções — nenhum esqueleto se divide entre conjuntos.""")
+grupos do maior para o menor e vamos preenchendo o treino até atingir a proporção;
+o que sobra vira teste — nenhum esqueleto se divide entre conjuntos.""")
 
-code(r'''PROP_TREINO, PROP_CALIB = 0.70, 0.15   # o resto (0.15) vai para teste
+code(r'''PROP_TREINO = 0.85   # o resto (0.15) vai para teste
 n_total = len(agregados)
 
 # --- divisao POR ESQUELETO: cada esqueleto inteiro fica em um unico conjunto ---
@@ -757,15 +748,13 @@ for indice in agregados.index:
         grupos_por_esqueleto[chave] = []
     grupos_por_esqueleto[chave].append(indice)
 
-# 2. do maior grupo para o menor, enche treino, depois calibracao, depois teste
+# 2. do maior grupo para o menor, enche o treino ate a proporcao; o resto vira teste
 grupos_ordenados = sorted(grupos_por_esqueleto.values(),
                           key=lambda grupo: (-len(grupo), agregados.loc[grupo[0], "esqueleto"]))
-idx_treino_esq, idx_calib_esq, idx_teste_esq = [], [], []
+idx_treino_esq, idx_teste_esq = [], []
 for grupo in grupos_ordenados:
     if len(idx_treino_esq) < PROP_TREINO * n_total:
         idx_treino_esq.extend(grupo)
-    elif len(idx_calib_esq) < PROP_CALIB * n_total:
-        idx_calib_esq.extend(grupo)
     else:
         idx_teste_esq.extend(grupo)
 
@@ -773,59 +762,30 @@ for grupo in grupos_ordenados:
 indices_embaralhados = list(agregados.index)
 np.random.RandomState(SEMENTE).shuffle(indices_embaralhados)
 corte_treino = int(PROP_TREINO * n_total)
-corte_calib = int((PROP_TREINO + PROP_CALIB) * n_total)
 idx_treino_ale = indices_embaralhados[:corte_treino]
-idx_calib_ale = indices_embaralhados[corte_treino:corte_calib]
-idx_teste_ale = indices_embaralhados[corte_calib:]
+idx_teste_ale = indices_embaralhados[corte_treino:]
 
-print("divisao por esqueleto -> treino", len(idx_treino_esq),
-      "calib", len(idx_calib_esq), "teste", len(idx_teste_esq))
-print("divisao aleatoria     -> treino", len(idx_treino_ale),
-      "calib", len(idx_calib_ale), "teste", len(idx_teste_ale))''')
+print("divisao por esqueleto -> treino", len(idx_treino_esq), "| teste", len(idx_teste_esq))
+print("divisao aleatoria     -> treino", len(idx_treino_ale), "| teste", len(idx_teste_ale))''')
 
-md("""### 4.2 — Diagramas do particionamento e da validação cruzada
+md("""### 4.2 — Diagrama do particionamento
 
-Dois esquemas desenhados no próprio notebook (Plotly, sem imagem externa). O
-primeiro mostra os três blocos em proporção — treino, **calibração** (o bloco do
-meio; não é um conjunto de validação, e sim um hold-out extra) e teste.
-O segundo mostra a validação cruzada em k dobras: repare que ela **não tem um
-bloco fixo de validação** — o papel de teste **roda** por todas as dobras, e é
-exatamente assim que ela valida sem reservar um conjunto à parte. Por isso o
-"conjunto de validação" não aparece como um bloco no segundo diagrama: ele foi
-substituído pelo rodízio.""")
+Um esquema desenhado no próprio notebook (Plotly, sem imagem externa): os **dois
+blocos** em proporção — treino e teste —, só para ver de relance quanto ficou em
+cada lado.""")
 
-code(r'''# diagrama 1: blocos treino/calibracao/teste
-tamanhos = [len(idx_treino_esq), len(idx_calib_esq), len(idx_teste_esq)]
-nomes = ["treino", "calibracao", "teste"]
-cores = ["#3266ad", "#7e9603", "#c0392b"]
+code(r'''# blocos treino/teste em proporcao
+tamanhos = [len(idx_treino_esq), len(idx_teste_esq)]
+nomes = ["treino", "teste"]
+cores = ["#3266ad", "#c0392b"]
 figura_blocos = go.Figure()
-inicio = 0
 for nome, tamanho, cor in zip(nomes, tamanhos, cores):
     figura_blocos.add_trace(go.Bar(
         y=["particao"], x=[tamanho], name=nome, orientation="h", marker_color=cor,
         text=nome + "<br>" + str(tamanho), textposition="inside"))
-    inicio = inicio + tamanho
 figura_blocos.update_layout(barmode="stack", height=180,
-                            title="Particionamento treino / calibracao / teste",
-                            showlegend=False)
-figura_blocos.show()
-
-# diagrama 2: validacao cruzada em k dobras
-K = 5
-figura_cv = go.Figure()
-for rodada in range(K):
-    for bloco in range(K):
-        eh_teste = (bloco == rodada)
-        figura_cv.add_trace(go.Bar(
-            y=["rodada " + str(rodada + 1)], x=[1], orientation="h",
-            marker_color=("#c0392b" if eh_teste else "#3266ad"),
-            marker_line_color="white", marker_line_width=2,
-            showlegend=False,
-            hovertext=("teste" if eh_teste else "treino")))
-figura_cv.update_layout(barmode="stack", height=280,
-                        title="Validacao cruzada em " + str(K) + " dobras (vermelho = teste)",
-                        xaxis_showticklabels=False)
-figura_cv.show()''')
+                            title="Particionamento treino / teste", showlegend=False)
+figura_blocos.show()''')
 
 md("""### 4.3 — O espaço químico das duas divisões, lado a lado
 
@@ -836,9 +796,8 @@ para enxergá-la. Como cada molécula passa a ocupar a posição do seu **núcle
 todas as moléculas de um mesmo esqueleto **caem exatamente no mesmo ponto**. É esse
 colapso que torna o mecanismo visível.
 
-Cada ponto é pintado pelo **conjunto** a que a molécula pertence (treino,
-calibração ou teste), uma vez para a divisão aleatória, outra para a por esqueleto.
-O que procurar:
+Cada ponto é pintado pelo **conjunto** a que a molécula pertence (treino ou teste),
+uma vez para a divisão aleatória, outra para a por esqueleto. O que procurar:
 
 - na **por esqueleto**, cada aglomerado de pontos coincidentes é de **uma cor só**
   — o esqueleto inteiro foi para um único conjunto; treino e teste nunca partilham
@@ -889,13 +848,12 @@ print("(o resto da estrutura vive nas dezenas de eixos que nao vemos aqui)")
 
 # marca, para cada molecula, a qual conjunto ela pertence em cada divisao
 # (uma coluna por divisao, so para colorir a projecao)
-for nome_coluna, idx_tr, idx_ca, idx_te in [
-    ("conjunto_aleatorio", idx_treino_ale, idx_calib_ale, idx_teste_ale),
-    ("conjunto_esqueleto", idx_treino_esq, idx_calib_esq, idx_teste_esq),
+for nome_coluna, idx_tr, idx_te in [
+    ("conjunto_aleatorio", idx_treino_ale, idx_teste_ale),
+    ("conjunto_esqueleto", idx_treino_esq, idx_teste_esq),
 ]:
     pertence = {}
     for indice in idx_tr: pertence[indice] = "treino"
-    for indice in idx_ca: pertence[indice] = "calibracao"
     for indice in idx_te: pertence[indice] = "teste"
     coluna = []
     for indice in agregados.index:
@@ -905,9 +863,9 @@ for nome_coluna, idx_tr, idx_ca, idx_te in [
 titulo_esq = "Divisao por esqueleto (cada nucleo de uma cor so)"
 figura_espaco = make_subplots(rows=1, cols=2,
     subplot_titles=("Divisao aleatoria (nucleos com cores misturadas)", titulo_esq))
-mapa_cores = {"treino": "#3266ad", "calibracao": "#7e9603", "teste": "#c0392b"}
+mapa_cores = {"treino": "#3266ad", "teste": "#c0392b"}
 for coluna_conjunto, col in [("conjunto_aleatorio", 1), ("conjunto_esqueleto", 2)]:
-    for nome_conjunto in ["treino", "calibracao", "teste"]:
+    for nome_conjunto in ["treino", "teste"]:
         sub = agregados[agregados[coluna_conjunto] == nome_conjunto]
         figura_espaco.add_trace(go.Scattergl(
             x=sub["pca_x"], y=sub["pca_y"], mode="markers", name=nome_conjunto,
@@ -925,20 +883,19 @@ md("""## Seção 5 — Os modelos
 
 Todos os modelos que precisam conversar com o resto do notebook vêm do
 **scikit-learn** e compartilham a mesma interface: `fit`, `predict`,
-`predict_proba`. Isso não é detalhe: é o que permite avaliar, interpretar e
-calibrar todos eles com o **mesmo** código, sem "adaptadores" que o aluno teria
+`predict_proba`. Isso não é detalhe: é o que permite avaliar e interpretar
+todos eles com o **mesmo** código, sem "adaptadores" que o aluno teria
 de decifrar.
 
 A partir daqui usamos a **divisão por esqueleto** como padrão (a honesta).""")
 
 md("""**A célula abaixo prepara o material dos modelos.** Até aqui a divisão por
-esqueleto (Seção 4.1) nos deu três listas de **rótulos de linha** —
-`idx_treino_esq`, `idx_calib_esq`, `idx_teste_esq` —, que são os índices do
-DataFrame `agregados`. Mas `X` e `y` são **arrays NumPy**, indexados por
-**posição** (0, 1, 2, …), não por esses rótulos. Então o primeiro passo é
-**traduzir cada rótulo na sua posição** com `agregados.index.get_loc(...)`, e só
-então fatiar `X` e `y` nos três conjuntos. É pura logística de indexação — nenhum
-modelo ainda.
+esqueleto (Seção 4.1) nos deu duas listas de **rótulos de linha** —
+`idx_treino_esq` e `idx_teste_esq` —, que são os índices do DataFrame `agregados`.
+Mas `X` e `y` são **arrays NumPy**, indexados por **posição** (0, 1, 2, …), não por
+esses rótulos. Então o primeiro passo é **traduzir cada rótulo na sua posição** com
+`agregados.index.get_loc(...)`, e só então fatiar `X` e `y` nos dois conjuntos. É
+pura logística de indexação — nenhum modelo ainda.
 
 Aproveitamos a mesma célula para duas coisas que todo o resto da seção vai usar:
 a **linha de base** do teste (a acurácia de quem chuta sempre a classe
@@ -946,15 +903,13 @@ maioritária — o piso que qualquer modelo precisa superar) e dois **dicionári
 vazios**, `modelos_treinados` e `tempos_treino`, onde cada modelo vai se guardar
 para a comparação única da Seção 5.5.""")
 
-code(r'''# recorta X e y para treino/calibracao/teste (divisao por esqueleto).
+code(r'''# recorta X e y para treino/teste (divisao por esqueleto).
 # X e y estao na ordem de agregados.index; convertemos cada indice na sua posicao.
 pos_treino = [agregados.index.get_loc(indice) for indice in idx_treino_esq]
-pos_calib  = [agregados.index.get_loc(indice) for indice in idx_calib_esq]
 pos_teste  = [agregados.index.get_loc(indice) for indice in idx_teste_esq]
 X_treino, y_treino = X[pos_treino], y[pos_treino]
-X_calib,  y_calib  = X[pos_calib],  y[pos_calib]
 X_teste,  y_teste  = X[pos_teste],  y[pos_teste]
-print("treino", X_treino.shape, "| calib", X_calib.shape, "| teste", X_teste.shape)
+print("treino", X_treino.shape, "| teste", X_teste.shape)
 
 # linha de base do teste: chutar sempre a classe maioritaria do treino
 classe_maioritaria = 1 if (y_treino == 1).mean() >= 0.5 else 0
@@ -2065,10 +2020,10 @@ TITULOS_CELULAS = {
     20: 'Monta X (descritores + fingerprint) e y',
     21: 'Balanço das classes FORTE e FRACO',
     22: 'Extrai os esqueletos de Bemis-Murcko',
-    23: 'Partição aleatória × por esqueleto (treino/calibração/teste)',
-    24: 'Diagramas da partição e da validação cruzada',
+    23: 'Partição aleatória × por esqueleto (treino/teste)',
+    24: 'Diagrama do particionamento (treino/teste)',
     25: 'Projeção PCA do espaço químico das duas divisões',
-    26: 'Recorta X e y de treino, calibração e teste',
+    26: 'Recorta X e y de treino e teste',
     27: 'Ilustração da sigmoide da regressão logística',
     28: 'Treina a regressão logística',
     29: 'SVM em dados circulares (o truque do kernel, ilustrado)',
