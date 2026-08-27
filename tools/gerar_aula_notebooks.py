@@ -1598,21 +1598,22 @@ informativa nos descritores, e igual ao número de bits ligados no eixo do finge
 code(r'''# vista 2 -- beeswarm das mesmas 10 features agrupadas
 shap.plots.beeswarm(explicacao_agrupada, max_display=10, show=True)''')
 
-md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata**: as barras
-partem do valor-base (a predição média) e somam, uma feature de cada vez, até a
-probabilidade daquela molécula. Vermelho empurra para FORTE, azul para FRACO. Para
-uma molécula, os bits **presentes** (valor 1) e os descritores aparecem no topo; os
-milhares de bits ausentes não pesam — é a leitura molécula a molécula do mesmo sinal
-que os resumos acima apontam.""")
+md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata** — nas
+**mesmas 10 features agrupadas**: as barras partem do valor-base (a predição média)
+e somam, uma feature de cada vez, até a probabilidade daquela molécula. Vermelho
+empurra para FORTE, azul para FRACO. O fingerprint entra como **um bloco só (Σ)**,
+então não aparecem bits `fp_XXX` individuais — é a leitura molécula a molécula do
+mesmo sinal que os resumos acima apontam.""")
 
-code(r'''# explica duas moleculas individuais com o waterfall do proprio SHAP
+code(r'''# explica duas moleculas individuais com o waterfall, usando as MESMAS 10 features
+# agrupadas (fingerprint colapsado num bloco) -> sem bits fp_XXX soltos.
 from IPython.display import display
 
 for posicao_no_shap in [0, 1]:
     indice_molecula = idx_teste_esq[amostra_shap[posicao_no_shap]]
     print("molecula:", agregados.loc[indice_molecula, "molecule_chembl_id"])
     display(Draw.MolToImage(agregados.loc[indice_molecula, "molecula"], size=(320, 240)))
-    shap.plots.waterfall(explicacao_forte[posicao_no_shap], max_display=10, show=True)''')
+    shap.plots.waterfall(explicacao_agrupada[posicao_no_shap], max_display=10, show=True)''')
 
 md("""## Seção 7 — Domínio de aplicabilidade
 
