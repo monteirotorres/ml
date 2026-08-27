@@ -1579,12 +1579,24 @@ md("""### 6.3 — SHAP sobre a floresta
 
 O SHAP atribui a cada feature, para cada molécula, o quanto ela empurrou a predição
 para FORTE ou FRACO — com uma base teórica (valores de Shapley) que reparte a
-predição de forma justa entre as features. Primeiro o **resumo** (*beeswarm*): cada
-ponto é uma molécula, a posição horizontal é a contribuição da feature e a cor é o
-valor dela, revelando o padrão geral. Depois abrimos duas moléculas individualmente
-com o **gráfico de cascata** (*waterfall*) do próprio SHAP, que soma as
-contribuições do valor-base até a predição final. Restringimos a uma amostra do
-teste porque o SHAP é custoso.""")
+predição de forma justa entre as features.
+
+Aqui um cuidado com a **representação** faz toda a diferença. O *beeswarm* clássico
+colore cada ponto pelo **valor** da feature (baixo → azul, alto → vermelho). Isso é
+ótimo para features **contínuas**, mas enganoso para os **2048 bits do fingerprint**:
+como eles são binários e esparsos (quase toda molécula tem cada bit em 0), um
+beeswarm dos bits vira um mar de pontos "azuis" (valor 0) e a cor deixa de informar.
+Por isso usamos **duas vistas**:
+
+1. um **gráfico de barras** com a importância média (|SHAP| médio) — sem cor por
+   valor, funciona igualmente bem para bits binários e descritores contínuos;
+2. um **beeswarm só dos 9 descritores** físico-químicos, onde a cor (valor baixo →
+   alto) de fato conta uma história direcional (por exemplo, se moléculas maiores
+   tendem a FORTE).
+
+Depois abrimos duas moléculas individualmente com o **gráfico de cascata**
+(*waterfall*) do próprio SHAP, que soma as contribuições do valor-base até a
+predição final. Restringimos a uma amostra do teste porque o SHAP é custoso.""")
 
 code(r'''import shap
 
@@ -1599,13 +1611,21 @@ explicador = shap.TreeExplainer(modelo_floresta)
 explicacao = explicador(X_shap, check_additivity=False)
 explicacao_forte = explicacao[:, :, 1]
 
-# resumo beeswarm: o padrao geral de quais features empurram para FORTE/FRACO
-shap.plots.beeswarm(explicacao_forte, max_display=12, show=True)''')
+# (1) ranking global por |SHAP| medio: uma barra por feature, SEM cor por valor.
+#     E a vista honesta para os 2048 bits binarios (o beeswarm os deixaria quase
+#     todos "azuis", pois o valor e 0 na imensa maioria das moleculas).
+shap.plots.bar(explicacao_forte, max_display=15, show=True)
+
+# (2) beeswarm SO dos 9 descritores continuos (as 9 primeiras colunas de X):
+#     aqui a cor por valor (baixo -> alto) e informativa e mostra a direcao do efeito.
+shap.plots.beeswarm(explicacao_forte[:, 0:9], max_display=9, show=True)''')
 
 md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata**: as barras
 partem do valor-base (a predição média) e somam, uma feature de cada vez, até a
-probabilidade daquela molécula. Vermelho empurra para FORTE, azul para FRACO — a
-leitura molécula a molécula do mesmo sinal que o beeswarm resume.""")
+probabilidade daquela molécula. Vermelho empurra para FORTE, azul para FRACO. Para
+uma molécula, os bits **presentes** (valor 1) e os descritores aparecem no topo; os
+milhares de bits ausentes não pesam — é a leitura molécula a molécula do mesmo sinal
+que os resumos acima apontam.""")
 
 code(r'''# explica duas moleculas individuais com o waterfall do proprio SHAP
 from IPython.display import display
@@ -2053,7 +2073,7 @@ TITULOS_CELULAS = {
     44: 'Correlação tamanho × potência (confundimento)',
     45: 'Modelo-controle de uma única feature (tamanho)',
     46: 'Importância por permutação (descritores × fingerprint)',
-    47: 'SHAP sobre a floresta (resumo beeswarm)',
+    47: 'SHAP sobre a floresta (importância global + descritores)',
     48: 'Explicações SHAP individuais (waterfall)',
     49: 'Fingerprints do RDKit para o domínio de aplicabilidade',
     50: 'Histograma da similaridade máxima ao treino',
