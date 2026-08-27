@@ -1590,9 +1590,13 @@ Por isso usamos **duas vistas**:
 
 1. um **gráfico de barras** com a importância média (|SHAP| médio) — sem cor por
    valor, funciona igualmente bem para bits binários e descritores contínuos;
-2. um **beeswarm só dos 9 descritores** físico-químicos, onde a cor (valor baixo →
-   alto) de fato conta uma história direcional (por exemplo, se moléculas maiores
-   tendem a FORTE).
+2. um **beeswarm** com os 9 descritores contínuos **mais o fingerprint colapsado
+   num único eixo** — somamos as contribuições SHAP dos 2048 bits (o SHAP é
+   aditivo, então a soma é a contribuição do bloco inteiro) e o colorimos pelo
+   número de bits ligados. Nos descritores a cor (valor baixo → alto) conta a
+   história direcional (por exemplo, se moléculas maiores tendem a FORTE); o eixo
+   do fingerprint mede o peso do bloco — e, como esperado, ele **costuma dominar** a
+   figura, ecoando o resultado da importância por permutação (6.2).
 
 Depois abrimos duas moléculas individualmente com o **gráfico de cascata**
 (*waterfall*) do próprio SHAP, que soma as contribuições do valor-base até a
@@ -1616,9 +1620,21 @@ explicacao_forte = explicacao[:, :, 1]
 #     todos "azuis", pois o valor e 0 na imensa maioria das moleculas).
 shap.plots.bar(explicacao_forte, max_display=15, show=True)
 
-# (2) beeswarm SO dos 9 descritores continuos (as 9 primeiras colunas de X):
-#     aqui a cor por valor (baixo -> alto) e informativa e mostra a direcao do efeito.
-shap.plots.beeswarm(explicacao_forte[:, 0:9], max_display=9, show=True)''')
+# (2) beeswarm com os 9 descritores continuos + o fingerprint COLAPSADO num eixo so:
+#     somamos as contribuicoes SHAP dos 2048 bits (o SHAP e aditivo, entao a soma e
+#     a contribuicao do bloco inteiro) e colorimos pelo numero de bits ligados.
+#     Nos descritores a cor (baixo->alto) mostra a direcao; o eixo do fingerprint
+#     mede o peso do bloco -- e costuma dominar, como a permutacao (6.2) ja indicou.
+valores_desc = explicacao_forte.values[:, 0:9]
+valores_fp = explicacao_forte.values[:, 9:].sum(axis=1, keepdims=True)
+dados_desc = explicacao_forte.data[:, 0:9]
+dados_fp = explicacao_forte.data[:, 9:].sum(axis=1, keepdims=True)   # nº de bits ligados
+explicacao_agrupada = shap.Explanation(
+    values=np.hstack([valores_desc, valores_fp]),
+    base_values=explicacao_forte.base_values,
+    data=np.hstack([dados_desc, dados_fp]),
+    feature_names=nomes_features[:9] + ["fingerprint (Σ 2048 bits)"])
+shap.plots.beeswarm(explicacao_agrupada, max_display=10, show=True)''')
 
 md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata**: as barras
 partem do valor-base (a predição média) e somam, uma feature de cada vez, até a
@@ -2073,7 +2089,7 @@ TITULOS_CELULAS = {
     44: 'Correlação tamanho × potência (confundimento)',
     45: 'Modelo-controle de uma única feature (tamanho)',
     46: 'Importância por permutação (descritores × fingerprint)',
-    47: 'SHAP sobre a floresta (importância global + descritores)',
+    47: 'SHAP sobre a floresta (importância global + beeswarm agrupado)',
     48: 'Explicações SHAP individuais (waterfall)',
     49: 'Fingerprints do RDKit para o domínio de aplicabilidade',
     50: 'Histograma da similaridade máxima ao treino',
