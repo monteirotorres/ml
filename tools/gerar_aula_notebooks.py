@@ -32,6 +32,7 @@ def codex(t, instr):  CELULAS.append(("codex", t, instr))
 # ══════════════════════════════════════════════════════════════════════════
 # TÍTULO
 # ══════════════════════════════════════════════════════════════════════════
+
 md("""# Aprendizado de máquina aplicado à bioinformática
 ## Classificar inibidores de um alvo proteico a partir do ChEMBL
 
@@ -58,9 +59,6 @@ perto do meio, sem evidência clara; (b) **fora do domínio de aplicabilidade** 
 molécula não se parece com nada que o modelo viu, então ele não deveria opinar.
 Saber quando não decidir é parte do trabalho.""")
 
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 0 — AMBIENTE
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 0 — Ambiente
 
 Antes de qualquer ciência, deixamos o ambiente reprodutível: instalamos o que
@@ -78,6 +76,7 @@ o `rdkit` (química), o `chembl_webresource_client` (acesso ao ChEMBL) e o
 
 Este bloco usa `subprocess` em vez da mágica `!pip` para funcionar igual no Colab
 e em qualquer outro kernel. Pode levar cerca de um minuto na primeira execução.""")
+
 code(r'''import importlib.util
 import subprocess
 import sys
@@ -105,6 +104,7 @@ md("""### 0.2 — Importações, agrupadas por finalidade
 
 Importar tudo em um lugar só, comentado, evita surpresas mais adiante e mostra ao
 leitor o mapa de ferramentas da aula.""")
+
 code(r'''# --- básicas: dados e números ---
 import numpy as np
 import pandas as pd
@@ -133,7 +133,6 @@ from sklearn.metrics import (matthews_corrcoef, roc_auc_score, roc_curve,
 # --- rede neural "aberta" em PyTorch (só na subseção 5b) ---
 import torch
 import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
 
 # --- gráficos interativos ---
 import plotly.express as px
@@ -155,6 +154,7 @@ não suposta) e confirmamos que **não há GPU**: a aula roda em CPU por escolha
 para ser idêntica em qualquer máquina. A semente é uma constante única no topo,
 propagada a `random`, `numpy` e `torch`, e passada como `random_state` a todo
 estimador daqui para frente.""")
+
 code(r'''import random
 import sklearn
 
@@ -171,10 +171,6 @@ print("cuda disponivel:", torch.cuda.is_available(), "(esperado: False, rodamos 
 DISPOSITIVO = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("dispositivo :", DISPOSITIVO)''')
 
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 1 — A PERGUNTA E OS DADOS
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 1 — A pergunta e os dados
 
 Antes de qualquer código: **o que estamos medindo?**
@@ -203,6 +199,7 @@ md("""### 1.1 — Carregar os dados
 Nós já extraímos os dados do ChEMBL e deixamos o CSV num **link público** no
 repositório. Assim o notebook lê direto da internet — **sem precisar subir
 arquivo nenhum** no Colab. É o caminho padrão, e é rápido.""")
+
 code(r'''URL_DADOS = ("https://raw.githubusercontent.com/monteirotorres/ml/"
              "main/data/dados_alvo_bruto.csv")
 
@@ -223,6 +220,7 @@ minutos, baixa ~10 mil medidas uma a uma), então vem **desligada** — deixe
 `EXECUTAR_EXTRACAO_API = False` em sala e rode em casa se tiver curiosidade. O
 alvo é resolvido pelo **nome do gene**, nunca fixado no código: trocar de alvo é
 mudar uma linha.""")
+
 code(r'''ALVO_GENE = "ACHE"                    # gene da acetilcolinesterase humana
 EXECUTAR_EXTRACAO_API = False         # mude para True para baixar da API (lento)
 
@@ -261,6 +259,7 @@ quantas moléculas únicas, e a distribuição das relações de medida (`=`, `>
 `<`). As relações vão importar muito na curadoria — uma medida "> 10000 nM"
 significa "pelo menos tão fraco quanto isso", e essa informação não pode ser
 jogada fora.""")
+
 code(r'''print("linhas totais      :", len(dados_brutos))
 print("moleculas unicas   :", dados_brutos["molecule_chembl_id"].nunique())
 print("com SMILES         :", dados_brutos["canonical_smiles"].notna().sum())
@@ -268,10 +267,6 @@ print()
 print("relacoes de medida (standard_relation):")
 print(dados_brutos["standard_relation"].value_counts(dropna=False))''')
 
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 2 — CURADORIA
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 2 — Curadoria, com tabela de proveniência
 
 Dados de repositório público chegam sujos. Cada filtro abaixo corrige um defeito
@@ -280,6 +275,7 @@ nenhuma transformação silenciosa. Ao final, montamos uma tabela de proveniênc
 (etapa, n restante, n removido, motivo) e um gráfico de funil.
 
 Começamos criando um registro da proveniência e uma cópia de trabalho.""")
+
 code(r'''proveniencia = []   # lista de (etapa, n_restante, n_removido, motivo)
 
 def registrar_etapa(nome, antes, depois, motivo):
@@ -296,6 +292,7 @@ md("""### 2.1 — SMILES ausentes ou inválidos
 Um SMILES é a representação textual da molécula. Se estiver faltando ou não puder
 ser lido pelo RDKit (parênteses errados, valência impossível), a linha é inútil —
 não há molécula para calcular nada. Testamos cada SMILES com um laço explícito.""")
+
 code(r'''antes = len(curados)
 curados = curados[curados["canonical_smiles"].notna()].copy()
 
@@ -313,6 +310,7 @@ O ChEMBL marca medidas suspeitas em `data_validity_comment` ("Outside typical
 range", "Potential transcription error"). Removemos as marcadas. Também mantemos
 apenas ensaios de ligação/funcionais do tipo `B` (binding), que medem inibição
 direta, descartando os demais formatos que não são comparáveis.""")
+
 code(r'''antes = len(curados)
 curados = curados[curados["data_validity_comment"].isna()].copy()
 registrar_etapa("validade ok", antes, len(curados), "data_validity_comment sinalizado")
@@ -329,6 +327,7 @@ padronizada** pela curadoria do ChEMBL. Ou seja, os µM e pM que apareciam nos
 artigos originais **já foram convertidos para nM** rio acima — por isso a coluna é
 quase toda "nM". Vamos primeiro **olhar** a distribuição de unidades antes de
 filtrar (nunca uma etapa silenciosa).""")
+
 code(r'''print("distribuicao de unidades (standard_units):")
 print(curados["standard_units"].value_counts(dropna=False))''')
 
@@ -338,6 +337,7 @@ recuperáveis para nM — µM, mM, M, pM — em vez de descartá-las. Imprimimos
 linhas foram convertidas. O que sobra e não é molar (por exemplo `ug.mL-1`,
 concentração em massa, que exigiria a massa molecular) ou está malformado será
 descartado no filtro seguinte.""")
+
 code(r'''# fatores para converter cada unidade molar para nM
 fator_para_nM = {
     "nM": 1.0, "uM": 1000.0, "um": 1000.0, "µM": 1000.0,
@@ -382,6 +382,7 @@ funcionam.
 Regra: **manter as relações `>`** e rotulá-las FRACO; **descartar as `<`** (uma
 molécula "melhor que" um limite baixo é ambígua para a classe). As relações `=`
 seguem normalmente.""")
+
 code(r'''antes = len(curados)
 curados = curados[curados["standard_relation"] != "<"].copy()
 registrar_etapa("descarta relacao <", antes, len(curados), "relacao '<' (limite inferior, ambiguo)")
@@ -416,6 +417,7 @@ confirmam a fraqueza de quem não tem nenhuma medida exata.
 Agregamos por molécula pela **mediana** das medidas exatas (robusta a outliers) e
 **descartamos moléculas cuja dispersão passa de uma unidade log** (exatas que
 discordam por mais de 10x não são confiáveis).""")
+
 code(r'''# pIC50 apenas das medidas EXATAS: usa o pchembl_value curado; onde faltar
 # (raro, medidas exatas sem pchembl) calcula 9 - log10(nM).
 pchembl = pd.to_numeric(curados["pchembl_value"], errors="coerce")
@@ -467,6 +469,7 @@ md("""### 2.6 — Tabela de proveniência e funil
 
 Agora a prestação de contas: a tabela cumulativa de tudo que fizemos, e o mesmo
 em um gráfico de funil interativo. Nada saiu dos dados sem motivo registrado.""")
+
 code(r'''tabela_proveniencia = pd.DataFrame(
     proveniencia, columns=["etapa", "n_restante", "n_removido", "motivo"])
 print(tabela_proveniencia.to_string(index=False))
@@ -478,17 +481,6 @@ figura_funil = go.Figure(go.Funnel(
 figura_funil.update_layout(title="Funil de curadoria dos dados", height=420)
 figura_funil.show()''')
 
-mdq("""**Pergunta.** Por que foi importante manter as medidas com relação `>` em
-vez de descartá-las, como se faria numa regressão?""",
-"""**Resposta.** Porque elas são inativos verdadeiros — a classe FRACO. O viés de
-publicação faz com que moléculas que não funcionam raramente sejam publicadas com
-valor exato; descartá-las esvaziaria justamente a classe minoritária e o modelo
-aprenderia um mundo onde quase tudo é potente, degradando a detecção de FRACO.""")
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 3 — DESCRITORES
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 3 — Os descritores, explicados um a um
 
 Um modelo não "vê" moléculas: vê números. Precisamos transformar cada molécula em
@@ -511,6 +503,7 @@ físico-químicos interpretáveis e o fingerprint de Morgan (estrutural).
 
 A regra dos cinco de Lipinski (MW≤500, LogP≤5, HBD≤5, HBA≤10) resume boa parte
 disso para fármacos orais.""")
+
 code(r'''# converte cada SMILES em objeto molecula uma unica vez (reaproveitado adiante)
 moleculas = []
 for smiles in agregados["canonical_smiles"]:
@@ -535,7 +528,41 @@ tabela_descritores = pd.DataFrame(lista_descritores, index=agregados.index)
 print("dimensao da tabela de descritores:", tabela_descritores.shape)
 tabela_descritores.describe().round(2)''')
 
-md("""### 3.1 — O fingerprint de Morgan, visualmente
+md("""### 3.1 — Correlação entre os descritores (e a questão da escala)
+
+Antes dos fingerprints, vale olhar como os nove descritores se relacionam entre
+si. O mapa de calor abaixo mostra a **correlação de Pearson** de cada par: valores
+próximos de +1 (ou -1) indicam descritores que carregam quase a mesma informação —
+redundância que ajuda a entender o que o modelo de fato tem em mãos. É de se
+esperar, por exemplo, que peso molecular, número de átomos pesados e aceptores de
+ligação de hidrogênio andem juntos: todos crescem com o tamanho da molécula.
+
+**Normalizar as features não teria sido bom?** Depende do modelo. Métodos baseados
+em distância ou gradiente — a regressão logística, a SVM e a rede neural — **são**
+sensíveis à escala, e por isso já os embrulhamos num `Pipeline` com
+`StandardScaler` (média 0, desvio 1) nas suas próprias células. Já as **árvores** e
+a **floresta** decidem por limiares em cada variável isoladamente, então são
+**indiferentes** a qualquer reescala monotônica — normalizar não muda nada nelas.
+Ou seja: a padronização é aplicada onde importa, dentro de cada pipeline, e omitida
+onde é inócua.""")
+
+code(r'''# matriz de correlacao de Pearson entre os 9 descritores
+matriz_correlacao = tabela_descritores.corr()
+
+figura_correlacao = px.imshow(
+    matriz_correlacao, text_auto=".2f", aspect="auto",
+    color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
+    title="Correlacao entre os descritores fisico-quimicos")
+figura_correlacao.update_layout(height=470, coloraxis_colorbar_title="Pearson")
+figura_correlacao.show()
+
+# maior correlacao (em modulo) fora da diagonal, so para nomear a redundancia
+correlacao_sem_diagonal = matriz_correlacao.where(~np.eye(len(matriz_correlacao), dtype=bool))
+par = correlacao_sem_diagonal.abs().stack().idxmax()
+print("par de descritores mais correlacionado:", par,
+      "->", round(matriz_correlacao.loc[par[0], par[1]], 2))''')
+
+md("""### 3.2 — O fingerprint de Morgan, visualmente
 
 Descritores físico-químicos resumem a molécula em poucos números, mas não dizem
 *quais subestruturas* ela tem. O **fingerprint de Morgan** faz isso: percorre
@@ -546,6 +573,7 @@ bits): 1 se a subestrutura está presente, 0 se não.
 Cada bit é, portanto, "esta molécula contém esta pequena subestrutura?". Vamos
 ver isso com os olhos: pegamos uma molécula e desenhamos duas subestruturas
 (bits) que ela ativa.""")
+
 code(r'''RAIO_MORGAN = 2
 N_BITS = 2048
 
@@ -567,6 +595,7 @@ Draw.MolToImage(molecula_exemplo, size=(360, 260))''')
 md("""Agora dois ou três bits específicos: cada painel mostra o átomo central
 (destacado) e a vizinhança que define aquela subestrutura. É isso que um "1" no
 fingerprint significa.""")
+
 code(r'''bits_para_mostrar = bits_ativos[:3]
 tuplas_bits = []
 for bit in bits_para_mostrar:
@@ -577,79 +606,7 @@ imagem_bits = Draw.DrawMorganBits(
     legends=["bit " + str(bit) for bit in bits_para_mostrar])
 imagem_bits''')
 
-md("""**Raio, número de bits e a compressão (*folding*).** O raio (2) controla o
-tamanho das vizinhanças. Já os `N_BITS` merecem cuidado, porque aqui há uma
-**compressão** que costuma ser mal explicada. O algoritmo (Morgan, 1965;
-formalizado como ECFP por *Rogers & Hahn, 2010*) primeiro gera, para cada
-subestrutura, um **identificador inteiro** num espaço enorme (bilhões de valores).
-Para virar um vetor de tamanho fixo, cada identificador é **dobrado** num bit por
-uma conta simples:
-
-$$\\text{bit} = \\text{identificador} \\bmod N\\_BITS$$
-
-Duas propriedades importam, e a célula abaixo **demonstra** as duas nos próprios
-dados (não é para acreditar, é para verificar):
-
-1. **O mapa é global e determinístico.** O identificador de uma subestrutura
-   depende só da vizinhança local do átomo, não do resto da molécula — então a
-   **mesma** subestrutura cai **sempre no mesmo bit**, em qualquer molécula. É isso
-   que torna dois fingerprints comparáveis (e a Tanimoto significativa).
-2. **Colisão.** Como há mais subestruturas possíveis que bits, subestruturas
-   **diferentes** podem cair no mesmo bit — e, por (1), colidem **em toda**
-   molécula, não numa só. É uma perda de informação sistemática que aceitamos em
-   troca do tamanho fixo. Dentro de uma molécula, porém, a colisão é rara (poucas
-   dezenas de subestruturas em 2048 bits).
-
-Uma distinção que confunde: o **espaço de identificadores é praticamente
-ilimitado** — o algoritmo dá a cada subestrutura um hash de 32 bits (~4 bilhões de
-valores possíveis), e o número de subestruturas quimicamente realizáveis cresce
-sem teto conforme se veem moléculas mais diversas. Por isso o folding é
-*necessário*. A contagem que a célula imprime abaixo (item 4) é **quantas
-subestruturas distintas existem neste dataset** — não "quantas o método tem": uma
-biblioteca maior revelaria mais. O ponto é só que já são **muito mais que 2048**,
-o que torna a colisão inevitável.""")
-code(r'''# (1) o folding e exatamente  bit = identificador % N_BITS
-fp_naodobrado = AllChem.GetMorganFingerprint(molecula_exemplo, RAIO_MORGAN)
-identificadores = list(fp_naodobrado.GetNonzeroElements().keys())
-confere = True
-for identificador in identificadores:
-    if (identificador % N_BITS) not in info_bits:      # info_bits: bits acesos (Secao 3.1)
-        confere = False
-print("subestruturas nesta molecula:", len(identificadores),
-      "| para todas, (id % N_BITS) e um bit aceso?", confere)
-for identificador in identificadores[:3]:
-    print("   id", identificador, "-> bit", identificador % N_BITS)
-
-# (2) o mapa e GLOBAL: a mesma subestrutura cai no mesmo bit em moleculas diferentes
-mol_a = Chem.MolFromSmiles("c1ccccc1CCN")       # feniletilamina
-mol_b = Chem.MolFromSmiles("c1ccccc1C(=O)O")    # acido benzoico
-ids_a = set(AllChem.GetMorganFingerprint(mol_a, RAIO_MORGAN).GetNonzeroElements().keys())
-ids_b = set(AllChem.GetMorganFingerprint(mol_b, RAIO_MORGAN).GetNonzeroElements().keys())
-comuns = sorted(ids_a & ids_b)
-print("\nsubestruturas identicas nas duas moleculas:", len(comuns))
-for identificador in comuns[:3]:
-    print("   subestrutura", identificador, "-> bit", identificador % N_BITS, "(igual em A e B)")
-
-# (3) uma colisao concreta: com poucos bits, duas subestruturas DIFERENTES no mesmo bit
-POUCOS_BITS = 256
-baldes = {}
-for identificador in (ids_a | ids_b):
-    posicao = identificador % POUCOS_BITS
-    baldes.setdefault(posicao, []).append(identificador)
-colisoes = [ids for ids in baldes.values() if len(ids) > 1]
-print("\ncom", POUCOS_BITS, "bits, bits que recebem >1 subestrutura (colisao):", len(colisoes))
-if colisoes:
-    print("   exemplo:", colisoes[0], "-> mesmo bit; colidem em QUALQUER molecula")
-
-# (4) por que existe colisao: subestruturas distintas no dataset inteiro x N_BITS
-todas_subestruturas = set()
-for molecula in agregados["molecula"]:
-    todas_subestruturas.update(AllChem.GetMorganFingerprint(molecula, RAIO_MORGAN).GetNonzeroElements().keys())
-print("\nsubestruturas distintas em TODO o dataset:", len(todas_subestruturas),
-      "| bits:", N_BITS,
-      "->", round(len(todas_subestruturas) / N_BITS, 1), "subestruturas por bit (no dataset)")''')
-
-md("""### 3.2 — A tabela onde o treino realmente acontece
+md("""### 3.3 — A tabela onde o treino realmente acontece
 
 Aqui está o ponto que desmistifica "treinar um modelo": juntamos os descritores,
 os primeiros bits do fingerprint e o rótulo em **uma tabela numérica**. Treinar é
@@ -660,6 +617,7 @@ O rótulo binário: uma molécula que só tem medida `>` é **FRACO** por regra 
 inativo conhecido, sem pIC50). As demais são **FORTE** se o pIC50 ≥
 `LIMIAR_POTENCIA`, senão **FRACO** — decididas pela sua medida exata, como na
 Seção 2.5.""")
+
 code(r'''LIMIAR_POTENCIA = 6.0   # pIC50 >= 6 equivale a IC50 <= 1 uM (1000 nM)
 
 # calcula o fingerprint de Morgan de cada molecula e o converte num vetor 0/1
@@ -690,12 +648,13 @@ tabela_treino["rotulo"] = agregados["rotulo"].values
 print("dimensao da tabela de treino (com fingerprint truncado):", tabela_treino.shape)
 tabela_treino.head()''')
 
-md("""### 3.3 — Dimensões e balanço de classes
+md("""### 3.4 — Dimensões e balanço de classes
 
 Imprimimos o tamanho da matriz completa, a densidade do fingerprint (fração de
 bits ligados — fingerprints são esparsos) e quantas moléculas há em cada classe.
 O balanço de classes vai definir a linha de base contra a qual julgamos todo
 modelo.""")
+
 code(r'''# matriz de entrada completa (X) = descritores + fingerprint inteiro
 matriz_descritores = tabela_descritores.values.astype(float)
 X = np.hstack([matriz_descritores, matriz_fingerprint.astype(float)])
@@ -719,6 +678,7 @@ md("""O mesmo balanço, em um gráfico — para **ver** o tamanho de cada classe
 barra maior é a linha de base: um modelo que chutasse sempre a classe maior já
 acertaria essa fração. Só faz sentido celebrar um modelo que **supere** essa
 barra.""")
+
 code(r'''# tamanho de cada classe, com o numero e a fracao anotados na barra
 contagem_classes = [n_fraco, n_forte]
 nomes_classes = ["FRACO (0)", "FORTE (1)"]
@@ -739,9 +699,6 @@ eixo_classes.set_ylim(0, max(contagem_classes) * 1.18)
 plt.tight_layout()
 plt.show()''')
 
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 4 — PARTIÇÃO
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 4 — Partição, com representação gráfica
 
 Para estimar honestamente o desempenho, separamos os dados em três papéis:
@@ -755,9 +712,9 @@ forma robusta, usamos **validação cruzada** (o segundo diagrama abaixo), que
 valida *sem* reservar um bloco fixo. Duas ressalvas: a rede neural cria
 internamente uma fração de validação **a partir do próprio treino** para decidir
 quando parar (early stopping) — não é um quarto bloco; e o terceiro bloco aqui, a
-**calibração**, tem um papel específico e diferente — a predição conformal da
-Seção 8 precisa de dados não usados nem no treino nem no teste. Se você pular a
-Seção 8, pode devolver a calibração ao treino.
+**calibração**, é um hold-out extra, mantido separado do treino e do teste, útil
+para passos opcionais como calibrar probabilidades. Os modelos desta aula não o
+utilizam; se quiser, pode devolvê-lo ao treino.
 
 *Como* separamos importa mais do que o tamanho de cada parte.
 
@@ -773,6 +730,7 @@ A regra, em uma frase: **moléculas de mesmo esqueleto devem ficar do mesmo lado
   (o núcleo, sem as cadeias laterais) e mantém **cada esqueleto inteiro em um único
   conjunto** — os análogos nunca se separam. Assim o teste contém núcleos que o
   treino **nunca viu**, que é a situação real de uso. É mais dura e mais honesta.""")
+
 code(r'''# extrai o esqueleto de Bemis-Murcko (o nucleo, sem cadeias laterais) de cada molecula
 esqueletos = []
 for molecula in agregados["molecula"]:
@@ -786,6 +744,7 @@ md("""### 4.1 — As duas divisões
 Implementamos as duas com laços explícitos. Na divisão por esqueleto, ordenamos os
 grupos do maior para o menor e vamos preenchendo treino, calibração e teste até
 atingir as proporções — nenhum esqueleto se divide entre conjuntos.""")
+
 code(r'''PROP_TREINO, PROP_CALIB = 0.70, 0.15   # o resto (0.15) vai para teste
 n_total = len(agregados)
 
@@ -828,12 +787,13 @@ md("""### 4.2 — Diagramas do particionamento e da validação cruzada
 
 Dois esquemas desenhados no próprio notebook (Plotly, sem imagem externa). O
 primeiro mostra os três blocos em proporção — treino, **calibração** (o bloco do
-meio; não é um conjunto de validação, e sim o reservado para a Seção 8) e teste.
+meio; não é um conjunto de validação, e sim um hold-out extra) e teste.
 O segundo mostra a validação cruzada em k dobras: repare que ela **não tem um
 bloco fixo de validação** — o papel de teste **roda** por todas as dobras, e é
 exatamente assim que ela valida sem reservar um conjunto à parte. Por isso o
 "conjunto de validação" não aparece como um bloco no segundo diagrama: ele foi
 substituído pelo rodízio.""")
+
 code(r'''# diagrama 1: blocos treino/calibracao/teste
 tamanhos = [len(idx_treino_esq), len(idx_calib_esq), len(idx_teste_esq)]
 nomes = ["treino", "calibracao", "teste"]
@@ -897,6 +857,7 @@ com um número na célula 4.3b.
 apareceriam bem misturadas — dois eixos de PCA não separam as classes, e não
 deveriam: se um gráfico 2D já separasse, não precisaríamos de modelo nenhum. A
 separação que importa para uma avaliação honesta é entre treino e teste.)*""")
+
 code(r'''from sklearn.decomposition import PCA
 
 # fingerprint de Morgan do ESQUELETO (nao da molecula inteira) de cada linha.
@@ -961,52 +922,6 @@ figura_espaco.update_layout(height=430,
     title="Espaco quimico dos ESQUELETOS (PCA) " + rotulo_var)
 figura_espaco.show()''')
 
-md("""### 4.3b — A separação que o olho não vê, medida com um número
-
-Em vez de confiar no gráfico, medimos diretamente **quão longe do treino está o
-teste** em cada divisão. Para cada molécula de teste, calculamos a **maior
-similaridade de Tanimoto** contra qualquer molécula de treino (1 = idêntica, 0 =
-nada em comum). A média dessas similaridades resume a divisão:
-
-- na divisão **aleatória**, cada molécula de teste costuma ter um primo quase
-  idêntico no treino — a média fica **alta**;
-- na divisão **por esqueleto**, os núcleos do teste foram mantidos fora do treino —
-  a média cai. **É esse número menor que a projeção 2D não conseguia mostrar.**""")
-code(r'''def similaridade_media_ao_treino(idx_treino, idx_teste):
-    # fingerprints do RDKit (para o Tanimoto) de cada conjunto
-    fps_treino = []
-    for indice in idx_treino:
-        molecula = agregados.loc[indice, "molecula"]
-        fps_treino.append(AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS))
-    maiores_similaridades = []
-    for indice in idx_teste:
-        molecula = agregados.loc[indice, "molecula"]
-        fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
-        similaridades = DataStructs.BulkTanimotoSimilarity(fp, fps_treino)
-        maiores_similaridades.append(max(similaridades))
-    return float(np.mean(maiores_similaridades))
-
-sim_aleatoria = similaridade_media_ao_treino(idx_treino_ale, idx_teste_ale)
-sim_esqueleto = similaridade_media_ao_treino(idx_treino_esq, idx_teste_esq)
-print("Tanimoto media do teste ao vizinho mais proximo no treino:")
-print("  divisao aleatoria  :", round(sim_aleatoria, 3), "(teste tem primos proximos no treino)")
-print("  divisao esqueleto  :", round(sim_esqueleto, 3), "(teste mais distante do treino)")
-print("  queda              :", round(sim_aleatoria - sim_esqueleto, 3),
-      "-> por isso a divisao por esqueleto e o teste mais honesto")''')
-
-mdq("""**Pergunta.** Se a divisão aleatória dá acurácia mais alta que a por
-esqueleto, qual das duas estima melhor o desempenho em moléculas realmente novas?""",
-"""**Resposta.** A por esqueleto. A acurácia mais alta da aleatória é ilusória:
-ela vem de o modelo reencontrar no teste primos próximos de moléculas do treino
-(a similaridade média alta que medimos em 4.3b). Em uma triagem real, as moléculas
-candidatas têm núcleos novos — a situação que a divisão por esqueleto reproduz, com
-sua similaridade média mais baixa. Preferimos a estimativa mais baixa e mais
-honesta.""")
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 5 — MODELOS
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 5 — Os modelos
 
 Todos os modelos que precisam conversar com o resto do notebook vêm do
@@ -1031,6 +946,7 @@ a **linha de base** do teste (a acurácia de quem chuta sempre a classe
 maioritária — o piso que qualquer modelo precisa superar) e dois **dicionários
 vazios**, `modelos_treinados` e `tempos_treino`, onde cada modelo vai se guardar
 para a comparação única da Seção 5.5.""")
+
 code(r'''# recorta X e y para treino/calibracao/teste (divisao por esqueleto).
 # X e y estao na ordem de agregados.index; convertemos cada indice na sua posicao.
 pos_treino = [agregados.index.get_loc(indice) for indice in idx_treino_esq]
@@ -1055,9 +971,18 @@ md("""### 5.0 — Como vamos avaliar
 Treinamos cada modelo em sua própria célula (guardando-o num dicionário
 `modelos_treinados`) e, ao final, comparamos **todos de uma vez** com um laço
 explícito na Seção 5.5. Assim o código de avaliação aparece **uma vez só**, e você
-vê o mesmo cálculo aplicado igualmente a cada modelo. A métrica principal é o
-**MCC** (coeficiente de correlação de Matthews): diferente da acurácia, ele não se
-deixa enganar por classes desbalanceadas (base = 0; perfeito = 1).""")
+vê o mesmo cálculo aplicado igualmente a cada modelo.
+
+**Por que MCC, e não RMSE?** Porque isto é uma tarefa de **classificação**: a
+resposta é um rótulo (FORTE/FRACO), não um número. O RMSE (raiz do erro quadrático
+médio) mede a distância entre valores previstos e observados — faz sentido em
+**regressão**, quando o alvo é contínuo, e não teria significado entre duas classes.
+Entre as métricas de classificação, evitamos a **acurácia** porque ela se deixa
+enganar por classes desbalanceadas (prever sempre a maioria já "acerta" muito). O
+**MCC** (coeficiente de correlação de Matthews) leva em conta os quatro quadrantes
+da matriz de confusão de uma vez e só fica alto quando o modelo acerta as duas
+classes: base = 0 (chute), 1 = perfeito. Ao lado dele reportamos a **AUC**, que
+resume o desempenho em todos os limiares de decisão.""")
 
 md("""### 5.1 — Regressão logística
 
@@ -1072,6 +997,7 @@ feature empurra para FORTE ou para FRACO, algo que retomaremos na Seção 6.
 
 O gráfico abaixo mostra exatamente essa conversão — a soma ponderada no eixo x, a
 probabilidade no eixo y, e o limiar de 0,5 que separa as duas decisões.""")
+
 code(r'''# figura didatica: como a regressao logistica transforma a soma ponderada
 # (z) numa probabilidade, via sigmoide. NAO usa os dados; ilustra o mecanismo.
 z = np.linspace(-6, 6, 300)
@@ -1118,6 +1044,7 @@ desempenho sairia otimista. Dentro do `Pipeline`, como o `fit` só enxerga
 4.3), agora no nível da transformação das features — e o testaremos de frente na
 Seção 6.5. Os modelos sensíveis à escala (5.1 e a SVM da 5.2) usam esse padrão; a
 floresta (5.3) dispensa o scaler.""")
+
 codex(r'''inicio = time.time()
 modelo_logistico = Pipeline([
     ("escala", StandardScaler()),
@@ -1141,6 +1068,7 @@ A SVM procura a fronteira que separa as classes com a **maior margem**. Com o
 **truque do kernel**, ela traça fronteiras curvas sem calcular explicitamente as
 coordenadas em alta dimensão. Vejamos a ideia em 2D, com dados sintéticos não
 separáveis por uma reta e a fronteira do kernel RBF traçada sobre eles.""")
+
 code(r'''from sklearn.datasets import make_circles
 
 X_circulos, y_circulos = make_circles(n_samples=300, factor=0.4, noise=0.12,
@@ -1165,37 +1093,24 @@ plt.scatter(X_circulos[:, 0], X_circulos[:, 1], c=y_circulos, cmap="RdBu",
 plt.title("SVM com kernel RBF: fronteira nao linear")
 plt.show()''')
 
-md("""Agora a SVM sobre os dados reais. Atenção ao custo: kernel RBF sobre
-milhares de amostras e 2048 bits é **lento** — é o gargalo mais provável do
-tempo de execução. Por isso **subamostramos** o treino e avisamos. Usamos
-`probability=True` porque precisamos das probabilidades para a curva ROC; isso
-acrescenta uma calibração interna e multiplica o tempo — mais um motivo para
-subamostrar. Esta célula pode levar cerca de 1 minuto.""")
-codex(r'''MAX_SVM = 1500   # subamostra do treino para caber no orcamento de tempo
-gerador_svm = np.random.RandomState(SEMENTE)
-if len(X_treino) > MAX_SVM:
-    escolhidos = gerador_svm.choice(len(X_treino), MAX_SVM, replace=False)
-    X_treino_svm, y_treino_svm = X_treino[escolhidos], y_treino[escolhidos]
-    print("SVM subamostrada para", MAX_SVM, "moleculas (de", len(X_treino), ") por custo de tempo")
-else:
-    X_treino_svm, y_treino_svm = X_treino, y_treino
+md("""Agora a SVM sobre os dados reais. Como precisamos das probabilidades para a curva
+ROC, usamos `probability=True` — o que acrescenta uma calibração interna por
+validação cruzada. O kernel RBF sobre milhares de moléculas e 2048 bits é o passo
+**mais lento** da aula; treinamos no conjunto de treino **completo**, sem
+subamostrar, então esta célula pode levar alguns minutos.""")
 
-inicio = time.time()
+code(r'''inicio = time.time()
 modelo_svm = Pipeline([
     ("escala", StandardScaler()),
     ("clf", SVC(kernel="rbf", C=1.0, gamma="scale", probability=True, random_state=SEMENTE)),
 ])
-modelo_svm.fit(X_treino_svm, y_treino_svm)
+modelo_svm.fit(X_treino, y_treino)          # treino completo, sem subamostrar
 tempo = time.time() - inicio
 
 modelos_treinados["SVM (RBF)"] = modelo_svm
 tempos_treino["SVM (RBF)"] = tempo
 mcc = matthews_corrcoef(y_teste, modelo_svm.predict(X_teste))
-print(f"SVM (RBF) treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''',
-"""Treine uma SVM RBF dentro de um Pipeline com StandardScaler (probability=True,
-random_state=SEMENTE). Subamostre o treino para no máximo 1500 moléculas e avise o
-aluno. Meça o tempo, guarde em modelos_treinados["SVM (RBF)"] e tempos_treino, e
-imprima o MCC no teste.""")
+print(f"SVM (RBF) treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")''')
 
 md("""### 5.3 — Floresta aleatória
 
@@ -1215,6 +1130,7 @@ Uma árvore fundo demais decora o treino (sobreajuste). Desenhamos uma árvore r
 árvores treinadas em reamostras diferentes dos dados e das features, cujo **voto
 médio** reduz a variância de uma árvore isolada — o todo generaliza melhor que
 qualquer árvore sozinha.""")
+
 code(r'''# arvore rasa, so para visualizar o mecanismo (nao entra na comparacao)
 arvore_rasa = DecisionTreeClassifier(max_depth=3, random_state=SEMENTE)
 arvore_rasa.fit(X_treino, y_treino)
@@ -1223,6 +1139,7 @@ plot_tree(arvore_rasa, max_depth=3, feature_names=nomes_features,
           class_names=["FRACO", "FORTE"], filled=True, fontsize=7, impurity=False)
 plt.title("Uma arvore de decisao rasa (profundidade 3)")
 plt.show()''')
+
 codex(r'''inicio = time.time()
 modelo_floresta = RandomForestClassifier(
     n_estimators=300, max_depth=None, n_jobs=-1, random_state=SEMENTE)
@@ -1237,6 +1154,34 @@ print(f"Floresta aleatoria treinada em {tempo:.1f}s | MCC no teste = {mcc:.3f}")
 random_state=SEMENTE), meça o tempo, guarde em modelos_treinados["Floresta
 aleatoria"] e tempos_treino, e imprima o MCC no teste.""")
 
+md("""Uma pergunta natural sobre a floresta: **quantas árvores bastam?** Crescemos a
+floresta em etapas (com `warm_start`, que só acrescenta as árvores novas em vez de
+recomeçar) e medimos o MCC no teste a cada etapa. A curva sobe rápido e depois
+**estabiliza** num platô — a partir daí, mais árvores custam tempo sem melhorar o
+resultado. É o diagnóstico que justifica a escolha de 300 árvores acima.""")
+
+code(r'''# cresce a floresta em etapas e mede o MCC no teste a cada etapa
+floresta_incremental = RandomForestClassifier(
+    n_estimators=10, warm_start=True, n_jobs=-1, random_state=SEMENTE)
+
+n_arvores_etapas = list(range(20, 301, 20))
+curva_floresta = []
+for n_arvores in n_arvores_etapas:
+    floresta_incremental.set_params(n_estimators=n_arvores)
+    floresta_incremental.fit(X_treino, y_treino)     # warm_start: so cresce as novas arvores
+    curva_floresta.append(matthews_corrcoef(y_teste, floresta_incremental.predict(X_teste)))
+print("MCC com 20 arvores:", round(curva_floresta[0], 3),
+      "| com 300 arvores:", round(curva_floresta[-1], 3))''')
+
+code(r'''figura_floresta = go.Figure(go.Scatter(
+    x=n_arvores_etapas, y=curva_floresta, mode="lines+markers", line=dict(color="#1a7a4a")))
+figura_floresta.update_layout(
+    title="Floresta aleatoria: MCC no teste conforme se adicionam arvores",
+    xaxis_title="numero de arvores", yaxis_title="MCC", height=360)
+figura_floresta.show()
+print("MCC estabiliza em torno de", round(curva_floresta[-1], 3),
+      "- mais arvores alem disso quase nao mudam nada")''')
+
 md("""### 5.4a — Rede neural (scikit-learn)
 
 Uma rede neural encadeia **camadas**: cada camada combina as entradas com pesos e
@@ -1249,6 +1194,7 @@ Usamos `early_stopping=True`: o treino para quando o desempenho numa fração de
 validação deixa de melhorar. Plotamos as duas curvas por época — perda de treino
 (`loss_curve_`) e desempenho na validação (`validation_scores_`). O descolamento
 entre elas é o **sobreajuste** ficando visível.""")
+
 codex(r'''inicio = time.time()
 modelo_rede = MLPClassifier(
     hidden_layer_sizes=(128, 64), activation="relu",
@@ -1296,6 +1242,7 @@ que ela produziu).
 Esta rede não conversa com o resto do notebook, então não precisa de invólucro:
 fatiamos os tensores em minilotes com um laço sobre índices embaralhados, sem
 `DataLoader`.""")
+
 code(r'''# preparo: padroniza (mesma ideia dos pipelines) e converte para tensores
 from sklearn.preprocessing import StandardScaler as _Escala
 escala_torch = _Escala().fit(X_treino)
@@ -1337,6 +1284,7 @@ arquitetura.)
 O `torchview` não vem no Colab, então a célula abaixo o **instala** (rápido) e
 gera o diagrama. Antes dele, imprimimos um resumo camada a camada com a contagem
 de parâmetros.""")
+
 code(r'''# instala o torchview se faltar (mesmo padrao robusto da Secao 0)
 import importlib.util
 import subprocess
@@ -1358,26 +1306,17 @@ grafo_rede = draw_graph(rede_torch, input_size=(1, X_treino.shape[1]),
                         device=str(DISPOSITIVO), graph_name="RedeMLP")
 grafo_rede.visual_graph   # ultima expressao: o Colab desenha o diagrama aqui''')
 
-md("""O laço de treino, comentado passo a passo, instrumentado com o
-`SummaryWriter` do TensorBoard (registra a perda por época) e com uma barra
-`tqdm`. Registramos também, ao lado, a `loss_curve_` do `MLPClassifier` da parte
-(a), para que as duas apareçam no mesmo painel. Guardamos a curva do PyTorch em
-uma lista para replicá-la em Plotly logo depois — o painel do TensorBoard não
-fica salvo no arquivo.""")
-code(r'''import os
-import shutil
+md("""O laço de treino, comentado passo a passo, com uma barra `tqdm` para acompanhar as
+épocas. Guardamos a perda média de cada época numa lista para desenhá-la em Plotly
+logo depois, ao lado da `loss_curve_` do `MLPClassifier` da parte (a) — assim as
+duas implementações da mesma rede aparecem no mesmo gráfico.""")
 
-PASTA_LOGS = "logs_tb"
-if os.path.exists(PASTA_LOGS):
-    shutil.rmtree(PASTA_LOGS)   # limpa logs antigos para nao acumular curvas
-os.makedirs(PASTA_LOGS, exist_ok=True)
-
-N_EPOCAS = 40
+code(r'''N_EPOCAS = 40
 TAM_MINILOTE = 64
-escritor = SummaryWriter(os.path.join(PASTA_LOGS, "pytorch"))
 
 perda_por_epoca_torch = []
 n_treino = Xt_treino.shape[0]
+inicio_torch = time.time()
 for epoca in tqdm(range(N_EPOCAS), desc="treino PyTorch"):
     rede_torch.train()
     # embaralha os indices a cada epoca e fatia em minilotes
@@ -1397,38 +1336,17 @@ for epoca in tqdm(range(N_EPOCAS), desc="treino PyTorch"):
 
         perda_acumulada = perda_acumulada + perda.item()
         n_lotes = n_lotes + 1
-    perda_media = perda_acumulada / n_lotes
-    perda_por_epoca_torch.append(perda_media)
-    escritor.add_scalar("perda/treino", perda_media, epoca)
-
-# registra tambem a curva do MLPClassifier (parte a) em subpasta propria
-escritor_mlp = SummaryWriter(os.path.join(PASTA_LOGS, "sklearn_mlp"))
-for indice_epoca in range(len(modelo_rede.loss_curve_)):
-    escritor_mlp.add_scalar("perda/treino", modelo_rede.loss_curve_[indice_epoca], indice_epoca)
-escritor.close()
-escritor_mlp.close()
-print("treino PyTorch concluido; perda final:", round(perda_por_epoca_torch[-1], 4))''')
-
-md("""**TensorBoard (célula de Colab).** No Colab, abra o painel **antes** de
-treinar para vê-lo atualizar ao vivo. Como o painel não fica salvo no arquivo,
-replicamos toda curva em Plotly na célula seguinte — o TensorBoard é a experiência
-ao vivo; o Plotly é o material de estudo. Fora do Colab, esta célula apenas avisa.""")
-code(r'''# Em Colab, as duas linhas idiomaticas sao:
-#   %load_ext tensorboard
-#   %tensorboard --logdir logs_tb
-# Usamos a forma robusta abaixo para nao quebrar fora do Colab.
-try:
-    get_ipython().run_line_magic("load_ext", "tensorboard")
-    get_ipython().run_line_magic("tensorboard", "--logdir " + PASTA_LOGS)
-except Exception as erro:
-    print("TensorBoard so abre no Colab/Jupyter com a extensao:", type(erro).__name__)
-    print("As curvas estao replicadas em Plotly na proxima celula.")''')
+    perda_por_epoca_torch.append(perda_acumulada / n_lotes)
+tempo_torch = time.time() - inicio_torch
+print("treino PyTorch concluido em", round(tempo_torch, 1), "s |",
+      "perda final:", round(perda_por_epoca_torch[-1], 4))''')
 
 md("""Registro permanente em Plotly: as duas curvas de perda sobrepostas.
 Elas **não coincidem**, embora sejam a mesma arquitetura — inicialização de pesos
 diferente, otimizadores diferentes, ordem dos minilotes diferente. Que dois
 códigos corretos para o mesmo modelo deem curvas diferentes é, em si, uma lição
 sobre estocasticidade em aprendizado de máquina.""")
+
 code(r'''figura_perdas = go.Figure()
 figura_perdas.add_trace(go.Scatter(
     x=list(range(1, len(perda_por_epoca_torch) + 1)), y=perda_por_epoca_torch,
@@ -1440,277 +1358,16 @@ figura_perdas.update_layout(title="Mesma rede, duas implementacoes: perda por ep
                             xaxis_title="epoca", yaxis_title="perda", height=380)
 figura_perdas.show()''')
 
-md("""**Comparação de execuções no TensorBoard.** Onde o TensorBoard ganha da
-curva estática é comparar execuções. Treinamos a mesma rede três vezes com taxas
-de aprendizado diferentes, cada uma gravada em sua **subpasta** de `logs_tb`. A
-célula abaixo treina e grava as três; a seguinte **abre o painel do TensorBoard**,
-onde as três curvas aparecem sobrepostas; e o Plotly na sequência é o registro
-permanente.""")
-code(r'''taxas = [0.0001, 0.001, 0.05]   # baixa, boa, alta demais
-curvas_por_taxa = {}
-
-# treina a MESMA rede uma vez para cada taxa de aprendizado (mesmo laco da 5.4b)
-for taxa in taxas:
-    torch.manual_seed(SEMENTE)
-    rede = RedeMLP(X_treino.shape[1]).to(DISPOSITIVO)
-    otim = torch.optim.Adam(rede.parameters(), lr=taxa)
-    escritor_taxa = SummaryWriter(os.path.join(PASTA_LOGS, "lr_" + str(taxa)))
-    curva = []
-    for epoca in range(N_EPOCAS):
-        ordem = torch.randperm(n_treino)
-        soma, n_lotes = 0.0, 0
-        for inicio_lote in range(0, n_treino, TAM_MINILOTE):
-            idx = ordem[inicio_lote:inicio_lote + TAM_MINILOTE]
-            otim.zero_grad()
-            perda = funcao_perda(rede(Xt_treino[idx].to(DISPOSITIVO)),
-                                 yt_treino[idx].to(DISPOSITIVO))
-            perda.backward()
-            otim.step()
-            soma += perda.item()
-            n_lotes += 1
-        media = soma / n_lotes
-        curva.append(media)
-        escritor_taxa.add_scalar("perda/treino", media, epoca)
-    escritor_taxa.close()
-    curvas_por_taxa[taxa] = curva
-print("tres execucoes gravadas em", PASTA_LOGS, "(subpastas lr_*)")''')
-
-md("""O painel do TensorBoard com as três execuções. No Colab, as curvas das três
-taxas aparecem sobrepostas no mesmo gráfico (uma cor por subpasta `lr_*`) e você
-pode ligar/desligar cada uma. É aqui que ele supera a figura estática: comparar
-execuções lado a lado sem redesenhar nada.""")
-code(r'''# reabre o painel do TensorBoard, agora com as tres execucoes de taxa
-try:
-    get_ipython().run_line_magic("tensorboard", "--logdir " + PASTA_LOGS)
-except Exception as erro:
-    print("TensorBoard so aparece no Colab/Jupyter:", type(erro).__name__)
-    print("As tres curvas estao replicadas no grafico Plotly abaixo.")''')
-
-md("""Registro permanente em Plotly das mesmas três curvas.""")
-code(r'''figura_taxas = go.Figure()
-for taxa in taxas:
-    figura_taxas.add_trace(go.Scatter(
-        x=list(range(1, N_EPOCAS + 1)), y=curvas_por_taxa[taxa],
-        name="lr = " + str(taxa)))
-figura_taxas.update_layout(title="Tres taxas de aprendizado (mesma rede)",
-                           xaxis_title="epoca", yaxis_title="perda", height=380)
-figura_taxas.show()''')
-
-mdq("""**Pergunta.** Entre as três taxas de aprendizado, qual é "alta demais" e
-qual é a assinatura visual disso na curva de perda?""",
-"""**Resposta.** A maior (0.05). A assinatura é uma curva que **não desce de forma
-estável**: oscila, sobe e desce, ou estaciona alta — o passo é grande demais e o
-otimizador "salta por cima" do mínimo. A taxa muito baixa (0.0001) desce, mas
-devagar demais; a intermediária desce de forma suave e consistente.""")
-
-md("""### 5.4c — TensorBoard não é só para redes neurais
-
-O TensorBoard aceita qualquer sequência de números via `add_scalar` — não precisa
-ser a perda de uma rede. A rigor, os modelos do scikit-learn que não treinam por
-época (regressão logística, SVM, floresta) não têm uma "curva de treino" a
-registrar; mas dá para registrar **qualquer progressão** que faça sentido. Para a
-floresta, a progressão natural é o desempenho **conforme se adicionam árvores**.
-Usamos `warm_start=True` para crescer a floresta em etapas e registramos o MCC no
-teste a cada etapa — primeiro gravamos no TensorBoard, depois abrimos o painel e,
-como sempre, replicamos em Plotly.""")
-code(r'''escritor_floresta = SummaryWriter(os.path.join(PASTA_LOGS, "floresta_arvores"))
-floresta_incremental = RandomForestClassifier(
-    n_estimators=10, warm_start=True, n_jobs=-1, random_state=SEMENTE)
-
-n_arvores_etapas = list(range(20, 301, 20))
-curva_floresta = []
-for n_arvores in n_arvores_etapas:
-    floresta_incremental.set_params(n_estimators=n_arvores)
-    floresta_incremental.fit(X_treino, y_treino)     # warm_start: so cresce as novas arvores
-    mcc = matthews_corrcoef(y_teste, floresta_incremental.predict(X_teste))
-    curva_floresta.append(mcc)
-    escritor_floresta.add_scalar("mcc/teste", mcc, n_arvores)
-escritor_floresta.close()
-print("curva MCC x n_arvores gravada em", PASTA_LOGS, "(subpasta floresta_arvores)")''')
-
-md("""O painel do TensorBoard com a curva da floresta — o mesmo `%tensorboard`,
-agora mostrando um escalar (`mcc/teste`) que **não** é a perda de uma rede.""")
-code(r'''# reabre o painel; a subpasta floresta_arvores aparece junto das curvas de rede
-try:
-    get_ipython().run_line_magic("tensorboard", "--logdir " + PASTA_LOGS)
-except Exception as erro:
-    print("TensorBoard so aparece no Colab/Jupyter:", type(erro).__name__)
-    print("A curva esta replicada no grafico Plotly abaixo.")''')
-
-md("""Registro permanente em Plotly da mesma curva.""")
-code(r'''figura_floresta = go.Figure(go.Scatter(
-    x=n_arvores_etapas, y=curva_floresta, mode="lines+markers", line=dict(color="#1a7a4a")))
-figura_floresta.update_layout(
-    title="Floresta aleatoria: MCC no teste conforme se adicionam arvores",
-    xaxis_title="numero de arvores", yaxis_title="MCC", height=360)
-figura_floresta.show()
-print("MCC estabiliza em torno de", round(curva_floresta[-1], 3),
-      "- mais arvores alem disso quase nao mudam nada")''')
-
-mdq("""**Pergunta.** A curva de MCC da floresta em função do número de árvores tem
-o mesmo significado que a curva de perda por época da rede? O que cada uma diz?""",
-"""**Resposta.** Não são a mesma coisa. A curva de **perda por época** da rede
-mostra o modelo **aprendendo** (ajustando pesos) e pode revelar sobreajuste se a
-validação descolar. A curva de **MCC × número de árvores** da floresta mostra
-outra coisa: como o desempenho **converge** conforme agregamos mais estimadores —
-ela sobe e **estabiliza** num platô (mais árvores não pioram, só param de ajudar).
-São progressões diferentes; o TensorBoard registra ambas porque é só um plotador
-de escalares ao longo de um eixo — o eixo é que muda de sentido (épocas vs.
-árvores).""")
-
-md("""### 5.4d — Melhorando a rede: mais potência e mais generalização
-
-A rede base (5.4b) é deliberadamente crua — treina um número fixo de épocas, sem
-nenhuma defesa contra o sobreajuste. Vamos aplicar a **caixa de ferramentas
-padrão** para uma rede generalizar melhor, e — o que importa — **medir no teste**
-se cada escolha compensa. As ferramentas:
-
-- **Mais capacidade** (camadas mais largas, 256→128): dá à rede mais poder de
-  representação — a "potência" — mas, sozinha, também mais chance de decorar.
-- **Dropout**: no treino, desliga neurônios ao acaso a cada passo, forçando a rede
-  a não depender de um só caminho. É o regularizador clássico de redes.
-- **Weight decay (L2)**: um freio no tamanho dos pesos embutido no otimizador — a
-  mesma ideia do Ridge (5.6), agora na rede.
-- **Normalização de lote (BatchNorm)**: padroniza as ativações dentro da rede,
-  estabilizando e acelerando o treino.
-- **Early stopping**: separamos uma fatia de **validação** de dentro do treino
-  (nunca tocamos teste nem calibração), acompanhamos a perda nela e ficamos com os
-  pesos da **melhor** época, parando quando ela deixa de melhorar.
-- **Pesos de classe**: como há mais FRACO que FORTE, pesamos a perda pelo inverso
-  da frequência — isso equilibra os erros e costuma subir o MCC.
-
-Nada disso é garantia: por isso comparamos base × melhorada × floresta no teste.""")
-code(r'''# fatia de VALIDACAO retirada de dentro do treino (nao toca teste nem calibracao)
-torch.manual_seed(SEMENTE)
-permutacao = torch.randperm(Xt_treino.shape[0])
-n_val = int(0.2 * Xt_treino.shape[0])
-idx_val, idx_tr = permutacao[:n_val], permutacao[n_val:]
-Xv, yv = Xt_treino[idx_val], yt_treino[idx_val]
-Xtr, ytr = Xt_treino[idx_tr], yt_treino[idx_tr]
-print("treino interno:", Xtr.shape[0], "| validacao interna:", Xv.shape[0])
-
-# pesos de classe = inverso da frequencia (equilibra FORTE x FRACO)
-n0 = int((ytr == 0).sum()); n1 = int((ytr == 1).sum())
-pesos_classe = torch.tensor([(n0 + n1) / (2.0 * n0), (n0 + n1) / (2.0 * n1)],
-                            dtype=torch.float32).to(DISPOSITIVO)
-criterio = nn.CrossEntropyLoss(weight=pesos_classe)
-
-class RedeMLPMelhorada(nn.Module):
-    """Mais larga (256->128), com BatchNorm e Dropout entre as camadas."""
-    def __init__(self, n_entradas, p_dropout=0.3):
-        super().__init__()
-        self.camada1 = nn.Linear(n_entradas, 256)
-        self.norm1 = nn.BatchNorm1d(256)
-        self.camada2 = nn.Linear(256, 128)
-        self.norm2 = nn.BatchNorm1d(128)
-        self.saida = nn.Linear(128, 2)
-        self.ativacao = nn.ReLU()
-        self.dropout = nn.Dropout(p_dropout)
-    def forward(self, entrada):
-        oculta1 = self.dropout(self.ativacao(self.norm1(self.camada1(entrada))))
-        oculta2 = self.dropout(self.ativacao(self.norm2(self.camada2(oculta1))))
-        return self.saida(oculta2)
-
-torch.manual_seed(SEMENTE)
-rede_melhor = RedeMLPMelhorada(X_treino.shape[1]).to(DISPOSITIVO)
-otimizador_m = torch.optim.Adam(rede_melhor.parameters(), lr=0.001, weight_decay=1e-4)
-
-MAX_EPOCAS, PACIENCIA = 120, 12
-melhor_perda_val = float("inf")
-melhor_estado = None
-epocas_sem_melhora = 0
-n_tr = Xtr.shape[0]
-curva_tr, curva_val = [], []
-for epoca in range(MAX_EPOCAS):
-    rede_melhor.train()
-    ordem = torch.randperm(n_tr)
-    soma, n_lotes = 0.0, 0
-    for inicio_lote in range(0, n_tr, TAM_MINILOTE):
-        indices_lote = ordem[inicio_lote:inicio_lote + TAM_MINILOTE]
-        if indices_lote.shape[0] < 2:
-            continue                          # BatchNorm precisa de >=2 exemplos
-        otimizador_m.zero_grad()
-        perda = criterio(rede_melhor(Xtr[indices_lote].to(DISPOSITIVO)),
-                         ytr[indices_lote].to(DISPOSITIVO))
-        perda.backward(); otimizador_m.step()
-        soma += perda.item(); n_lotes += 1
-    curva_tr.append(soma / n_lotes)
-
-    # perda na validacao interna (rede em modo eval: BatchNorm/Dropout desligam)
-    rede_melhor.eval()
-    with torch.no_grad():
-        perda_v = criterio(rede_melhor(Xv.to(DISPOSITIVO)), yv.to(DISPOSITIVO)).item()
-    curva_val.append(perda_v)
-
-    # early stopping: guarda o melhor estado; para apos PACIENCIA epocas sem melhora
-    if perda_v < melhor_perda_val - 1e-4:
-        melhor_perda_val = perda_v
-        melhor_estado = {chave: valor.clone() for chave, valor in rede_melhor.state_dict().items()}
-        epocas_sem_melhora = 0
-    else:
-        epocas_sem_melhora += 1
-        if epocas_sem_melhora >= PACIENCIA:
-            print("early stopping na epoca", epoca + 1)
-            break
-
-rede_melhor.load_state_dict(melhor_estado)   # volta aos pesos de menor perda de validacao
-print("melhor perda de validacao:", round(melhor_perda_val, 4),
-      "| epocas treinadas:", len(curva_tr))''')
-
-md("""Agora o juiz honesto: o **teste**. Avaliamos a rede base (a de 5.4b), a rede
-melhorada e — como norte — a floresta, todas no mesmo conjunto de teste, com MCC e
-AUC. Se a soma das defesas valeu a pena, a rede melhorada supera a base; se ainda
-fica atrás da floresta, é a lição de que, em fingerprints, árvores continuam
-difíceis de bater. A curva de treino × validação mostra o early stopping em ação —
-o ponto onde a validação para de cair é onde guardamos os pesos.""")
-code(r'''def avaliar_rede(rede, X_tensor, y_verdadeiro):
-    rede.eval()
-    with torch.no_grad():
-        logits = rede(X_tensor.to(DISPOSITIVO))
-        probabilidade = torch.softmax(logits, dim=1)[:, 1].cpu().numpy()
-    predito = (probabilidade >= 0.5).astype(int)
-    return matthews_corrcoef(y_verdadeiro, predito), roc_auc_score(y_verdadeiro, probabilidade)
-
-mcc_base, auc_base = avaliar_rede(rede_torch, Xt_teste, y_teste)
-mcc_melhor, auc_melhor = avaliar_rede(rede_melhor, Xt_teste, y_teste)
-mcc_rf = matthews_corrcoef(y_teste, modelo_floresta.predict(X_teste))
-auc_rf = roc_auc_score(y_teste, modelo_floresta.predict_proba(X_teste)[:, 1])
-
-print(f"{'modelo':26s} {'MCC':>7s} {'AUC':>7s}")
-print(f"{'Rede base (5.4b)':26s} {mcc_base:7.3f} {auc_base:7.3f}")
-print(f"{'Rede melhorada':26s} {mcc_melhor:7.3f} {auc_melhor:7.3f}")
-print(f"{'Floresta (referencia)':26s} {mcc_rf:7.3f} {auc_rf:7.3f}")
-print("ganho da rede em MCC:", round(mcc_melhor - mcc_base, 3))
-
-figura_es = go.Figure()
-figura_es.add_trace(go.Scatter(x=list(range(1, len(curva_tr) + 1)), y=curva_tr,
-                               name="treino", line=dict(color="#3266ad")))
-figura_es.add_trace(go.Scatter(x=list(range(1, len(curva_val) + 1)), y=curva_val,
-                               name="validacao", line=dict(color="#c0392b")))
-figura_es.update_layout(title="Rede melhorada: perda treino x validacao (early stopping)",
-                        xaxis_title="epoca", yaxis_title="perda", height=360)
-figura_es.show()''')
-
-mdq("""**Pergunta.** Das ferramentas aplicadas, quais melhoram a **capacidade** do
-modelo e quais melhoram a **generalização**? Pode uma delas atrapalhar se exagerada?""",
-"""**Resposta.** Aumentar a largura (256→128) e treinar mais épocas melhoram a
-**capacidade** — o quanto a rede *pode* aprender. Dropout, weight decay, BatchNorm,
-pesos de classe e early stopping melhoram a **generalização** — o quanto do que ela
-aprende vale fora do treino. As duas famílias se equilibram: mais capacidade sem
-regularização decora; regularização demais (dropout alto, weight decay grande)
-**sufoca** a rede e ela passa a errar por falta de capacidade — o subajuste. O
-early stopping é o mais seguro dos controles porque é guiado pelos dados: ele para
-exatamente quando a validação para de melhorar, sem você adivinhar o número de
-épocas. E o teste continua sendo a palavra final: qualquer ganho só conta se
-aparecer nele, não na perda de treino.""")
-
 md("""### 5.5 — Comparação de todos os modelos
 
-Agora a **avaliação em um laço só**: percorremos os modelos guardados e aplicamos
-a cada um exatamente o mesmo cálculo de métricas. Como todos compartilham a
-interface do scikit-learn (`predict`, `predict_proba`), o mesmo código serve para
-todos — sem ramificações. Guardamos tudo em `resultados` para os gráficos.""")
-code(r'''# avalia todos os modelos com o MESMO codigo, num laco explicito
+Agora a **avaliação em um laço só**: percorremos os modelos guardados e aplicamos a
+cada um exatamente o mesmo cálculo de métricas. Como os modelos do scikit-learn
+compartilham a interface (`predict`, `predict_proba`), o mesmo código serve para
+todos. A rede em PyTorch (5.4b) não é um estimador do scikit-learn, então a
+acrescentamos **à mão** ao final, para que ela também apareça na tabela e nos
+gráficos. Guardamos tudo em `resultados`.""")
+
+code(r'''# avalia todos os modelos do scikit-learn com o MESMO codigo, num laco explicito
 resultados = {}
 for nome, modelo in modelos_treinados.items():
     predito = modelo.predict(X_teste)
@@ -1730,13 +1387,34 @@ for nome, modelo in modelos_treinados.items():
         "tempo_s": tempos_treino[nome],
         "proba": proba, "predito": predito,
     }
-    print(f"{nome}: MCC={resultados[nome]['MCC']:.3f}  AUC={resultados[nome]['AUC']:.3f}"
+
+# a rede em PyTorch (5.4b) nao e um estimador sklearn: entra a mao, com o mesmo calculo
+rede_torch.eval()
+with torch.no_grad():
+    proba_torch = torch.softmax(rede_torch(Xt_teste.to(DISPOSITIVO)), dim=1)[:, 1].cpu().numpy()
+predito_torch = (proba_torch >= 0.5).astype(int)
+relatorio_torch = classification_report(y_teste, predito_torch, output_dict=True,
+                                        target_names=["FRACO", "FORTE"], zero_division=0)
+resultados["Rede neural (PyTorch)"] = {
+    "MCC": matthews_corrcoef(y_teste, predito_torch),
+    "AUC": roc_auc_score(y_teste, proba_torch),
+    "prec_FORTE": relatorio_torch["FORTE"]["precision"],
+    "rec_FORTE": relatorio_torch["FORTE"]["recall"],
+    "prec_FRACO": relatorio_torch["FRACO"]["precision"],
+    "rec_FRACO": relatorio_torch["FRACO"]["recall"],
+    "tempo_s": tempo_torch,
+    "proba": proba_torch, "predito": predito_torch,
+}
+
+for nome in resultados:
+    print(f"{nome:24s}: MCC={resultados[nome]['MCC']:.3f}  AUC={resultados[nome]['AUC']:.3f}"
           f"  (base MCC=0.000, AUC=0.500)")''')
 
 md("""Uma tabela e um gráfico com MCC, AUC, precisão e revocação por classe e
 tempo de treino; depois as curvas ROC e de precisão-revocação sobrepostas e as
 matrizes de confusão lado a lado. Nenhum número aparece sozinho: a linha de base
 (MCC 0, AUC 0,5) está sempre à vista.""")
+
 code(r'''tabela_comparacao = pd.DataFrame(resultados).T[
     ["MCC", "AUC", "prec_FORTE", "rec_FORTE", "prec_FRACO", "rec_FRACO", "tempo_s"]]
 tabela_comparacao = tabela_comparacao.astype(float).round(3)
@@ -1752,6 +1430,7 @@ figura_barras.add_hline(y=0.5, line_dash="dash", line_color="#c0392b",
 figura_barras.update_layout(barmode="group", title="Comparacao de modelos (MCC e AUC)",
                             height=380)
 figura_barras.show()''')
+
 code(r'''# curvas ROC e precisao-revocacao sobrepostas
 figura_curvas = make_subplots(rows=1, cols=2, subplot_titles=("ROC", "Precisao-Revocacao"))
 for nome in resultados:
@@ -1764,8 +1443,13 @@ for nome in resultados:
 figura_curvas.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines",
                                    line=dict(dash="dash", color="gray"),
                                    name="acaso"), row=1, col=1)
-figura_curvas.update_layout(height=400, title="ROC e Precisao-Revocacao (teste)")
+figura_curvas.update_xaxes(title_text="falsos positivos (1 - especificidade)", row=1, col=1)
+figura_curvas.update_yaxes(title_text="verdadeiros positivos (revocacao)", row=1, col=1)
+figura_curvas.update_xaxes(title_text="revocacao", row=1, col=2)
+figura_curvas.update_yaxes(title_text="precisao", row=1, col=2)
+figura_curvas.update_layout(height=430, title="ROC e Precisao-Revocacao (teste)")
 figura_curvas.show()''')
+
 code(r'''# matrizes de confusao lado a lado
 nomes_modelos = list(resultados.keys())
 figura_conf, eixos = plt.subplots(1, len(nomes_modelos),
@@ -1781,135 +1465,6 @@ for eixo, nome in zip(eixos, nomes_modelos):
             eixo.text(j, i, matriz[i, j], ha="center", va="center", fontsize=11)
 plt.tight_layout(); plt.show()''')
 
-mdq("""**Pergunta.** A diferença de desempenho entre os quatro modelos é grande ou
-pequena? Como ela se compara à diferença que a escolha da partição (aleatória x
-esqueleto) costuma causar?""",
-"""**Resposta.** Depende do que os dados mostrarem nesta execução — olhe a coluna
-MCC da tabela. O padrão típico, que você pode verificar refazendo a Seção 4 com a
-divisão aleatória, é que a diferença **entre modelos** é menor do que a diferença
-**entre esquemas de partição**. Trocar de algoritmo rende pouco; escolher a
-avaliação honesta muda o número que você reporta.""")
-
-
-md("""### 5.6 — E se o alvo fosse contínuo? Regressão do pIC50
-
-Ao binarizar o pIC50 em FORTE/FRACO, jogamos fora informação: uma molécula com
-pIC50 8,9 e outra com 6,1 viram a mesma classe "FORTE". A alternativa é **prever o
-pIC50 diretamente** — uma tarefa de **regressão** (valor contínuo), não de
-classificação.
-
-Uma diferença importante liga isto à Seção 2.4: as moléculas que só têm medida
-de limite `>` **não entram** na regressão. Elas não têm um valor pontual (só um
-limite), e um regressor precisa de um número exato como alvo. Na classificação
-elas eram FRACO por regra; na regressão, sem pIC50, saem. É o outro lado da mesma
-decisão.
-
-Como sempre, todo número vem **ao lado de referências**. Comparamos a floresta com
-duas linhas de base: uma **linear** — o `Ridge`, regressão linear com um freio L2
-nos pesos (a análoga da regressão logística, agora prevendo um número) — e uma
-**trivial**, que chuta sempre a média do treino. As métricas: **RMSE** e **MAE**
-(erro médio, em unidades de pIC50 — menor é melhor) e **R²** (fração da variância
-explicada — maior é melhor; 0 = tão bom quanto chutar a média).
-
-Um detalhe que **importa** no Ridge: a força do freio (`alpha`) não é chutada — é
-escolhida por validação cruzada (`RidgeCV`). Aqui isso não é luxo: com ~2000 bits
-de fingerprint esparsos, um freio fraco deixa o modelo linear **estourar** (pior
-que a média); o freio certo é o que o torna uma referência honesta. É a mesma
-lição da rede (5.4): num modelo linear, regularizar bem vale mais que o algoritmo.""")
-codex(r'''from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import RidgeCV
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
-# dados de regressao: so moleculas com pIC50 exato (as 'sem_medida_exata' saem).
-# monta as posicoes de treino e de teste com dois lacos explicitos.
-pos_reg_treino = []
-for indice in idx_treino_esq:
-    if not agregados.loc[indice, "sem_medida_exata"]:
-        pos_reg_treino.append(agregados.index.get_loc(indice))
-pos_reg_teste = []
-for indice in idx_teste_esq:
-    if not agregados.loc[indice, "sem_medida_exata"]:
-        pos_reg_teste.append(agregados.index.get_loc(indice))
-
-Xr_treino, yr_treino = X[pos_reg_treino], agregados["pic50"].values[pos_reg_treino]
-Xr_teste, yr_teste = X[pos_reg_teste], agregados["pic50"].values[pos_reg_teste]
-print("regressao -> treino:", Xr_treino.shape[0], "| teste:", Xr_teste.shape[0],
-      "(medidas de limite removidas)")
-
-# modelo principal: floresta de regressao (a familia que venceu a classificacao)
-regressor = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=SEMENTE)
-regressor.fit(Xr_treino, yr_treino)
-predito_reg = regressor.predict(Xr_teste)
-
-# linha de base LINEAR: Ridge = regressao linear com freio L2, padronizada num Pipeline.
-# a forca do freio (alpha) e ESCOLHIDA por validacao cruzada (RidgeCV) - crucial aqui:
-# com freio fraco, o modelo linear estoura nos ~2000 bits esparsos e fica pior que a media.
-alphas_testados = np.logspace(-1, 4, 20)
-ridge = Pipeline([("escala", StandardScaler()), ("reg", RidgeCV(alphas=alphas_testados))])
-ridge.fit(Xr_treino, yr_treino)
-predito_ridge = ridge.predict(Xr_teste)
-print("alpha escolhido pelo RidgeCV:", round(ridge.named_steps["reg"].alpha_, 2))
-
-# linha de base TRIVIAL: prever sempre a media do treino
-predito_media = np.full_like(yr_teste, yr_treino.mean())
-
-# compara os tres com um laco (RMSE/MAE menores sao melhores; R2 maior e melhor)
-print(f"{'modelo':20s} {'RMSE':>7s} {'MAE':>7s} {'R2':>7s}")
-for nome_modelo, predito in [("Floresta (RF)", predito_reg),
-                             ("Ridge (linear)", predito_ridge),
-                             ("base (media)", predito_media)]:
-    rmse = np.sqrt(mean_squared_error(yr_teste, predito))
-    mae = mean_absolute_error(yr_teste, predito)
-    r2 = r2_score(yr_teste, predito)
-    print(f"{nome_modelo:20s} {rmse:7.3f} {mae:7.3f} {r2:7.3f}")
-
-# R2 da floresta (o modelo desenhado no grafico predito x observado abaixo)
-r2 = r2_score(yr_teste, predito_reg)''',
-"""Monte os dados de regressão excluindo as moléculas que só têm medida '>'
-(sem_medida_exata — elas não têm pIC50 pontual). Treine um RandomForestRegressor e,
-como linha de base linear, um RidgeCV (dentro de um Pipeline com StandardScaler, que
-escolhe o alpha por validação cruzada). Compare os dois com a base trivial (prever a
-média) imprimindo RMSE, MAE e R2 lado a lado.""")
-
-md("""O gráfico de predito × observado mostra o ajuste. As linhas tracejadas
-marcam o limiar de potência: os pontos se dividem em quatro quadrantes que são,
-na prática, a matriz de confusão da classificação obtida ao **aplicar o limiar às
-predições da regressão** — as duas tarefas são duas vistas do mesmo sinal.""")
-code(r'''figura_reg = px.scatter(
-    x=yr_teste, y=predito_reg,
-    labels={"x": "pIC50 observado", "y": "pIC50 previsto"},
-    title="Regressao do pIC50: previsto x observado (R2 = " + str(round(r2, 3)) + ")",
-    opacity=0.4)
-figura_reg.update_traces(marker=dict(size=5, color="#3266ad"))
-minimo = float(min(yr_teste.min(), predito_reg.min()))
-maximo = float(max(yr_teste.max(), predito_reg.max()))
-figura_reg.add_trace(go.Scatter(x=[minimo, maximo], y=[minimo, maximo],
-                                mode="lines", line=dict(dash="dash", color="gray"),
-                                name="ideal"))
-figura_reg.add_hline(y=LIMIAR_POTENCIA, line_dash="dot", line_color="#c0392b")
-figura_reg.add_vline(x=LIMIAR_POTENCIA, line_dash="dot", line_color="#c0392b")
-figura_reg.show()
-
-# a classificacao "derivada" da regressao, so para mostrar a ligacao
-classe_derivada = (predito_reg >= LIMIAR_POTENCIA).astype(int)
-classe_real = (yr_teste >= LIMIAR_POTENCIA).astype(int)
-print("MCC da classificacao derivada da regressao:",
-      round(matthews_corrcoef(classe_real, classe_derivada), 3))''')
-
-mdq("""**Pergunta.** Por que as moléculas de limite (`>`), que na classificação
-eram úteis como FRACO, tiveram de ser removidas da regressão?""",
-"""**Resposta.** Porque a regressão prevê um **número exato** e precisa de um alvo
-numérico exato para treinar. Uma medida "IC50 > 30000 nM" só diz "pelo menos tão
-fraco quanto isto" — é um limite, não um ponto. Na classificação isso bastava
-(qualquer valor acima do limite é FRACO), mas na regressão não há valor pontual
-para ajustar. Mantê-las forçaria um número inventado e enviesaria o modelo. É por
-isso que a mesma decisão de curadoria (Seção 2.4) leva a caminhos opostos nas duas
-tarefas.""")
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 6 — INTERPRETABILIDADE
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 6 — Interpretabilidade e o confundimento por tamanho
 
 Um modelo pode acertar pelo motivo errado. Aqui investigamos uma hipótese
@@ -1918,6 +1473,7 @@ molecular** em vez de química específica de reconhecimento? Potência bruta
 correlaciona-se com número de átomos pesados — moléculas maiores fazem mais
 contatos — e é por isso que a área usa eficiência de ligante em vez de potência
 bruta. **Não afirmamos o resultado de antemão**: testamos.""")
+
 code(r'''from scipy.stats import spearmanr
 
 atomos_pesados = tabela_descritores["atomos_pesados"].values
@@ -1936,6 +1492,7 @@ md("""### 6.1 — Modelo-controle de uma única feature
 O teste decisivo: um classificador que usa **apenas** o número de átomos pesados.
 Se o MCC dele for próximo ao dos modelos completos, então o fingerprint —
 toda a química fina — está contribuindo pouco, e a conclusão da aula muda.""")
+
 codex(r'''X_treino_tamanho = tabela_descritores.loc[idx_treino_esq, ["atomos_pesados"]].values
 X_teste_tamanho = tabela_descritores.loc[idx_teste_esq, ["atomos_pesados"]].values
 
@@ -1967,6 +1524,7 @@ uma vez (mantendo cada fingerprint interno intacto, mas quebrando sua associaç�
 com o rótulo) e medimos a queda. Assim comparamos, na mesma escala, a importância
 de **cada descritor** e a do **fingerprint inteiro**. Fazemos tudo com laços
 explícitos.""")
+
 code(r'''gerador_perm = np.random.RandomState(SEMENTE)
 n_amostra_perm = min(400, len(X_teste))
 amostra_perm = gerador_perm.choice(len(X_teste), n_amostra_perm, replace=False)
@@ -2020,334 +1578,57 @@ print("maior queda entre os descritores:", round(max(importancia_descritores), 3
 
 md("""### 6.3 — SHAP sobre a floresta
 
-O SHAP atribui a cada feature, para cada molécula, o quanto ela empurrou a
-predição para FORTE ou FRACO. O gráfico de resumo mostra o padrão geral; depois
-explicamos duas moléculas individualmente, com o desenho ao lado. Restringimos a
-uma amostra do teste porque o SHAP é custoso.""")
+O SHAP atribui a cada feature, para cada molécula, o quanto ela empurrou a predição
+para FORTE ou FRACO — com uma base teórica (valores de Shapley) que reparte a
+predição de forma justa entre as features. Primeiro o **resumo** (*beeswarm*): cada
+ponto é uma molécula, a posição horizontal é a contribuição da feature e a cor é o
+valor dela, revelando o padrão geral. Depois abrimos duas moléculas individualmente
+com o **gráfico de cascata** (*waterfall*) do próprio SHAP, que soma as
+contribuições do valor-base até a predição final. Restringimos a uma amostra do
+teste porque o SHAP é custoso.""")
+
 code(r'''import shap
 
 n_amostra_shap = min(120, len(X_teste))
 amostra_shap = gerador_perm.choice(len(X_teste), n_amostra_shap, replace=False)
-X_shap = X_teste[amostra_shap]
+# DataFrame com nomes das features: o SHAP os usa nos rotulos dos graficos
+X_shap = pd.DataFrame(X_teste[amostra_shap], columns=nomes_features)
 
-# feature_perturbation e check_additivity=False evitam um erro de aditividade
-# comum em florestas grandes com muitas features binarias
-explicador = shap.TreeExplainer(modelo_floresta, feature_perturbation="tree_path_dependent")
-valores_shap = explicador.shap_values(X_shap, check_additivity=False)
-# em classificacao binaria, pegamos as contribuicoes para a classe FORTE (indice 1)
-if isinstance(valores_shap, list):
-    valores_shap_forte = valores_shap[1]
-else:
-    valores_shap_forte = valores_shap[:, :, 1]
-shap.summary_plot(valores_shap_forte, X_shap, feature_names=nomes_features,
-                  max_display=12, show=True)''')
+# TreeExplainer: rapido e exato para florestas. O objeto Explanation traz, para
+# classificacao binaria, uma dimensao por classe -> ficamos com a classe FORTE (1).
+explicador = shap.TreeExplainer(modelo_floresta)
+explicacao = explicador(X_shap, check_additivity=False)
+explicacao_forte = explicacao[:, :, 1]
 
-md("""Duas moléculas explicadas individualmente: para cada uma, o desenho da
-molécula ao lado das features que mais empurraram a predição para FORTE (verde) ou
-para FRACO (vermelho). É a mesma informação do resumo, agora molécula a molécula.""")
-code(r'''# explica duas moleculas (as posicoes 0 e 1 da amostra do SHAP), uma por vez
+# resumo beeswarm: o padrao geral de quais features empurram para FORTE/FRACO
+shap.plots.beeswarm(explicacao_forte, max_display=12, show=True)''')
+
+md("""Agora duas moléculas individuais, cada uma com seu **gráfico de cascata**: as barras
+partem do valor-base (a predição média) e somam, uma feature de cada vez, até a
+probabilidade daquela molécula. Vermelho empurra para FORTE, azul para FRACO — a
+leitura molécula a molécula do mesmo sinal que o beeswarm resume.""")
+
+code(r'''# explica duas moleculas individuais com o waterfall do proprio SHAP
+from IPython.display import display
+
 for posicao_no_shap in [0, 1]:
     indice_molecula = idx_teste_esq[amostra_shap[posicao_no_shap]]
-    molecula = agregados.loc[indice_molecula, "molecula"]
-    contribuicoes = valores_shap_forte[posicao_no_shap]
+    print("molecula:", agregados.loc[indice_molecula, "molecule_chembl_id"])
+    display(Draw.MolToImage(agregados.loc[indice_molecula, "molecula"], size=(320, 240)))
+    shap.plots.waterfall(explicacao_forte[posicao_no_shap], max_display=10, show=True)''')
 
-    # pega as 8 features de maior contribuicao (em modulo)
-    ordem = np.argsort(np.abs(contribuicoes))[::-1][:8]
-    nomes = []
-    valores = []
-    cores = []
-    for i in ordem:
-        nomes.append(nomes_features[i])
-        valores.append(contribuicoes[i])
-        cores.append("#1a7a4a" if contribuicoes[i] > 0 else "#c0392b")
+md("""## Seção 7 — Domínio de aplicabilidade
 
-    figura, (eixo_mol, eixo_shap) = plt.subplots(1, 2, figsize=(11, 3.6))
-    eixo_mol.imshow(Draw.MolToImage(molecula, size=(320, 300)))
-    eixo_mol.axis("off")
-    eixo_mol.set_title(agregados.loc[indice_molecula, "molecule_chembl_id"], fontsize=10)
-    eixo_shap.barh(range(len(valores)), valores[::-1], color=cores[::-1])
-    eixo_shap.set_yticks(range(len(valores)))
-    eixo_shap.set_yticklabels(nomes[::-1], fontsize=9)
-    eixo_shap.axvline(0, color="black", linewidth=0.8)
-    eixo_shap.set_title("contribuicao SHAP (verde=FORTE, vermelho=FRACO)", fontsize=9)
-    plt.tight_layout()
-    plt.show()''')
+Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Nesta seção
+construímos essa noção de forma quantitativa: medimos, para cada molécula de teste,
+quão próxima ela está do treino, definimos um **limiar** derivado dos próprios dados
+e vemos o compromisso entre **cobertura** (opinar sobre mais moléculas) e **acerto**
+(estar certo onde opina). É essa régua que, na Seção 9, permite ao classificador
+**abster-se** quando não tem base.""")
 
-md("""### 6.4 — Dependência parcial
+md("""### 7.1 — Medindo a proximidade ao treino
 
-Como a predição varia quando movemos um descritor, mantendo os demais? As curvas
-de dependência parcial de MW, LogP e TPSA mostram a direção do efeito aprendido —
-por exemplo, se ganho de massa empurra para FORTE, é mais evidência de
-confundimento por tamanho.""")
-code(r'''indices_pdp = [nomes_features.index(nome) for nome in ["MW", "LogP", "TPSA"]]
-figura_pdp, eixo_pdp = plt.subplots(1, 3, figsize=(12, 3.5))
-PartialDependenceDisplay.from_estimator(
-    modelo_floresta, X_treino, indices_pdp, feature_names=nomes_features, ax=eixo_pdp)
-plt.tight_layout(); plt.show()''')
-
-md("""### 6.5 — Controle negativo: rótulos embaralhados
-
-O teste de sanidade final. Embaralhamos os rótulos do treino — destruindo
-qualquer relação entre molécula e classe — e treinamos de novo. O desempenho
-**deve** cair ao nível do acaso (MCC ≈ 0). Se **não** cair, há vazamento na
-montagem dos dados, e o notebook precisa dizer isso claramente.""")
-code(r'''gerador_embaralho = np.random.RandomState(SEMENTE)
-y_treino_embaralhado = y_treino.copy()
-gerador_embaralho.shuffle(y_treino_embaralhado)
-
-floresta_controle = RandomForestClassifier(
-    n_estimators=300, n_jobs=-1, random_state=SEMENTE)
-floresta_controle.fit(X_treino, y_treino_embaralhado)
-mcc_controle = matthews_corrcoef(y_teste, floresta_controle.predict(X_teste))
-print("MCC com rotulos embaralhados:", round(mcc_controle, 3), "(esperado: proximo de 0)")
-if abs(mcc_controle) > 0.15:
-    print("ATENCAO: MCC longe de zero sugere vazamento de dados. Investigar.")
-else:
-    print("OK: desempenho caiu ao acaso, como deveria. Sem sinal de vazamento.")''')
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 7 — DOMÍNIO DE APLICABILIDADE
-# ══════════════════════════════════════════════════════════════════════════
-md("""## Seção 7 — Ampliando os dados e o domínio de aplicabilidade
-
-Nas seções anteriores esgotamos o que dava para extrair de **um modelo** sobre **um
-conjunto**. Sobra uma alavanca que ainda não puxamos: **mais dados**. Fazemos isso
-com honestidade, em três passos. Primeiro reforçamos a classe **FRACO** — que o
-viés de publicação torna escassa — com **inativos de ensaios de triagem**. Depois
-testamos com rigor se o reforço ajuda ou apenas engana, incluindo um controle de
-**efeito de lote**. Por fim revisitamos o **domínio de aplicabilidade**, agora
-construído sobre o treino ampliado.
-
-A ideia de fundo vale para qualquer projeto: **quantidade** de dados e
-**qualidade/diversidade** de dados são eixos diferentes. Vamos ver os dois em ação.""")
-
-md("""### 7.1 — Reforçando a classe FRACO com inativos de triagem
-
-A classe FRACO é escassa por um motivo sociológico, não químico: **artigos publicam
-o que funciona**. Moléculas que *não* inibem raramente viram um IC50 na literatura.
-Mas elas existem em outro formato: ensaios de **porcentagem de inibição** a uma
-concentração fixa (uma leitura típica de triagem). Uma molécula que inibe **pouco**
-(digamos, ≤ 20%) é um **inativo confirmado** — exatamente um FRACO.
-
-Baixamos um segundo dump do ChEMBL para o **mesmo alvo** (AChE), agora do tipo
-`Inhibition`, e rotulamos FRACO as moléculas de baixa inibição. Duas ressalvas que
-vamos levar a sério adiante: (1) é **outra fonte** de medida — risco de efeito de
-lote; (2) esses dados trazem **uma só** classe (inativos), então servem para dizer
-"onde não confiar", não para ensinar novos FORTE.""")
-code(r'''URL_INIBICAO = ("https://raw.githubusercontent.com/monteirotorres/ml/"
-                "main/data/dados_inibicao_bruto.csv")
-try:
-    inibicao_bruta = pd.read_csv(URL_INIBICAO)
-    print("dump de % inibicao lido da URL:", len(inibicao_bruta), "medidas")
-except Exception as erro:
-    print("URL indisponivel (", type(erro).__name__, "); tentando arquivo local")
-    inibicao_bruta = pd.read_csv("../data/dados_inibicao_bruto.csv")
-    print("dump de % inibicao lido do arquivo local:", len(inibicao_bruta), "medidas")
-
-TETO_INIBICAO = 20.0    # <= 20% de inibicao a concentracao fixa = inativo (FRACO)
-valor_inibicao = pd.to_numeric(inibicao_bruta["standard_value"], errors="coerce")
-comentario = inibicao_bruta["activity_comment"].astype(str).str.lower()
-eh_percentual = inibicao_bruta["standard_units"] == "%"
-inativo_por_valor = eh_percentual & valor_inibicao.notna() & (valor_inibicao <= TETO_INIBICAO)
-inativo_por_comentario = comentario.isin(["not active", "inactive"])
-inibicao_bruta["eh_inativo"] = inativo_por_valor | inativo_por_comentario
-print("medidas de baixa inibicao (candidatas a FRACO):", int(inibicao_bruta["eh_inativo"].sum()))
-
-# uma linha por molecula: o primeiro SMILES de cada molecula marcada inativa
-smiles_inativos = []
-for id_molecula, bloco in inibicao_bruta[inibicao_bruta["eh_inativo"]].groupby("molecule_chembl_id"):
-    smiles_inativos.append(bloco["canonical_smiles"].iloc[0])
-print("moleculas inativas unicas:", len(smiles_inativos))''')
-
-md("""Nem todo inativo serve. Descartamos dois grupos, com a contagem impressa: (1)
-moléculas que **já estão** no conjunto de afinidade (não são novidade); (2)
-moléculas cujo **esqueleto** aparece no **teste** — deixá-las no treino vazaria o
-teste (a regra de ouro da Seção 4). O que sobra é featurizado com **o mesmo** vetor
-do treino (9 descritores na ordem das colunas + fingerprint) e entra **só no
-treino**.""")
-code(r'''smiles_ja_vistos = set(agregados["canonical_smiles"])
-esqueletos_do_teste = set(agregados.loc[idx_teste_esq, "esqueleto"])
-
-X_inativos_linhas = []
-fp_inativos_novos = []
-esqueleto_inativos = []
-n_ja_conhecido = 0
-n_vaza_teste = 0
-n_ilegivel = 0
-for smiles in smiles_inativos:
-    if smiles in smiles_ja_vistos:
-        n_ja_conhecido += 1
-        continue
-    molecula = Chem.MolFromSmiles(smiles)
-    if molecula is None:
-        n_ilegivel += 1
-        continue
-    esqueleto = Chem.MolToSmiles(MurckoScaffold.GetScaffoldForMol(molecula))
-    if esqueleto in esqueletos_do_teste:
-        n_vaza_teste += 1
-        continue
-    # mesmo vetor de features do treino: 9 descritores (ordem das colunas) + fingerprint
-    vetor_desc = np.array([
-        Descriptors.MolWt(molecula), Descriptors.MolLogP(molecula),
-        Descriptors.TPSA(molecula), Descriptors.NumHDonors(molecula),
-        Descriptors.NumHAcceptors(molecula), Descriptors.NumRotatableBonds(molecula),
-        Descriptors.NumAromaticRings(molecula), Descriptors.FractionCSP3(molecula),
-        molecula.GetNumHeavyAtoms()], dtype=float)
-    fp = AllChem.GetMorganFingerprintAsBitVect(molecula, RAIO_MORGAN, nBits=N_BITS)
-    vetor_fp = np.zeros((N_BITS,), dtype=float)
-    DataStructs.ConvertToNumpyArray(fp, vetor_fp)
-    X_inativos_linhas.append(np.hstack([vetor_desc, vetor_fp]))
-    fp_inativos_novos.append(fp)
-    esqueleto_inativos.append(esqueleto)
-
-X_inativos = np.array(X_inativos_linhas)
-y_inativos = np.zeros(len(X_inativos), dtype=int)   # todos FRACO (0)
-print("descartados -> ja conhecidos:", n_ja_conhecido, "| vazariam o teste:", n_vaza_teste,
-      "| ilegiveis:", n_ilegivel)
-print("inativos NOVOS usaveis (entram so no treino):", len(X_inativos))''')
-
-md("""### 7.2 — O reforço ajuda ou só engana?
-
-O teste tem de ser justo: os inativos entram **apenas no treino**; o conjunto de
-**teste continua o mesmo** (as moléculas de afinidade da Seção 4). Assim medimos a
-única coisa que importa — *treinar com mais FRACO melhora a previsão no mesmo
-teste?* — sem confundir com uma troca de teste. Comparamos a floresta **sem** e
-**com** o reforço olhando MCC, AUC e, sobretudo, a **revocação de FORTE**: a classe
-que interessa não pode piorar. Calculamos a revocação **na mão** (FORTE corretos /
-FORTE verdadeiros), sem esconder nada numa função.""")
-code(r'''X_treino_ampliado = np.vstack([X_treino, X_inativos])
-y_treino_ampliado = np.concatenate([y_treino, y_inativos])
-print("treino: literatura", len(y_treino), "-> ampliado", len(y_treino_ampliado),
-      "( +", len(y_inativos), "inativos )")
-print("balanco do treino ampliado -> FORTE", int((y_treino_ampliado == 1).sum()),
-      "| FRACO", int((y_treino_ampliado == 0).sum()))
-
-print("\n%-16s  MCC    AUC   revoc.FORTE" % "treino")
-for nome_treino, Xt, yt in [("so literatura", X_treino, y_treino),
-                            ("com inativos", X_treino_ampliado, y_treino_ampliado)]:
-    lista_mcc, lista_auc, lista_rev = [], [], []
-    for semente in (0, 1, 2):
-        floresta = RandomForestClassifier(n_estimators=300, n_jobs=-1,
-                                          class_weight="balanced", random_state=semente).fit(Xt, yt)
-        predito = floresta.predict(X_teste)
-        proba = floresta.predict_proba(X_teste)[:, 1]
-        lista_mcc.append(matthews_corrcoef(y_teste, predito))
-        lista_auc.append(roc_auc_score(y_teste, proba))
-        # revocacao de FORTE, explicita: FORTE previstos corretamente / FORTE verdadeiros
-        forte_verdadeiro = (y_teste == 1)
-        lista_rev.append(((predito == 1) & forte_verdadeiro).sum() / max(1, forte_verdadeiro.sum()))
-    print("%-16s  %.3f  %.3f   %.3f" % (nome_treino, np.mean(lista_mcc),
-                                        np.mean(lista_auc), np.mean(lista_rev)))''')
-md("""Leia com a régua de variância da Seção 6: diferenças menores que ~0,05 são
-**ruído de partição**, não melhora. MCC e AUC sobem um tico, a **revocação de
-FORTE** se move de leve — os três **dentro do ruído**. A leitura honesta: entupir o
-treino de FRACO **não sabota** a classe que interessa, mas também **não entrega
-ganho robusto**. O reforço é, no máximo, **seguro** — e "seguro" ainda não é motivo
-para implantar. O próximo controle mostra por quê ter cautela.""")
-
-md("""### 7.3 — Controle de efeito de lote: dá para adivinhar a *fonte*?
-
-Aqui está a armadilha que levantamos ao discutir vazamento e lote. Se as duas
-fontes (afinidade da literatura × inibição de triagem) ocuparem regiões químicas
-distintas, um modelo pode "melhorar" aprendendo a reconhecer **a fonte**, não a
-biologia — efeito de lote disfarçado de ganho. O diagnóstico é direto: treinar um
-classificador para prever a **fonte** (0 = literatura, 1 = inibição) a partir do
-fingerprint, com split por esqueleto. AUC perto de 0,5 = fontes indistinguíveis
-(seguro); perto de 1,0 = separáveis (o ganho seria suspeito).""")
-code(r'''X_fonte = np.vstack([X_treino, X_inativos])
-y_fonte = np.concatenate([np.zeros(len(X_treino), dtype=int),
-                          np.ones(len(X_inativos), dtype=int)])
-esqueleto_fonte = list(agregados.loc[idx_treino_esq, "esqueleto"]) + esqueleto_inativos
-
-# split por esqueleto tambem aqui: o mesmo nucleo nao pode ficar dos dois lados
-esqueletos_unicos = sorted(set(esqueleto_fonte))
-np.random.RandomState(SEMENTE).shuffle(esqueletos_unicos)
-corte = int(0.7 * len(esqueletos_unicos))
-esqueletos_treino_fonte = set(esqueletos_unicos[:corte])
-em_treino_fonte = np.array([e in esqueletos_treino_fonte for e in esqueleto_fonte])
-
-detector_fonte = RandomForestClassifier(n_estimators=300, n_jobs=-1, class_weight="balanced",
-                                        random_state=SEMENTE).fit(X_fonte[em_treino_fonte], y_fonte[em_treino_fonte])
-proba_fonte = detector_fonte.predict_proba(X_fonte[~em_treino_fonte])[:, 1]
-auc_fonte = roc_auc_score(y_fonte[~em_treino_fonte], proba_fonte)
-print("AUC para prever a FONTE pelo fingerprint:", round(auc_fonte, 3))
-print("(0.5 = fontes indistinguiveis; 1.0 = triviais de separar)")''')
-md("""A AUC fica **alta** (bem acima de 0,5): as fontes *são* separáveis pelo
-fingerprint — os inativos de triagem formam uma nuvem de quimiotipos distinta da
-literatura. Esse é o motivo de termos feito o teste da 7.2 com o **teste 100%
-literatura**: ali o modelo não tem como "trapacear pela fonte", então a revocação e
-a precisão que medimos são honestas — e disseram que o reforço é **seguro**. Mas
-"seguro" não é "melhor". A fonte separável é um aviso: antes de implantar esse
-reforço, ele tem de **provar que ajuda o objetivo real** — recuperar inibidores que
-o modelo nunca viu. Guardaremos essa prova para a Seção 9.""")
-md("""### 7.4 — Curva de aprendizado: mais dados ainda ajudariam?
-
-Antes de sair coletando dados, todo projeto deveria perguntar: **já saturamos?**
-Treinamos com frações crescentes do treino (ampliado) e medimos MCC e AUC no mesmo
-teste. Subamostramos **por esqueleto** (coerente com o split): se a curva ainda
-**sobe** em 100%, mais dados ajudariam; se achatou, o teto está em outro lugar.""")
-code(r'''esqueletos_treino_amp = np.array(list(agregados.loc[idx_treino_esq, "esqueleto"]) + esqueleto_inativos)
-esqueletos_distintos_amp = np.array(sorted(set(esqueletos_treino_amp)))
-sorteador = np.random.RandomState(SEMENTE)
-
-fracoes_treino = [0.1, 0.25, 0.5, 1.0]
-mcc_por_fracao = []
-auc_por_fracao = []
-print("fracao  n_treino    MCC    AUC")
-for fracao in fracoes_treino:
-    k = max(2, int(len(esqueletos_distintos_amp) * fracao))
-    escolhidos = set(sorteador.choice(esqueletos_distintos_amp, k, replace=False))
-    dentro = np.array([e in escolhidos for e in esqueletos_treino_amp])
-    floresta = RandomForestClassifier(n_estimators=300, n_jobs=-1, class_weight="balanced",
-                                      random_state=SEMENTE).fit(X_treino_ampliado[dentro], y_treino_ampliado[dentro])
-    proba = floresta.predict_proba(X_teste)[:, 1]
-    mcc = matthews_corrcoef(y_teste, (proba >= 0.5).astype(int))
-    auc = roc_auc_score(y_teste, proba)
-    mcc_por_fracao.append(mcc); auc_por_fracao.append(auc)
-    print("%5.2f  %8d  %.3f  %.3f" % (fracao, int(dentro.sum()), mcc, auc))''')
-code(r'''figura_curva, eixo_mcc = plt.subplots(figsize=(5.4, 3.4))
-eixo_x = [f * 100 for f in fracoes_treino]
-eixo_mcc.plot(eixo_x, mcc_por_fracao, "o-", color="#3266ad")
-eixo_mcc.set_xlabel("fracao do treino usada (%)")
-eixo_mcc.set_ylabel("MCC", color="#3266ad"); eixo_mcc.tick_params(axis="y", labelcolor="#3266ad")
-eixo_auc = eixo_mcc.twinx()
-eixo_auc.plot(eixo_x, auc_por_fracao, "s--", color="#c0392b")
-eixo_auc.set_ylabel("AUC", color="#c0392b"); eixo_auc.tick_params(axis="y", labelcolor="#c0392b")
-eixo_mcc.set_title("Curva de aprendizado (subamostragem do treino)")
-plt.tight_layout(); plt.show()''')
-md("""Se as duas curvas ainda **sobem** em 100%, o modelo **não** está saturado por
-dados — mais dados ajudariam. Mas some isso ao que a 7.3 mostrou: o dado barato
-extra (inativos) é de uma classe só e separável por fonte. "Mais dados", aqui, quer
-dizer mais dados **diversos e bem rotulados**, não só volume — a mesma lição
-quantidade × qualidade do começo da seção.""")
-
-md("""### 7.4b — Veredito: reforçar FRACO ajuda a ferramenta?
-
-Hora de fechar a investigação com honestidade — inclusive quando o resultado é
-"não". Juntando as evidências que **medimos**:
-
-- **7.2:** no teste de literatura, o reforço é **seguro** — MCC, AUC e revocação de
-  FORTE se movem todos dentro do ruído de partição. Nenhum ganho robusto, mas também
-  nada que sabote a classe FORTE. Seguro, porém, não é melhor.
-- **7.3:** as fontes são **separáveis** (AUC alta). O reforço não é um dado "limpo"
-  a mais; é outra distribuição.
-- **Seção 9 (adiante):** o gargalo real da ferramenta é **generalizar para
-  esqueletos inéditos** — e ali veremos que o modelo recupera **zero** dos
-  inibidores conhecidos de esqueleto novo. Mais exemplos de FRACO **não** ensinam a
-  reconhecer um FORTE de núcleo nunca visto: é o tipo errado de dado para o gargalo.
-
-**Conclusão honesta:** o reforço não melhora o objetivo que importa. Por isso a
-ferramenta implantada (Seção 9) continua treinada e delimitada **nos dados de
-afinidade curados** — o `modelo_floresta` da Seção 5, sem alteração. Os inativos
-ficam como o que realmente são aqui: um **exercício de testar uma ideia até o fim** e
-aceitar um resultado nulo, em vez de adotá-la porque "mais dados soa bem". É a mesma
-disciplina que aplicamos a cada sugestão ao longo da aula.""")
-
-md("""### 7.5 — Domínio de aplicabilidade, revisitado
-
-Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Medimos,
-para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
+Medimos, para cada molécula de teste, a **similaridade de Tanimoto máxima** contra o
 treino.
 
 Antes, um esclarecimento que costuma confundir: **Morgan e Tanimoto não são duas
@@ -2355,17 +1636,18 @@ representações concorrentes.** O fingerprint de Morgan (Seção 3) é a
 **representação** — o vetor de bits que descreve a molécula, e que serve de
 *feature* para os modelos. A similaridade de Tanimoto é uma **medida** de quão
 parecidos são **dois desses fingerprints** (interseção sobre união dos bits
-ligados). Ou seja, calculamos Tanimoto **sobre** os mesmos fingerprints de
-Morgan; um é a representação, o outro é a régua que compara duas representações.
-Aqui a régua serve para o domínio de aplicabilidade, não para treinar.
+ligados). Ou seja, calculamos Tanimoto **sobre** os mesmos fingerprints de Morgan;
+um é a representação, o outro é a régua que compara duas representações. Aqui a régua
+serve para o domínio de aplicabilidade, não para treinar.
 
-O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios dados —
-um **percentil baixo** das similaridades internas do treino — e não arbitrado.
-Usamos o **percentil 2**: uma molécula menos conectada ao espaço químico do que
-98% do treino é considerada fora do domínio. É uma escolha deliberadamente **um
-pouco permissiva** (o comum seria o percentil 5, mais estrito), para o modelo
-opinar sobre mais moléculas — ao custo de arriscar palpite em casos um pouco mais
-atípicos. É um botão explícito: `PERCENTIL_DOMINIO`.""")
+O limiar que separa "dentro" de "fora" do domínio é derivado dos próprios dados — um
+**percentil baixo** das similaridades internas do treino — e não arbitrado. Usamos o
+**percentil 2**: uma molécula menos conectada ao espaço químico do que 98% do treino
+é considerada fora do domínio. É uma escolha deliberadamente **um pouco permissiva**
+(o comum seria o percentil 5, mais estrito), para o modelo opinar sobre mais
+moléculas — ao custo de arriscar palpite em casos um pouco mais atípicos. É um botão
+explícito: `PERCENTIL_DOMINIO`.""")
+
 code(r'''# fingerprints de Morgan (objetos do RDKit) do treino e do teste, para o Tanimoto
 fp_treino_rdkit = []
 for indice in idx_treino_esq:
@@ -2392,6 +1674,7 @@ for i in range(len(fp_treino_rdkit)):
 PERCENTIL_DOMINIO = 2              # menor = dominio mais amplo (mais moleculas 'dentro')
 LIMIAR_DOMINIO = float(np.percentile(similaridade_treino_interna, PERCENTIL_DOMINIO))
 print("limiar de dominio (percentil", PERCENTIL_DOMINIO, "do treino):", round(LIMIAR_DOMINIO, 3))''')
+
 code(r'''figura_dominio = px.histogram(
     x=similaridade_teste, nbins=40,
     labels={"x": "Tanimoto maxima ao treino"},
@@ -2401,7 +1684,7 @@ figura_dominio.add_vline(x=LIMIAR_DOMINIO, line_dash="dash", line_color="#c0392b
 figura_dominio.update_traces(marker_color="#3266ad")
 figura_dominio.show()''')
 
-md("""### 7.6 — O botão do domínio: cobertura × acerto
+md("""### 7.2 — O botão do domínio: cobertura × acerto
 
 `PERCENTIL_DOMINIO` é um botão com um trade-off claro. Baixá-lo **alarga** o domínio
 (o modelo opina sobre mais moléculas — maior **cobertura**), mas passa a arriscar
@@ -2409,6 +1692,7 @@ palpite em casos mais atípicos (o **acerto** ali pode cair). Em vez de escolher
 escuro, **varremos** o percentil e vemos as duas curvas. A cobertura é a fração de
 moléculas de teste dentro do domínio; o acerto é a acurácia da floresta (Seção 5)
 **apenas nessas** moléculas. A linha verde marca a nossa escolha (2).""")
+
 code(r'''percentis = [1, 2, 5, 10, 20, 30]
 cobertura_por_percentil = []
 acerto_por_percentil = []
@@ -2425,6 +1709,7 @@ for percentil in percentis:
     cobertura_por_percentil.append(cobertura)
     acerto_por_percentil.append(acerto)
     print("%8d   %.3f    %.3f      %.3f" % (percentil, limiar, cobertura, acerto))''')
+
 code(r'''figura_botao, eixo_cob = plt.subplots(figsize=(5.4, 3.4))
 eixo_cob.plot(percentis, [100 * c for c in cobertura_por_percentil], "o-", color="#3266ad")
 eixo_cob.set_xlabel("PERCENTIL_DOMINIO (maior = dominio mais estrito)")
@@ -2437,6 +1722,7 @@ eixo_ac.tick_params(axis="y", labelcolor="#c0392b")
 eixo_cob.axvline(PERCENTIL_DOMINIO, color="#7e9603", linestyle=":", linewidth=2)
 eixo_cob.set_title("Dominio: cobertura x acerto ao variar o percentil")
 plt.tight_layout(); plt.show()''')
+
 md("""Leia a **tendência**, não um ponto: à medida que o percentil sobe (domínio
 mais estrito), a cobertura cai e o acerto entre as moléculas de dentro tende a
 subir — o modelo passa a opinar só onde está mais seguro. O acerto pode oscilar
@@ -2445,117 +1731,20 @@ atípicas pesam muito). A escolha do percentil 2 privilegia **cobertura**: opina
 sobre mais, assumindo o risco em troca — coerente com uma triagem, onde a abstenção
 excessiva desperdiça candidatos.""")
 
-md("""### 7.7 — Desempenho dentro e fora do domínio, com cuidado
-
-Comparamos o desempenho nas moléculas **dentro** e **fora** do domínio — mas com
-uma advertência: comparar acurácias entre grupos de tamanhos e composições de
-classe diferentes **engana**. Por isso imprimimos o número de amostras e a
-proporção de FORTE em cada grupo, e olhamos o MCC, não a acurácia crua. Foi
-exatamente ignorar isso que, num teste preliminar com dados sintéticos, produziu
-a observação contraintuitiva de "melhor fora do que dentro".""")
-code(r'''dentro = similaridade_teste >= LIMIAR_DOMINIO
-fora = ~dentro
-predito_floresta = resultados["Floresta aleatoria"]["predito"]
-
-# para cada grupo (dentro/fora), imprime n, composicao de classe e MCC
-print("Comparacao estratificada (floresta aleatoria):")
-for nome_grupo, mascara in [("dentro dom.", dentro), ("fora dom.", fora)]:
-    n = int(mascara.sum())
-    if n == 0:
-        print(nome_grupo, "-> grupo vazio")
-        continue
-    frac_forte = float(y_teste[mascara].mean())
-    if len(np.unique(y_teste[mascara])) < 2:
-        mcc = float("nan")            # so uma classe no grupo: MCC indefinido
-    else:
-        mcc = matthews_corrcoef(y_teste[mascara], predito_floresta[mascara])
-    print(f"{nome_grupo:14s} n={n:4d}  fracao FORTE={frac_forte:.2f}  MCC={mcc:.3f}")
-print("\\nObservacao: se os grupos tem composicao de classe muito diferente,")
-print("a comparacao direta de desempenho e enganosa. Olhe n e fracao FORTE antes de concluir.")''')
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 8 — CONFORMAL (OPCIONAL)
-# ══════════════════════════════════════════════════════════════════════════
-md("""## Seção 8 — Predição conformal (opcional)
-
-*Esta seção é opcional: pode ser pulada sem quebrar o resto do notebook.*
-
-A predição conformal transforma probabilidades em **conjuntos de predição** com
-uma garantia de cobertura. Usamos a variante **indutiva de Mondrian** (uma
-calibração por classe) sobre o conjunto de calibração separado na Seção 4. Para
-cada molécula de teste, o conjunto de predição pode ser: `{FORTE}`, `{FRACO}`,
-`{ambos}` (ambíguo) ou `{}` (vazio, atípico).""")
-code(r'''NIVEL_CONFIANCA = 0.80   # cobertura pretendida: 80%
-alfa = 1.0 - NIVEL_CONFIANCA
-
-# escores de nao-conformidade = 1 - probabilidade da classe verdadeira, na calibracao
-proba_calib = modelo_floresta.predict_proba(X_calib)
-escores_por_classe = {0: [], 1: []}
-for posicao in range(len(y_calib)):
-    classe_real = y_calib[posicao]
-    escore = 1.0 - proba_calib[posicao, classe_real]
-    escores_por_classe[classe_real].append(escore)
-
-# limiar de Mondrian: quantil (1-alfa) dos escores de cada classe separadamente
-limiar_conformal = {}
-for classe in (0, 1):
-    limiar_conformal[classe] = float(np.quantile(escores_por_classe[classe], 1.0 - alfa))
-print("limiares conformais por classe:", {k: round(v, 3) for k, v in limiar_conformal.items()})
-
-# aplica ao teste: para cada molecula, monta o conjunto de predicao e checa cobertura
-proba_teste_rf = modelo_floresta.predict_proba(X_teste)
-conjuntos = []
-cobertos = 0
-for posicao in range(len(y_teste)):
-    # o conjunto tem cada classe cujo escore de nao-conformidade cabe no limiar dela
-    conjunto = []
-    for classe in (0, 1):
-        escore = 1.0 - proba_teste_rf[posicao, classe]
-        if escore <= limiar_conformal[classe]:
-            conjunto.append(classe)
-    conjuntos.append(conjunto)
-    if y_teste[posicao] in conjunto:
-        cobertos = cobertos + 1
-cobertura_empirica = cobertos / len(y_teste)
-print("cobertura pretendida:", NIVEL_CONFIANCA, "| cobertura empirica:", round(cobertura_empirica, 3))
-
-# distribuicao dos quatro tipos de conjunto
-from collections import Counter
-tipos = Counter()
-for conjunto in conjuntos:
-    if len(conjunto) == 2:   tipos["ambos (ambiguo)"] += 1
-    elif len(conjunto) == 0: tipos["vazio (atipico)"] += 1
-    elif conjunto[0] == 1:   tipos["so FORTE"] += 1
-    else:                    tipos["so FRACO"] += 1
-print("tipos de conjunto:", dict(tipos))''')
-
-mdq("""**Pergunta.** O que a garantia conformal de 80% significa — e o que ela
-**não** significa?""",
-"""**Resposta.** Significa que, em média, o conjunto de predição contém a classe
-verdadeira em cerca de 80% das moléculas (cobertura marginal). **Não** significa
-que cada predição individual tem 80% de chance de estar certa, nem que uma
-molécula com conjunto `{FORTE}` é forte com 80% de probabilidade. É uma garantia
-sobre a taxa de acerto do procedimento no agregado, não sobre uma molécula
-específica.""")
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 9 — O CLASSIFICADOR EM USO
-# ══════════════════════════════════════════════════════════════════════════
 md("""## Seção 9 — O classificador em uso
 
 Até aqui o código foi **procedural** — cada célula mostra os passos, sem funções
 escondendo a lógica. Agora, porém, uma função **se justifica**: `classificar` é a
 **ferramenta** que queremos reutilizar em qualquer molécula nova, e reutilização é
 exatamente para o que servem as funções. É o único caso deste tipo na aula (fora a
-classe da rede em PyTorch e o widget, que os frameworks exigem).
+classe da rede em PyTorch, que o framework exige).
 
 A função `classificar(smiles)` devolve **FORTE**, **FRACO** ou **INDEFINIDA**,
 sempre com o motivo. A ordem importa: primeiro verificamos o **domínio de
-aplicabilidade**; só então interpretamos a probabilidade. Uma molécula fora do
-domínio é INDEFINIDA por atipicidade, independentemente do que o modelo "acharia".
-A função funciona mesmo se a Seção 8 for pulada.""")
+aplicabilidade** (Seção 7); só então interpretamos a probabilidade. Uma molécula
+fora do domínio é INDEFINIDA por atipicidade, independentemente do que o modelo
+"acharia".""")
+
 code(r'''MARGEM_ABSTENCAO = 0.15   # se |proba - 0.5| < margem, o modelo se abstem (INDEFINIDA)
 
 def classificar(smiles):
@@ -2616,6 +1805,7 @@ FORTE; e há um caso instrutivo — uma molécula "cotidiana" pode, ainda assim,
 **estar dentro do domínio** se sua estrutura se parece com algo do treino, e então
 receber uma resposta confiante. Não presuma o resultado: observe o que o modelo de
 fato responde e por quê.""")
+
 code(r'''galeria = [
     ("donepezila",  "O=C1CC2(CCN(Cc3ccccc3)CC2)Cc2cc(OC)c(OC)cc21"),
     ("tacrina",     "Nc1c2c(nc3ccccc13)CCCC2"),
@@ -2636,22 +1826,6 @@ for nome, smiles in galeria:
 Draw.MolsToGridImage(moleculas_galeria, legends=legendas_galeria,
                      molsPerRow=4, subImgSize=(230, 180))''')
 
-mdq("""**Pergunta.** Olhe os motivos impressos para a cafeína e o etanol. Um deles
-caiu em INDEFINIDA por estar fora do domínio; o outro recebeu uma classe com
-probabilidade confiante. O que isso revela sobre a diferença entre "irrelevante
-para um biólogo" e "fora do domínio do modelo"?""",
-"""**Resposta.** O **etanol** cai em INDEFINIDA por atipicidade — é tão pequeno e
-diferente do treino que o modelo, corretamente, se abstém. A **cafeína**, porém,
-fica **dentro do domínio**: seu anel purínico/xantínico se parece com esqueletos
-presentes no conjunto (xantinas já foram estudadas contra a acetilcolinesterase),
-então o modelo tem base para opinar — e responde FRACO com alta confiança (~0,08
-de probabilidade de FORTE), o que é **quimicamente correto**: cafeína não é um
-inibidor potente. A lição: "irrelevante" é uma intuição biológica; "fora do
-domínio" é uma medida estrutural. Elas nem sempre coincidem — e um FRACO confiante
-e correto é uma resposta tão honesta quanto um INDEFINIDA. O modelo só deve abster-se
-quando de fato não tem base, não sempre que a molécula parece incomum aos nossos
-olhos.""")
-
 md("""### 9.2 — Triagem virtual: procurar inibidores entre fármacos aprovados
 
 Agora o pagamento de verdade da aula. Pegamos uma **biblioteca real** de fármacos
@@ -2663,6 +1837,7 @@ exatamente o raciocínio do **reposicionamento de fármacos** — e é para isso
 
 Carregamos o arquivo direto do repositório (`data/world.csv`), com as colunas
 `zinc_id` (identificador) e `smiles` (estrutura).""")
+
 code(r'''URL_WORLD = ("https://raw.githubusercontent.com/monteirotorres/ml/"
              "main/data/world.csv")
 try:
@@ -2678,6 +1853,7 @@ md("""Rodamos o classificador em toda a biblioteca. Como a imensa maioria dos
 fármacos aprovados **não** tem nada a ver com a acetilcolinesterase, o esperado é
 um mar de FRACO e INDEFINIDA e **poucos** FORTE — e são justamente esses poucos que
 interessam. Guardamos a probabilidade de FORTE para ordenar os candidatos depois.""")
+
 code(r'''# passa cada farmaco pela ferramenta da Secao 9 (reuso, nao reimplementacao)
 linhas_triagem = []
 for posicao in range(len(tabela_world)):
@@ -2708,6 +1884,7 @@ classe do modelo com o rótulo verdadeiro.
 modelo — acertá-los ali é em parte memorização, não generalização. Por isso separamos
 os que estavam no treino dos que **não** estavam (o teste honesto), e olhamos os dois
 grupos.""")
+
 code(r'''# mapa: esqueleto-InChIKey -> (rotulo verdadeiro, estava no treino do modelo?)
 def esqueleto_inchikey(molecula):
     return Chem.MolToInchiKey(molecula).split("-")[0]
@@ -2762,6 +1939,7 @@ modelo aposta em atividade **sem** ter visto nada igual medido contra o alvo. Ca
 uma é uma **hipótese de reposicionamento** a levar para a bancada, não uma verdade:
 o modelo dá a pista, o experimento decide. Ordenamos pela probabilidade de FORTE e
 desenhamos os primeiros.""")
+
 code(r'''esqueletos_conhecidos = set(verdade_por_esqueleto.keys())
 
 candidatas_novas = []
@@ -2795,33 +1973,14 @@ else:
     imagem_candidatas = None
 imagem_candidatas''')
 
-mdq("""**Pergunta.** Um fármaco aprovado classificado FORTE aqui é um inibidor da
-acetilcolinesterase? E se um inibidor conhecido tivesse saído FRACO, o que isso
-significaria?""",
-"""**Resposta.** Não — um FORTE aqui é uma **hipótese**, não um veredito. O modelo
-diz "esta molécula se parece, na representação que ele usa, com inibidores potentes
-que ele viu"; confirmar exige o ensaio de IC50 na bancada. Muitos FORTE serão
-falsos positivos, e tudo bem: a triagem virtual serve para **priorizar** o que
-testar, não para substituir o teste. Já um inibidor conhecido classificado FRACO
-seria um **falso negativo** — e o mais custoso dos erros numa triagem, porque
-descartaria em silêncio um composto que funciona. É por isso que a Seção 9.2a
-mede exatamente isso (recuperação dos conhecidos e falsos negativos): a taxa de
-falsos negativos, sobretudo **fora do treino**, é o que diz se podemos confiar na
-triagem. E note o papel do **domínio**: candidatos bons demais para serem verdade
-muitas vezes caem em INDEFINIDA por atipicidade — a abstenção protegendo você de
-apostar onde o modelo não tem base.""")
-
-
-# ══════════════════════════════════════════════════════════════════════════
-# SEÇÃO 10 — PERSISTÊNCIA E EXERCÍCIOS
-# ══════════════════════════════════════════════════════════════════════════
-md("""## Seção 10 — Persistência e exercícios
+md("""## Seção 10 — Persistência
 
 Salvamos tudo que a função `classificar` precisa para rodar amanhã sem refazer o
 treino: o modelo, os fingerprints do treino (para o domínio), os limiares e um
-**dicionário de versões**. As versões importam porque um modelo salvo com uma
-versão de scikit-learn ou RDKit pode não recarregar corretamente em outra — sem
-registrar isso, um modelo "que funcionava" vira irreproduzível.""")
+**dicionário de versões**. As versões importam porque um modelo salvo com uma versão
+de scikit-learn ou RDKit pode não recarregar corretamente em outra — sem registrar
+isso, um modelo "que funcionava" vira irreproduzível.""")
+
 code(r'''pacote = {
     "modelo_floresta": modelo_floresta,
     "fp_treino_rdkit": fp_treino_rdkit,
@@ -2840,52 +1999,7 @@ joblib.dump(pacote, "classificador_ache.joblib")
 print("salvo: classificador_ache.joblib")
 print("versoes registradas:", pacote["versoes"])''')
 
-md("""### Exercícios
 
-1. **Limiar de potência.** Reexecute a partir da Seção 3 com `LIMIAR_POTENCIA =
-   7.0` (mais exigente). Como mudam o balanço de classes e o MCC dos modelos?
-2. **Remover as medidas de limite.** Refaça a curadoria descartando as medidas
-   `>`. O que acontece com a classe FRACO e com a revocação dela? Por quê?
-3. **Comparar representações.** Troque o fingerprint de Morgan por apenas os nove
-   descritores físico-químicos. Quanto se perde? E só com o fingerprint, sem os
-   descritores?
-4. **Taxa de aprendizado.** Na rede em PyTorch, encontre uma taxa alta demais e
-   descreva a assinatura visual na curva de perda.
-5. **Domínio de aplicabilidade.** Varie o percentil do limiar de domínio (de 1 a
-   20). Como muda a fração de moléculas classificadas como INDEFINIDA?
-6. **Escrita.** Um usuário recebe FORTE do seu modelo para uma molécula nova. O
-   que ele **pode** e o que ele **não pode** concluir a partir dessa resposta?
-   (Pense em domínio de aplicabilidade, calibração e na diferença entre potência
-   prevista e atividade confirmada em bancada.)
-7. **Confundimento.** Com base na Seção 6, o modelo aprende química específica ou
-   majoritariamente tamanho? Que evidência do notebook sustenta sua resposta?""")
-
-md("""### Controle interativo (célula de Colab)
-
-Um controle deslizante para o limiar de abstenção que atualiza ao vivo a fração de
-moléculas classificadas como INDEFINIDA no teste. A interatividade muda o que se
-**entende**, não só o que se vê: dá para sentir o compromisso entre abster-se mais
-(mais INDEFINIDA, menos erros declarados) e decidir mais. O estado dos controles
-**não** é salvo no arquivo — é preciso reexecutar a célula.""")
-code(r'''try:
-    from ipywidgets import interact, FloatSlider
-
-    proba_teste_forte = modelo_floresta.predict_proba(X_teste)[:, 1]
-
-    def mostrar_incerto(margem):
-        """Recalcula e imprime a fracao de INDEFINIDA para uma margem de abstencao."""
-        ambiguo = np.abs(proba_teste_forte - 0.5) < margem
-        fora_dom = similaridade_teste < LIMIAR_DOMINIO
-        incerto = ambiguo | fora_dom
-        print("margem =", round(margem, 2),
-              "| fracao INDEFINIDA =", round(incerto.mean(), 3),
-              "| por ambiguidade =", round(ambiguo.mean(), 3),
-              "| fora do dominio =", round(fora_dom.mean(), 3))
-
-    interact(mostrar_incerto,
-             margem=FloatSlider(min=0.0, max=0.45, step=0.05, value=0.15))
-except Exception as erro:
-    print("ipywidgets so e interativo no Colab/Jupyter:", type(erro).__name__)''')
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -2894,86 +2008,65 @@ except Exception as erro:
 # Título curto de cada célula de código, na ordem em que aparecem (1..N).
 # Vira o cabeçalho "# Célula NN — <título>" no topo da célula.
 TITULOS_CELULAS = {
-    1:  "Instalação dos pacotes ausentes (rdkit, plotly, ChEMBL)",
-    2:  "Importações agrupadas por finalidade",
-    3:  "Versões das bibliotecas e semente reprodutível",
-    4:  "Carrega o CSV de dados (URL com fallback local)",
-    5:  "Extração opcional do ChEMBL pela API (desligada por padrão)",
-    6:  "Primeiro olhar: contagens e amostra dos dados brutos",
-    7:  "Infraestrutura da proveniência (lista + função registrar_etapa)",
-    8:  "Curadoria: remove SMILES ausentes ou inválidos",
-    9:  "Curadoria: filtra validade e tipo de ensaio",
-    10: "Inspeção das unidades de medida",
-    11: "Curadoria: converte as unidades para nM",
+    1: 'Instalação dos pacotes ausentes (rdkit, plotly, ChEMBL)',
+    2: 'Importações agrupadas por finalidade',
+    3: 'Versões das bibliotecas e semente reprodutível',
+    4: 'Carrega o CSV de dados (URL com fallback local)',
+    5: 'Extração opcional do ChEMBL pela API (desligada por padrão)',
+    6: 'Primeiro olhar: contagens e amostra dos dados brutos',
+    7: 'Infraestrutura da proveniência (lista + função registrar_etapa)',
+    8: 'Curadoria: remove SMILES ausentes ou inválidos',
+    9: 'Curadoria: filtra validade e tipo de ensaio',
+    10: 'Inspeção das unidades de medida',
+    11: 'Curadoria: converte as unidades para nM',
     12: "Curadoria: descarta medidas de limite '<'",
-    13: "Calcula o pIC50 e agrega duplicatas por molécula",
-    14: "Monta a tabela de proveniência e o funil",
-    15: "Converte SMILES em moléculas e calcula os 9 descritores",
-    16: "Fingerprint de Morgan de uma molécula, ilustrado",
-    17: "Desenha os bits de Morgan sobre a molécula",
-    18: "Mostra o folding do fingerprint (identificador % N_BITS)",
-    19: "Rótulo FORTE/FRACO e matriz de fingerprints",
-    20: "Monta X (descritores + fingerprint) e y",
-    21: "Balanço das classes FORTE e FRACO",
-    22: "Extrai os esqueletos de Bemis-Murcko",
-    23: "Partição aleatória × por esqueleto (treino/calibração/teste)",
-    24: "Diagramas da partição e da validação cruzada",
-    25: "Projeção PCA do espaço químico das duas divisões",
-    26: "Similaridade de Tanimoto média ao treino (a separação medida)",
-    27: "Recorta X e y de treino, calibração e teste",
-    28: "Ilustração da sigmoide da regressão logística",
-    29: "Treina a regressão logística",
-    30: "SVM em dados circulares (o truque do kernel, ilustrado)",
-    31: "Treina a SVM (com subamostragem do treino)",
-    32: "Árvore rasa para visualizar o mecanismo",
-    33: "Treina a floresta aleatória",
-    34: "Treina a rede neural (MLP do scikit-learn)",
-    35: "Prepara tensores e treina a mesma rede em PyTorch",
-    36: "Instala o torchview e desenha a arquitetura da rede",
-    37: "Prepara a pasta de logs do TensorBoard",
-    38: "Abre o painel do TensorBoard no Colab",
-    39: "Curva de perda da rede (réplica em Plotly)",
-    40: "Treina a rede com três taxas de aprendizado",
-    41: "Reabre o TensorBoard com as três taxas",
-    42: "Compara as curvas de perda por taxa (Plotly)",
-    43: "Loga o MCC da floresta por nº de árvores no TensorBoard",
-    44: "Reabre o TensorBoard com a curva da floresta",
-    45: "Curva MCC × nº de árvores (réplica em Plotly)",
-    46: "Rede melhorada: validação interna e parada antecipada",
-    47: "Avalia a rede melhorada e imprime as métricas",
-    48: "Avalia todos os modelos com o mesmo código",
-    49: "Tabela comparativa das métricas",
-    50: "Curvas ROC e precisão-revocação sobrepostas",
-    51: "Matrizes de confusão lado a lado",
-    52: "Regressão do pIC50 contínuo",
-    53: "Dispersão observado × previsto do pIC50",
-    54: "Correlação tamanho × potência (confundimento)",
-    55: "Modelo-controle de uma única feature (tamanho)",
-    56: "Importância por permutação (descritores × fingerprint)",
-    57: "SHAP sobre a floresta",
-    58: "Explicações SHAP de moléculas individuais",
-    59: "Dependência parcial (MW, LogP, TPSA)",
-    60: "Controle negativo: rótulos embaralhados",
-    61: "Carrega o dump de % de inibição (reforço da classe FRACO)",
-    62: "Seleciona inativos novos, fora dos esqueletos de teste",
-    63: "Compara o treino com e sem os inativos de reforço",
-    64: "Efeito de lote: classificador tenta adivinhar a fonte",
-    65: "Curva de aprendizado: subamostragem do treino × MCC/AUC",
-    66: "Plota a curva de aprendizado (MCC e AUC)",
-    67: "Fingerprints do RDKit para o domínio de aplicabilidade",
-    68: "Histograma da similaridade máxima ao treino",
-    69: "Varredura do percentil do domínio: cobertura × acerto",
-    70: "Plota cobertura × acerto por percentil",
-    71: "Desempenho dentro × fora do domínio",
-    72: "Predição conformal (opcional)",
-    73: "A função classificar(smiles), com abstenção",
-    74: "Galeria de moléculas de teste",
-    75: "Triagem virtual sobre fármacos aprovados (world)",
-    76: "Passa cada fármaco pelo classificador",
-    77: "Sanidade: recuperamos os inibidores já conhecidos?",
-    78: "Os candidatos novos da triagem",
-    79: "Persistência do modelo e exercícios",
-    80: "Controle interativo (slider) da margem de abstenção",
+    13: 'Calcula o pIC50 e agrega duplicatas por molécula',
+    14: 'Monta a tabela de proveniência e o funil',
+    15: 'Converte SMILES em moléculas e calcula os 9 descritores',
+    16: 'Correlação entre os descritores (mapa de calor)',
+    17: 'Fingerprint de Morgan de uma molécula, ilustrado',
+    18: 'Desenha os bits de Morgan sobre a molécula',
+    19: 'Rótulo FORTE/FRACO e matriz de fingerprints',
+    20: 'Monta X (descritores + fingerprint) e y',
+    21: 'Balanço das classes FORTE e FRACO',
+    22: 'Extrai os esqueletos de Bemis-Murcko',
+    23: 'Partição aleatória × por esqueleto (treino/calibração/teste)',
+    24: 'Diagramas da partição e da validação cruzada',
+    25: 'Projeção PCA do espaço químico das duas divisões',
+    26: 'Recorta X e y de treino, calibração e teste',
+    27: 'Ilustração da sigmoide da regressão logística',
+    28: 'Treina a regressão logística',
+    29: 'SVM em dados circulares (o truque do kernel, ilustrado)',
+    30: 'Treina a SVM (kernel RBF, treino completo)',
+    31: 'Árvore rasa para visualizar o mecanismo',
+    32: 'Treina a floresta aleatória',
+    33: 'MCC da floresta conforme se adicionam árvores',
+    34: 'Curva MCC × nº de árvores (Plotly)',
+    35: 'Treina a rede neural (MLP do scikit-learn)',
+    36: 'Prepara tensores e monta a mesma rede em PyTorch',
+    37: 'Instala o torchview e desenha a arquitetura da rede',
+    38: 'Treina a rede em PyTorch (laço explícito)',
+    39: 'Curva de perda da rede (PyTorch × MLP, em Plotly)',
+    40: 'Avalia todos os modelos com o mesmo código',
+    41: 'Tabela comparativa das métricas',
+    42: 'Curvas ROC e precisão-revocação sobrepostas',
+    43: 'Matrizes de confusão lado a lado',
+    44: 'Correlação tamanho × potência (confundimento)',
+    45: 'Modelo-controle de uma única feature (tamanho)',
+    46: 'Importância por permutação (descritores × fingerprint)',
+    47: 'SHAP sobre a floresta (resumo beeswarm)',
+    48: 'Explicações SHAP individuais (waterfall)',
+    49: 'Fingerprints do RDKit para o domínio de aplicabilidade',
+    50: 'Histograma da similaridade máxima ao treino',
+    51: 'Varredura do percentil do domínio: cobertura × acerto',
+    52: 'Plota cobertura × acerto por percentil',
+    53: 'A função classificar(smiles), com abstenção',
+    54: 'Galeria de moléculas de teste',
+    55: 'Triagem virtual sobre fármacos aprovados (world)',
+    56: 'Passa cada fármaco pelo classificador',
+    57: 'Sanidade: recuperamos os inibidores já conhecidos?',
+    58: 'Os candidatos novos da triagem',
+    59: 'Persistência do modelo',
 }
 
 

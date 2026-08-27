@@ -5,4 +5,4 @@ __pycache__/
 
 # artefatos de execução da aula (gerados em runtime)
 08_aula_bioinfo/logs_tb/
-08_aula_bioinfo/*.joblib
+*.joblib

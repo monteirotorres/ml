@@ -16,7 +16,7 @@ Colab, em CPU.
 | --- | --- |
 | `aula.ipynb` | O notebook completo da aula: perguntas com resposta e todas as células de código preenchidas (cada uma prefixada por `# Célula NN`). |
 | `../data/dados_alvo_bruto.csv` | Extração pré-feita do ChEMBL (10.079 medidas de IC50), na pasta **`data/`** do repositório. O notebook lê direto do link público; este é o caminho alternativo quando a API do EBI não está acessível em sala. |
-| `../data/dados_inibicao_bruto.csv` | Segundo dump do ChEMBL para o mesmo alvo (medidas de % de inibição), usado na Seção 7 para reforçar a classe FRACO com inativos de triagem. |
+| `../data/world.csv` | Biblioteca de fármacos aprovados (ZINC15) usada na triagem virtual da Seção 9. |
 | `01_ml_bioinformatica.md` | Página de apresentação da aula no site do curso. |
 
 ## Antes da aula
@@ -28,8 +28,6 @@ Colab, em CPU.
    se a URL falhar.)
 3. Rode a Seção 0 uma vez para instalar `rdkit`, `plotly` e demais pacotes
    (cerca de 1 minuto). O restante já vem no Colab.
-4. Se for usar o TensorBoard ao vivo (Seção 5b), **abra o painel antes de
-   treinar**, para vê-lo atualizar durante a aula.
 
 ## Tempo estimado por seção
 
@@ -38,19 +36,17 @@ Colab, em CPU.
 | 0 | Ambiente, semente, versões | 5 min | não |
 | 1 | IC50/pIC50; carregar dados | 10 min | não |
 | 2 | Curadoria + funil de proveniência | 15 min | não |
-| 3 | Descritores e fingerprint de Morgan | 20 min | não |
-| 4 | Partição aleatória × esqueleto; projeção do espaço químico; prova quantitativa da separação (Tanimoto) | 20 min | 4.3b (Tanimoto) para 2ª aula |
-| 5 | Quatro modelos + rede em PyTorch + TensorBoard + regressão do pIC50 (5.6) | 40 min | 5b (PyTorch/TensorBoard) e 5.6 (regressão) para 2ª aula |
-| 6 | Interpretabilidade, confundimento por tamanho e vazamento | 20 min | SHAP (6.3) é o mais lento — pode cortar |
+| 3 | Descritores, correlação e fingerprint de Morgan | 20 min | não |
+| 4 | Partição aleatória × esqueleto; projeção do espaço químico | 20 min | não (é a lição central) |
+| 5 | Modelos (logística, SVM, floresta, MLP e a mesma rede aberta em PyTorch) + comparação | 35 min | 5b (PyTorch) para 2ª aula |
+| 6 | Interpretabilidade: confundimento por tamanho, permutação e SHAP | 20 min | SHAP (6.3) é o mais lento — pode cortar |
 | 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta a abstenção) |
-| 8 | Predição conformal | 10 min | **opcional** — marcada como tal |
-| 9 | `classificar()` em uso + galeria | 10 min | não (é o pagamento da aula) |
-| 10 | Persistência e exercícios | 5 min | exercícios ficam de casa |
+| 9 | `classificar()` em uso + galeria + triagem virtual | 10 min | não (é o pagamento da aula) |
+| 10 | Persistência do modelo | 5 min | não |
 
-**Total cheio:** ~2 h 40 min. Para caber em **2 h**, corte a Seção 8 (conformal)
-e adie a subseção 5b (PyTorch/TensorBoard) e o SHAP (6.3) para uma segunda aula.
-O núcleo mínimo — Seções 0 a 4, os modelos sklearn da Seção 5, a Seção 7 e a 9 —
-cabe em ~90 min.
+**Total cheio:** ~2 h. Para encurtar, adie a subseção 5b (PyTorch) e o SHAP (6.3)
+para uma segunda aula. O núcleo mínimo — Seções 0 a 4, os modelos sklearn da
+Seção 5, a Seção 7 e a 9 — cabe em ~90 min.
 
 ## O que não pode ser cortado (a espinha pedagógica)
 
@@ -66,18 +62,14 @@ cabe em ~90 min.
 
 ## Notas técnicas
 
-- **Tempo de execução** do notebook inteiro: alguns minutos em CPU. A SVM (5.2) e
-  o SHAP (6.3) são os trechos mais lentos; ambos já subamostram e avisam.
+- **Tempo de execução** do notebook inteiro: alguns minutos em CPU. A SVM (5.2),
+  treinada no conjunto **completo** com kernel RBF, e o SHAP (6.3) são os trechos
+  mais lentos (cerca de 1 minuto cada) e avisam antes de rodar.
 - **Plotly no Colab:** os gráficos aparecem inline; se não renderizarem após
   salvar/reabrir, reexecute a célula. Não há renderizador manual a configurar.
-- **TensorBoard** (5b–5c): é a experiência ao vivo; como o painel não fica salvo
-  no arquivo, **toda curva mostrada nele é replicada em Plotly** na célula
-  seguinte. Registra a perda da rede (PyTorch e sklearn), a comparação de 3 taxas
-  de aprendizado e também o MCC da floresta em função do número de árvores (5.4c) —
-  para deixar claro que o TensorBoard não é só para redes. Limpe a pasta de logs
-  entre execuções (a célula já faz isso).
-- **ipywidgets** (Seção 10): o controle deslizante atualiza métricas ao vivo; o
-  estado não é salvo — é preciso reexecutar a célula.
+- **PyTorch (5b):** a mesma rede do `MLPClassifier` é reimplementada à mão, com o
+  laço de treino explícito, e entra na comparação final ao lado dos modelos do
+  scikit-learn — o objetivo é abrir a caixa-preta do `fit`, não um modelo melhor.
 - **Reprodutibilidade:** uma única constante `SEMENTE` no topo é propagada a
   `random`, `numpy`, `torch` e a todo estimador.
 

@@ -149,46 +149,39 @@ que vale muito além da quimioinformática.</p>
 </tr>
 <tr>
 <td>4</td>
-<td>Partição (aleatória × esqueleto de Bemis-Murcko), projeção 2D do espaço químico dos esqueletos e prova quantitativa da separação por similaridade de Tanimoto</td>
+<td>Partição (aleatória × esqueleto de Bemis-Murcko) e projeção 2D do espaço químico dos esqueletos</td>
 </tr>
 <tr>
 <td>5</td>
-<td>Quatro modelos de classificação + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo</td>
+<td>Modelos de classificação (logística, SVM, floresta e MLP) + a mesma rede aberta em PyTorch, com comparação</td>
 </tr>
 <tr>
 <td>6</td>
-<td>Interpretabilidade (importância por permutação, SHAP), confundimento por tamanho e controle de vazamento (data leakage)</td>
+<td>Interpretabilidade: confundimento por tamanho, importância por permutação e SHAP</td>
 </tr>
 <tr>
 <td>7</td>
 <td>Domínio de aplicabilidade por similaridade de Tanimoto</td>
 </tr>
 <tr>
-<td>8</td>
-<td>Predição conformal (opcional)</td>
-</tr>
-<tr>
 <td>9</td>
-<td>A função <code>classificar(smiles)</code> em uso, com galeria de moléculas</td>
+<td>A função <code>classificar(smiles)</code> em uso, com galeria de moléculas e triagem virtual</td>
 </tr>
 <tr>
 <td>10</td>
-<td>Persistência do modelo e exercícios</td>
+<td>Persistência do modelo</td>
 </tr>
 </tbody>
 </table>
 <h2>Como usar</h2>
-<p>O material é um único notebook completo e executado, com as células de código
-prontas (cada uma marcada com <code># Célula NN</code> para referência em sala). Consulte o
-<code>README.md</code> da pasta para o roteiro do docente
-(o que rodar antes da aula, o que pode ser cortado se o tempo apertar, e o tempo
-estimado por seção).</p>
+<p>O material é um único notebook completo, com as células de código prontas (cada
+uma marcada com <code># Célula NN</code> para referência em sala). Consulte o <code>README.md</code> da
+pasta para o roteiro do docente (o que rodar antes da aula, o que pode ser cortado
+se o tempo apertar, e o tempo estimado por seção).</p>
 <blockquote>
-<p><strong>Nota.</strong> Este é um material extenso, voltado ao Colab. Partes específicas do
-Colab — o painel do TensorBoard ao vivo, as mágicas <code>%tensorboard</code>/<code>%pip</code> e os
-controles interativos <code>ipywidgets</code> — só se comportam plenamente no Colab; toda
-curva mostrada no TensorBoard é também replicada em Plotly como registro
-permanente no arquivo.</p>
+<p><strong>Nota.</strong> Este é um material extenso, voltado ao Colab. Alguns recursos — as
+mágicas <code>%pip</code> e a renderização inline do Plotly — se comportam plenamente no
+Colab; ao abrir o notebook fora dele, reexecute as células para ver os gráficos.</p>
 </blockquote>
 
 </article>

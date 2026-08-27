@@ -47,24 +47,20 @@ que vale muito além da quimioinformática.
 | 0–1 | Ambiente reprodutível; o que é IC50, pIC50 e por que a escala é logarítmica |
 | 2 | Curadoria dos dados com tabela de proveniência e gráfico de funil |
 | 3 | Descritores moleculares e fingerprint de Morgan, explicados um a um |
-| 4 | Partição (aleatória × esqueleto de Bemis-Murcko), projeção 2D do espaço químico dos esqueletos e prova quantitativa da separação por similaridade de Tanimoto |
-| 5 | Quatro modelos de classificação + a mesma rede aberta em PyTorch + regressão do pIC50 contínuo |
-| 6 | Interpretabilidade (importância por permutação, SHAP), confundimento por tamanho e controle de vazamento (data leakage) |
+| 4 | Partição (aleatória × esqueleto de Bemis-Murcko) e projeção 2D do espaço químico dos esqueletos |
+| 5 | Modelos de classificação (logística, SVM, floresta e MLP) + a mesma rede aberta em PyTorch, com comparação |
+| 6 | Interpretabilidade: confundimento por tamanho, importância por permutação e SHAP |
 | 7 | Domínio de aplicabilidade por similaridade de Tanimoto |
-| 8 | Predição conformal (opcional) |
-| 9 | A função `classificar(smiles)` em uso, com galeria de moléculas |
-| 10 | Persistência do modelo e exercícios |
+| 9 | A função `classificar(smiles)` em uso, com galeria de moléculas e triagem virtual |
+| 10 | Persistência do modelo |
 
 ## Como usar
 
-O material é um único notebook completo e executado, com as células de código
-prontas (cada uma marcada com `# Célula NN` para referência em sala). Consulte o
-`README.md` da pasta para o roteiro do docente
-(o que rodar antes da aula, o que pode ser cortado se o tempo apertar, e o tempo
-estimado por seção).
+O material é um único notebook completo, com as células de código prontas (cada
+uma marcada com `# Célula NN` para referência em sala). Consulte o `README.md` da
+pasta para o roteiro do docente (o que rodar antes da aula, o que pode ser cortado
+se o tempo apertar, e o tempo estimado por seção).
 
-> **Nota.** Este é um material extenso, voltado ao Colab. Partes específicas do
-> Colab — o painel do TensorBoard ao vivo, as mágicas `%tensorboard`/`%pip` e os
-> controles interativos `ipywidgets` — só se comportam plenamente no Colab; toda
-> curva mostrada no TensorBoard é também replicada em Plotly como registro
-> permanente no arquivo.
+> **Nota.** Este é um material extenso, voltado ao Colab. Alguns recursos — as
+> mágicas `%pip` e a renderização inline do Plotly — se comportam plenamente no
+> Colab; ao abrir o notebook fora dele, reexecute as células para ver os gráficos.
