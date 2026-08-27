@@ -850,8 +850,7 @@ O que procurar:
 **Uma ressalva honesta:** estes dois eixos de PCA ainda resumem só parte da
 variação (o valor é impresso abaixo), então não leia distâncias absolutas ao pé da
 letra. O que o gráfico mostra bem é o **mecanismo** — a coincidência de pontos por
-esqueleto e como cada divisão a colore. A magnitude da separação a gente confirma
-com um número na célula 4.3b.
+esqueleto e como cada divisão a colore.
 
 *(E se coloríssemos por classe FORTE/FRACO em vez de por conjunto? As duas classes
 apareceriam bem misturadas — dois eixos de PCA não separam as classes, e não
@@ -1041,9 +1040,8 @@ o `StandardScaler` no conjunto **todo** antes de dividir, a média e o desvio
 carregariam informação do teste para dentro do treino, e a estimativa de
 desempenho sairia otimista. Dentro do `Pipeline`, como o `fit` só enxerga
 `X_treino`, o scaler nunca "vê" o teste. É o mesmo vazamento da partição (Seção
-4.3), agora no nível da transformação das features — e o testaremos de frente na
-Seção 6.5. Os modelos sensíveis à escala (5.1 e a SVM da 5.2) usam esse padrão; a
-floresta (5.3) dispensa o scaler.""")
+4.3), agora no nível da transformação das features. Os modelos sensíveis à escala
+(5.1 e a SVM da 5.2) usam esse padrão; a floresta (5.3) dispensa o scaler.""")
 
 codex(r'''inicio = time.time()
 modelo_logistico = Pipeline([
@@ -1156,9 +1154,10 @@ aleatoria"] e tempos_treino, e imprima o MCC no teste.""")
 
 md("""Uma pergunta natural sobre a floresta: **quantas árvores bastam?** Crescemos a
 floresta em etapas (com `warm_start`, que só acrescenta as árvores novas em vez de
-recomeçar) e medimos o MCC no teste a cada etapa. A curva sobe rápido e depois
-**estabiliza** num platô — a partir daí, mais árvores custam tempo sem melhorar o
-resultado. É o diagnóstico que justifica a escolha de 300 árvores acima.""")
+recomeçar) e medimos o MCC no teste a cada etapa. A curva **estabiliza** cedo,
+num platô: já com poucas dezenas de árvores o MCC praticamente não muda, e
+acrescentar mais só custa tempo. É o diagnóstico que justifica as 300 árvores
+usadas acima — uma folga confortável dentro do platô.""")
 
 code(r'''# cresce a floresta em etapas e mede o MCC no teste a cada etapa
 floresta_incremental = RandomForestClassifier(
@@ -1623,7 +1622,7 @@ Um modelo só deveria opinar sobre moléculas parecidas com as que viu. Nesta se
 construímos essa noção de forma quantitativa: medimos, para cada molécula de teste,
 quão próxima ela está do treino, definimos um **limiar** derivado dos próprios dados
 e vemos o compromisso entre **cobertura** (opinar sobre mais moléculas) e **acerto**
-(estar certo onde opina). É essa régua que, na Seção 9, permite ao classificador
+(estar certo onde opina). É essa régua que, na Seção 8, permite ao classificador
 **abster-se** quando não tem base.""")
 
 md("""### 7.1 — Medindo a proximidade ao treino
@@ -1731,7 +1730,7 @@ atípicas pesam muito). A escolha do percentil 2 privilegia **cobertura**: opina
 sobre mais, assumindo o risco em troca — coerente com uma triagem, onde a abstenção
 excessiva desperdiça candidatos.""")
 
-md("""## Seção 9 — O classificador em uso
+md("""## Seção 8 — O classificador em uso
 
 Até aqui o código foi **procedural** — cada célula mostra os passos, sem funções
 escondendo a lógica. Agora, porém, uma função **se justifica**: `classificar` é a
@@ -1791,7 +1790,7 @@ def classificar(smiles):
 exemplo_smiles = agregados.loc[idx_teste_esq[0], "canonical_smiles"]
 print(exemplo_smiles, "->", classificar(exemplo_smiles))''')
 
-md("""### 9.1 — Galeria de teste
+md("""### 8.1 — Galeria de teste
 
 Testamos com uma grade de moléculas desenhadas pelo RDKit, com a resposta do
 modelo como legenda: inibidores conhecidos da acetilcolinesterase (donepezila,
@@ -1826,7 +1825,7 @@ for nome, smiles in galeria:
 Draw.MolsToGridImage(moleculas_galeria, legends=legendas_galeria,
                      molsPerRow=4, subImgSize=(230, 180))''')
 
-md("""### 9.2 — Triagem virtual: procurar inibidores entre fármacos aprovados
+md("""### 8.2 — Triagem virtual: procurar inibidores entre fármacos aprovados
 
 Agora o pagamento de verdade da aula. Pegamos uma **biblioteca real** de fármacos
 aprovados no mundo (o conjunto `world` do ZINC15, cerca de 5,9 mil moléculas) e
@@ -1854,7 +1853,7 @@ fármacos aprovados **não** tem nada a ver com a acetilcolinesterase, o esperad
 um mar de FRACO e INDEFINIDA e **poucos** FORTE — e são justamente esses poucos que
 interessam. Guardamos a probabilidade de FORTE para ordenar os candidatos depois.""")
 
-code(r'''# passa cada farmaco pela ferramenta da Secao 9 (reuso, nao reimplementacao)
+code(r'''# passa cada farmaco pela ferramenta da Secao 8 (reuso, nao reimplementacao)
 linhas_triagem = []
 for posicao in range(len(tabela_world)):
     smiles = tabela_world.iloc[posicao]["smiles"]
@@ -1872,7 +1871,7 @@ for nome_classe in ["FORTE", "FRACO", "INDEFINIDA"]:
     n = int(contagem_triagem.get(nome_classe, 0))
     print(f"  {nome_classe:11s}: {n:4d}  ({round(100 * n / len(triagem), 1)}%)")''')
 
-md("""### 9.2a — Sanidade: recuperamos os inibidores já conhecidos?
+md("""### 8.2a — Sanidade: recuperamos os inibidores já conhecidos?
 
 Antes de acreditar num candidato novo, uma pergunta de **controle**: dos fármacos
 desta biblioteca que **já têm medida de IC50 no ChEMBL** contra a acetilcolinesterase
@@ -1931,7 +1930,7 @@ for rotulo_grupo, grupo in [("no treino (memoria)", verdadeiros_fortes[verdadeir
     print(f"  {rotulo_grupo}: {len(grupo)} conhecidos -> "
           f"FORTE {n_forte} | FRACO {n_fraco} (falsos negativos) | INDEFINIDA {n_indef}")''')
 
-md("""### 9.2b — Os candidatos novos
+md("""### 8.2b — Os candidatos novos
 
 Agora o que a triagem tem de mais interessante: fármacos classificados **FORTE**
 cujo esqueleto **não** aparece no ChEMBL AChE — ou seja, moléculas para as quais o
@@ -1973,7 +1972,7 @@ else:
     imagem_candidatas = None
 imagem_candidatas''')
 
-md("""## Seção 10 — Persistência
+md("""## Seção 9 — Persistência
 
 Salvamos tudo que a função `classificar` precisa para rodar amanhã sem refazer o
 treino: o modelo, os fingerprints do treino (para o domínio), os limiares e um

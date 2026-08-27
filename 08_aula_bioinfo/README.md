@@ -41,8 +41,8 @@ Colab, em CPU.
 | 5 | Modelos (logística, SVM, floresta, MLP e a mesma rede aberta em PyTorch) + comparação | 35 min | 5b (PyTorch) para 2ª aula |
 | 6 | Interpretabilidade: confundimento por tamanho, permutação e SHAP | 20 min | SHAP (6.3) é o mais lento — pode cortar |
 | 7 | Domínio de aplicabilidade | 10 min | não (é o que sustenta a abstenção) |
-| 9 | `classificar()` em uso + galeria + triagem virtual | 10 min | não (é o pagamento da aula) |
-| 10 | Persistência do modelo | 5 min | não |
+| 8 | `classificar()` em uso + galeria + triagem virtual | 10 min | não (é o pagamento da aula) |
+| 9 | Persistência do modelo | 5 min | não |
 
 **Total cheio:** ~2 h. Para encurtar, adie a subseção 5b (PyTorch) e o SHAP (6.3)
 para uma segunda aula. O núcleo mínimo — Seções 0 a 4, os modelos sklearn da

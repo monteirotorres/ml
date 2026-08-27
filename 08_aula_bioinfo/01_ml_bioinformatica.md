@@ -51,8 +51,8 @@ que vale muito além da quimioinformática.
 | 5 | Modelos de classificação (logística, SVM, floresta e MLP) + a mesma rede aberta em PyTorch, com comparação |
 | 6 | Interpretabilidade: confundimento por tamanho, importância por permutação e SHAP |
 | 7 | Domínio de aplicabilidade por similaridade de Tanimoto |
-| 9 | A função `classificar(smiles)` em uso, com galeria de moléculas e triagem virtual |
-| 10 | Persistência do modelo |
+| 8 | A função `classificar(smiles)` em uso, com galeria de moléculas e triagem virtual |
+| 9 | Persistência do modelo |
 
 ## Como usar
 
