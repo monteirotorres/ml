@@ -98,6 +98,6 @@ cruzada).
 
 ## Referências
 
-- Cortes, C. & Vapnik, V. (1995). *Support-Vector Networks*. Machine Learning, 20, 273–297 — o artigo seminal.
-- Boser, B., Guyon, I. & Vapnik, V. (1992). *A Training Algorithm for Optimal Margin Classifiers*. COLT.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 9. Livro aberto: https://www.statlearning.com/
+- Cortes, C. & Vapnik, V. (1995). *Support-Vector Networks*. Machine Learning, 20, 273–297 — o artigo seminal. [DOI](https://doi.org/10.1007/BF00994018)
+- Boser, B., Guyon, I. & Vapnik, V. (1992). *A Training Algorithm for Optimal Margin Classifiers*. COLT. [DOI](https://doi.org/10.1145/130385.130401)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 9. [Livro aberto](https://www.statlearning.com/)

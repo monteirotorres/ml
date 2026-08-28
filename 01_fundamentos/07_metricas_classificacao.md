@@ -139,6 +139,6 @@ exato depende dos custos reais de cada erro.
 
 ## Referências
 
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 4.
-- Fawcett, T. (2006). *An introduction to ROC analysis*.
-- Documentação do scikit-learn: *Metrics and scoring*.
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 4. [Livro aberto](https://www.statlearning.com/)
+- Fawcett, T. (2006). *An introduction to ROC analysis*. [DOI](https://doi.org/10.1016/j.patrec.2005.10.010)
+- Documentação do scikit-learn: *Metrics and scoring*. [docs](https://scikit-learn.org/stable/modules/model_evaluation.html)

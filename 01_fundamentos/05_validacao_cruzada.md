@@ -123,6 +123,6 @@ colocando o `StandardScaler` dentro de um `Pipeline`.
 
 ## Referências
 
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 5.
-- Hastie, T. et al. (2009). *The Elements of Statistical Learning*, cap. 7.
-- Documentação do scikit-learn: *Cross-validation*.
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 5. [Livro aberto](https://www.statlearning.com/)
+- Hastie, T. et al. (2009). *The Elements of Statistical Learning*, cap. 7. [DOI](https://doi.org/10.1007/978-0-387-84858-7)
+- Documentação do scikit-learn: *Cross-validation*. [docs](https://scikit-learn.org/stable/modules/cross_validation.html)

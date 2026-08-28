@@ -108,7 +108,7 @@ essencial para que todas as variáveis pesem de forma comparável.
 
 ## Referências
 
-- MacQueen, J. (1967). *Some Methods for Classification and Analysis of Multivariate Observations*. Proc. 5th Berkeley Symposium.
-- Lloyd, S. (1982). *Least Squares Quantization in PCM*. IEEE Transactions on Information Theory, 28(2), 129–137.
-- Arthur, D. & Vassilvitskii, S. (2007). *k-means++: The Advantages of Careful Seeding*. SODA, 1027–1035.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 12. Livro aberto: https://www.statlearning.com/
+- MacQueen, J. (1967). *Some Methods for Classification and Analysis of Multivariate Observations*. Proc. 5th Berkeley Symposium. [Project Euclid](https://projecteuclid.org/euclid.bsmsp/1200512992)
+- Lloyd, S. (1982). *Least Squares Quantization in PCM*. IEEE Transactions on Information Theory, 28(2), 129–137. [DOI](https://doi.org/10.1109/TIT.1982.1056489)
+- Arthur, D. & Vassilvitskii, S. (2007). *k-means++: The Advantages of Careful Seeding*. SODA, 1027–1035. [PDF](http://theory.stanford.edu/~sergei/papers/kMeansPP-soda.pdf)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 12. [Livro aberto](https://www.statlearning.com/)

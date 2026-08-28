@@ -144,6 +144,6 @@ validação cruzada.
 
 ## Referências
 
-- Géron, A. (2019). *Hands-On Machine Learning*, cap. 2.
-- Kuhn, M. & Johnson, K. (2013). *Applied Predictive Modeling*, cap. 3.
-- Documentação do scikit-learn: *Preprocessing data* e *Pipelines*.
+- Géron, A. (2019). *Hands-On Machine Learning*, cap. 2. [O'Reilly](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/)
+- Kuhn, M. & Johnson, K. (2013). *Applied Predictive Modeling*, cap. 3. [DOI](https://doi.org/10.1007/978-1-4614-6849-3)
+- Documentação do scikit-learn: *Preprocessing data* e *Pipelines*. [docs](https://scikit-learn.org/stable/modules/preprocessing.html)

@@ -130,6 +130,6 @@ dimensionalidade** (PCA) antes de treinar.
 
 ## Referências
 
-- VanderPlas, J. (2016). *Python Data Science Handbook*, cap. 5.
-- Kuhn, M. & Johnson, K. (2013). *Applied Predictive Modeling*, cap. 3.
-- Documentação do scikit-learn: *Dataset transformations*.
+- VanderPlas, J. (2016). *Python Data Science Handbook*, cap. 5. [livro aberto](https://jakevdp.github.io/PythonDataScienceHandbook/)
+- Kuhn, M. & Johnson, K. (2013). *Applied Predictive Modeling*, cap. 3. [DOI](https://doi.org/10.1007/978-1-4614-6849-3)
+- Documentação do scikit-learn: *Dataset transformations*. [docs](https://scikit-learn.org/stable/data_transforms.html)

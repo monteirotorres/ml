@@ -139,6 +139,6 @@ overfitting (tópico 4).
 
 ## Referências
 
-- Mitchell, T. (1997). *Machine Learning*. McGraw-Hill.
-- Géron, A. (2019). *Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow*, cap. 1.
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 1–2.
+- Mitchell, T. (1997). *Machine Learning*. McGraw-Hill. [página do livro](https://www.cs.cmu.edu/~tom/mlbook.html)
+- Géron, A. (2019). *Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow*, cap. 1. [O'Reilly](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/)
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 1–2. [Livro aberto](https://www.statlearning.com/)

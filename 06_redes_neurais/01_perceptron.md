@@ -98,6 +98,6 @@ linearidade** da ativação que quebra esse colapso e dá poder à profundidade.
 
 ## Referências
 
-- Rosenblatt, F. (1958). *The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain*. Psychological Review, 65(6), 386–408.
-- Minsky, M. & Papert, S. (1969). *Perceptrons*. MIT Press — o livro que expôs a limitação do XOR.
-- Cybenko, G. (1989). *Approximation by Superpositions of a Sigmoidal Function*. Mathematics of Control, Signals and Systems, 2, 303–314 (aproximação universal).
+- Rosenblatt, F. (1958). *The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain*. Psychological Review, 65(6), 386–408. [DOI](https://doi.org/10.1037/h0042519)
+- Minsky, M. & Papert, S. (1969). *Perceptrons*. MIT Press — o livro que expôs a limitação do XOR. [DOI](https://doi.org/10.7551/mitpress/11301.001.0001)
+- Cybenko, G. (1989). *Approximation by Superpositions of a Sigmoidal Function*. Mathematics of Control, Signals and Systems, 2, 303–314 (aproximação universal). [DOI](https://doi.org/10.1007/BF02551274)

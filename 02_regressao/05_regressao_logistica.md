@@ -106,6 +106,6 @@ bem-calibrado.
 
 ## Referências
 
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 4. Livro aberto: https://www.statlearning.com/
-- Hosmer, D. W., Lemeshow, S. & Sturdivant, R. X. (2013). *Applied Logistic Regression*, 3ª ed. Wiley.
-- Cox, D. R. (1958). *The Regression Analysis of Binary Sequences*. Journal of the Royal Statistical Society B, 20(2), 215–242.
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 4. [Livro aberto](https://www.statlearning.com/)
+- Hosmer, D. W., Lemeshow, S. & Sturdivant, R. X. (2013). *Applied Logistic Regression*, 3ª ed. Wiley. [DOI](https://doi.org/10.1002/9781118548387)
+- Cox, D. R. (1958). *The Regression Analysis of Binary Sequences*. Journal of the Royal Statistical Society B, 20(2), 215–242. [DOI](https://doi.org/10.1111/j.2517-6161.1958.tb00292.x)

@@ -88,6 +88,6 @@ olham o grupo como um todo, são mais robustas a isso.
 
 ## Referências
 
-- Ward, J. H. (1963). *Hierarchical Grouping to Optimize an Objective Function*. Journal of the American Statistical Association, 58(301), 236–244.
+- Ward, J. H. (1963). *Hierarchical Grouping to Optimize an Objective Function*. Journal of the American Statistical Association, 58(301), 236–244. [DOI](https://doi.org/10.1080/01621459.1963.10500845)
 - Sokal, R. & Michener, C. (1958). *A Statistical Method for Evaluating Systematic Relationships*. University of Kansas Science Bulletin.
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 14.3.
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 14.3. [DOI](https://doi.org/10.1007/978-0-387-84858-7)

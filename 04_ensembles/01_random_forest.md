@@ -92,6 +92,6 @@ próprio treino, sem separar dados nem retreinar.
 
 ## Referências
 
-- Breiman, L. (1996). *Bagging Predictors*. Machine Learning, 24, 123–140.
-- Breiman, L. (2001). *Random Forests*. Machine Learning, 45, 5–32 — o artigo seminal.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 8. Livro aberto: https://www.statlearning.com/
+- Breiman, L. (1996). *Bagging Predictors*. Machine Learning, 24, 123–140. [DOI](https://doi.org/10.1007/BF00058655)
+- Breiman, L. (2001). *Random Forests*. Machine Learning, 45, 5–32 — o artigo seminal. [DOI](https://doi.org/10.1023/A:1010933404324)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 8. [Livro aberto](https://www.statlearning.com/)

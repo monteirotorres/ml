@@ -82,6 +82,6 @@ não generalizou.
 
 ## Referências
 
-- Breiman, L., Friedman, J., Olshen, R. & Stone, C. (1984). *Classification and Regression Trees* (CART). Wadsworth — a referência fundadora.
-- Quinlan, J. R. (1986). *Induction of Decision Trees*. Machine Learning, 1, 81–106 (algoritmo ID3).
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 8. Livro aberto: https://www.statlearning.com/
+- Breiman, L., Friedman, J., Olshen, R. & Stone, C. (1984). *Classification and Regression Trees* (CART). Wadsworth — a referência fundadora. [DOI](https://doi.org/10.1201/9781315139470)
+- Quinlan, J. R. (1986). *Induction of Decision Trees*. Machine Learning, 1, 81–106 (algoritmo ID3). [DOI](https://doi.org/10.1007/BF00116251)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 8. [Livro aberto](https://www.statlearning.com/)

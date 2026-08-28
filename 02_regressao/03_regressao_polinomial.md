@@ -84,5 +84,5 @@ péssimo. É o retrato do overfitting: memorizou, não aprendeu.
 
 ## Referências
 
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 7. Livro aberto: https://www.statlearning.com/
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 2 e 7 (viés–variância).
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 7. [Livro aberto](https://www.statlearning.com/)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 2 e 7 (viés–variância). [DOI](https://doi.org/10.1007/978-0-387-84858-7)

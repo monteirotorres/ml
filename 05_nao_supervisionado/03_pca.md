@@ -93,6 +93,6 @@ escala. Padronizar coloca todas na mesma régua e evita esse artefato.
 
 ## Referências
 
-- Pearson, K. (1901). *On Lines and Planes of Closest Fit to Systems of Points in Space*. Philosophical Magazine, 2(11), 559–572 — a origem da PCA.
-- Hotelling, H. (1933). *Analysis of a Complex of Statistical Variables into Principal Components*. Journal of Educational Psychology, 24, 417–441.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 12. Livro aberto: https://www.statlearning.com/
+- Pearson, K. (1901). *On Lines and Planes of Closest Fit to Systems of Points in Space*. Philosophical Magazine, 2(11), 559–572 — a origem da PCA. [DOI](https://doi.org/10.1080/14786440109462720)
+- Hotelling, H. (1933). *Analysis of a Complex of Statistical Variables into Principal Components*. Journal of Educational Psychology, 24, 417–441. [DOI](https://doi.org/10.1037/h0071325)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 12. [Livro aberto](https://www.statlearning.com/)

@@ -86,6 +86,6 @@ clássico compromisso entre desempenho e tempo de treino.
 
 ## Referências
 
-- Freund, Y. & Schapire, R. (1997). *A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting* (AdaBoost). Journal of Computer and System Sciences, 55(1), 119–139.
-- Friedman, J. H. (2001). *Greedy Function Approximation: A Gradient Boosting Machine*. Annals of Statistics, 29(5), 1189–1232 — o artigo seminal.
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 10.
+- Freund, Y. & Schapire, R. (1997). *A Decision-Theoretic Generalization of On-Line Learning and an Application to Boosting* (AdaBoost). Journal of Computer and System Sciences, 55(1), 119–139. [DOI](https://doi.org/10.1006/jcss.1997.1504)
+- Friedman, J. H. (2001). *Greedy Function Approximation: A Gradient Boosting Machine*. Annals of Statistics, 29(5), 1189–1232 — o artigo seminal. [DOI](https://doi.org/10.1214/aos/1013203451)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 10. [DOI](https://doi.org/10.1007/978-0-387-84858-7)

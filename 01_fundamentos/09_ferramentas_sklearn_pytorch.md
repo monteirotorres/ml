@@ -161,9 +161,9 @@ grande demais? E pequena demais?
 
 ## Referências
 
-- Pedregosa, F. et al. (2011). *Scikit-learn: Machine Learning in Python*. Journal of Machine Learning Research, 12, 2825–2830.
-- Paszke, A. et al. (2019). *PyTorch: An Imperative Style, High-Performance Deep Learning Library*. Advances in Neural Information Processing Systems (NeurIPS), 32.
-- Harris, C. R. et al. (2020). *Array programming with NumPy*. Nature, 585, 357–362.
-- McKinney, W. (2010). *Data Structures for Statistical Computing in Python*. Proceedings of the 9th Python in Science Conference.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*. Springer. Livro aberto: https://www.statlearning.com/
-- Documentação do scikit-learn: *Choosing the right estimator* — https://scikit-learn.org/1.3/tutorial/machine_learning_map/
+- Pedregosa, F. et al. (2011). *Scikit-learn: Machine Learning in Python*. Journal of Machine Learning Research, 12, 2825–2830. [JMLR](https://www.jmlr.org/papers/v12/pedregosa11a.html)
+- Paszke, A. et al. (2019). *PyTorch: An Imperative Style, High-Performance Deep Learning Library*. Advances in Neural Information Processing Systems (NeurIPS), 32. [arXiv](https://arxiv.org/abs/1912.01703)
+- Harris, C. R. et al. (2020). *Array programming with NumPy*. Nature, 585, 357–362. [DOI](https://doi.org/10.1038/s41586-020-2649-2)
+- McKinney, W. (2010). *Data Structures for Statistical Computing in Python*. Proceedings of the 9th Python in Science Conference. [DOI](https://doi.org/10.25080/Majora-92bf1922-00a)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*. Springer. [Livro aberto](https://www.statlearning.com/)
+- Documentação do scikit-learn: *Choosing the right estimator* — [link](https://scikit-learn.org/1.3/tutorial/machine_learning_map/)

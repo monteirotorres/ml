@@ -99,6 +99,6 @@ ReLU evita isso dando uma pequena inclinação (derivada $\alpha > 0$) aos negat
 
 ## Referências
 
-- Nair, V. & Hinton, G. (2010). *Rectified Linear Units Improve Restricted Boltzmann Machines*. ICML.
-- Glorot, X. & Bengio, Y. (2010). *Understanding the Difficulty of Training Deep Feedforward Neural Networks*. AISTATS (sobre o gradiente que desaparece).
-- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 6. MIT Press. Livro aberto: https://www.deeplearningbook.org/
+- Nair, V. & Hinton, G. (2010). *Rectified Linear Units Improve Restricted Boltzmann Machines*. ICML. [PDF](https://www.cs.toronto.edu/~fritz/absps/reluICML.pdf)
+- Glorot, X. & Bengio, Y. (2010). *Understanding the Difficulty of Training Deep Feedforward Neural Networks*. AISTATS (sobre o gradiente que desaparece). [PMLR](https://proceedings.mlr.press/v9/glorot10a.html)
+- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 6. MIT Press. [Livro aberto](https://www.deeplearningbook.org/)

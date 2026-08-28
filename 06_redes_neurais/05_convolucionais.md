@@ -115,6 +115,6 @@ posição específica, e a rede teria de reaprender o padrão para cada canto da
 
 ## Referências
 
-- LeCun, Y., Bottou, L., Bengio, Y. & Haffner, P. (1998). *Gradient-Based Learning Applied to Document Recognition* (LeNet). Proceedings of the IEEE, 86(11), 2278–2324.
-- Krizhevsky, A., Sutskever, I. & Hinton, G. (2012). *ImageNet Classification with Deep Convolutional Neural Networks* (AlexNet). NeurIPS.
-- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 9 (Convolutional Networks). MIT Press. Livro aberto: https://www.deeplearningbook.org/
+- LeCun, Y., Bottou, L., Bengio, Y. & Haffner, P. (1998). *Gradient-Based Learning Applied to Document Recognition* (LeNet). Proceedings of the IEEE, 86(11), 2278–2324. [DOI](https://doi.org/10.1109/5.726791)
+- Krizhevsky, A., Sutskever, I. & Hinton, G. (2012). *ImageNet Classification with Deep Convolutional Neural Networks* (AlexNet). NeurIPS. [DOI](https://doi.org/10.1145/3065386)
+- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 9 (Convolutional Networks). MIT Press. [Livro aberto](https://www.deeplearningbook.org/)

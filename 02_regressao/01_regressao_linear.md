@@ -117,6 +117,6 @@ mínimos desvios absolutos* —, mais robusta a outliers, porém sem fórmula fe
 
 ## Referências
 
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 3. Livro aberto: https://www.statlearning.com/
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 3.
-- Galton, F. (1886). *Regression Towards Mediocrity in Hereditary Stature*. Journal of the Anthropological Institute — o trabalho que deu nome à "regressão".
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 3. [Livro aberto](https://www.statlearning.com/)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 3. [DOI](https://doi.org/10.1007/978-0-387-84858-7)
+- Galton, F. (1886). *Regression Towards Mediocrity in Hereditary Stature*. Journal of the Anthropological Institute — o trabalho que deu nome à "regressão". [DOI](https://doi.org/10.2307/2841583)

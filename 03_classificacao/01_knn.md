@@ -92,6 +92,6 @@ outra. Padronizar (ou normalizar) antes teria dado peso comparável às duas.
 
 ## Referências
 
-- Cover, T. & Hart, P. (1967). *Nearest Neighbor Pattern Classification*. IEEE Transactions on Information Theory, 13(1), 21–27 — o artigo seminal.
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 2 e 4. Livro aberto: https://www.statlearning.com/
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 13.
+- Cover, T. & Hart, P. (1967). *Nearest Neighbor Pattern Classification*. IEEE Transactions on Information Theory, 13(1), 21–27 — o artigo seminal. [DOI](https://doi.org/10.1109/TIT.1967.1053964)
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 2 e 4. [Livro aberto](https://www.statlearning.com/)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 13. [DOI](https://doi.org/10.1007/978-0-387-84858-7)

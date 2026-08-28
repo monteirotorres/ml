@@ -99,6 +99,6 @@ falharem em casos distintos; sem isso, votar apenas reproduz os mesmos erros.
 
 ## Referências
 
-- Wolpert, D. H. (1992). *Stacked Generalization*. Neural Networks, 5(2), 241–259 — o artigo seminal.
-- Breiman, L. (1996). *Stacked Regressions*. Machine Learning, 24, 49–64.
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 8.8.
+- Wolpert, D. H. (1992). *Stacked Generalization*. Neural Networks, 5(2), 241–259 — o artigo seminal. [DOI](https://doi.org/10.1016/S0893-6080(05)80023-1)
+- Breiman, L. (1996). *Stacked Regressions*. Machine Learning, 24, 49–64. [DOI](https://doi.org/10.1007/BF00117832)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 8.8. [DOI](https://doi.org/10.1007/978-0-387-84858-7)

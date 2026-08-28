@@ -128,6 +128,6 @@ ajustando um classificador com os 200 exemplos rotulados.
 
 ## Referências
 
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 2.
-- Géron, A. (2019). *Hands-On Machine Learning*, cap. 1.
-- Sutton, R. & Barto, A. (2018). *Reinforcement Learning: An Introduction*.
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 2. [Livro aberto](https://www.statlearning.com/)
+- Géron, A. (2019). *Hands-On Machine Learning*, cap. 1. [O'Reilly](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/)
+- Sutton, R. & Barto, A. (2018). *Reinforcement Learning: An Introduction*. [livro (2ª ed.)](http://incompleteideas.net/book/the-book-2nd.html)

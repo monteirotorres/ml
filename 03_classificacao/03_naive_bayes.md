@@ -101,6 +101,6 @@ mesmo sendo um estimador de probabilidade medíocre.
 
 ## Referências
 
-- Maron, M. E. (1961). *Automatic Indexing: An Experimental Inquiry*. Journal of the ACM, 8(3), 404–417.
-- Domingos, P. & Pazzani, M. (1997). *On the Optimality of the Simple Bayesian Classifier under Zero-One Loss*. Machine Learning, 29, 103–130.
-- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 6.6.
+- Maron, M. E. (1961). *Automatic Indexing: An Experimental Inquiry*. Journal of the ACM, 8(3), 404–417. [DOI](https://doi.org/10.1145/321075.321084)
+- Domingos, P. & Pazzani, M. (1997). *On the Optimality of the Simple Bayesian Classifier under Zero-One Loss*. Machine Learning, 29, 103–130. [DOI](https://doi.org/10.1023/A:1007413511361)
+- Hastie, T., Tibshirani, R. & Friedman, J. (2009). *The Elements of Statistical Learning*, cap. 6.6. [DOI](https://doi.org/10.1007/978-0-387-84858-7)

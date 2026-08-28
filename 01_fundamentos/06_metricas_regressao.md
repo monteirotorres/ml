@@ -128,6 +128,6 @@ avaliado em dados muito diferentes dos de treino.
 
 ## Referências
 
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 3.
-- Documentação do scikit-learn: *Metrics and scoring*.
-- Willmott, C. & Matsuura, K. (2005). *Advantages of the MAE over the RMSE*.
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 3. [Livro aberto](https://www.statlearning.com/)
+- Documentação do scikit-learn: *Metrics and scoring*. [docs](https://scikit-learn.org/stable/modules/model_evaluation.html)
+- Willmott, C. & Matsuura, K. (2005). *Advantages of the MAE over the RMSE*. [DOI](https://doi.org/10.3354/cr030079)

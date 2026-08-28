@@ -92,6 +92,6 @@ o padrão.
 
 ## Referências
 
-- Rumelhart, D., Hinton, G. & Williams, R. (1986). *Learning Representations by Back-Propagating Errors*. Nature, 323, 533–536 — o artigo que popularizou a backpropagation.
-- Robbins, H. & Monro, S. (1951). *A Stochastic Approximation Method*. Annals of Mathematical Statistics, 22(3), 400–407 (origem do SGD).
-- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 6 e 8. MIT Press. Livro aberto: https://www.deeplearningbook.org/
+- Rumelhart, D., Hinton, G. & Williams, R. (1986). *Learning Representations by Back-Propagating Errors*. Nature, 323, 533–536 — o artigo que popularizou a backpropagation. [DOI](https://doi.org/10.1038/323533a0)
+- Robbins, H. & Monro, S. (1951). *A Stochastic Approximation Method*. Annals of Mathematical Statistics, 22(3), 400–407 (origem do SGD). [DOI](https://doi.org/10.1214/aoms/1177729586)
+- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*, cap. 6 e 8. MIT Press. [Livro aberto](https://www.deeplearningbook.org/)

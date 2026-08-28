@@ -107,7 +107,7 @@ O bom $\alpha$ fica no meio, e se escolhe por validação cruzada.
 
 ## Referências
 
-- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 6. Livro aberto: https://www.statlearning.com/
-- Hoerl, A. E. & Kennard, R. W. (1970). *Ridge Regression: Biased Estimation for Nonorthogonal Problems*. Technometrics, 12(1), 55–67.
-- Tibshirani, R. (1996). *Regression Shrinkage and Selection via the Lasso*. Journal of the Royal Statistical Society B, 58(1), 267–288.
-- Zou, H. & Hastie, T. (2005). *Regularization and Variable Selection via the Elastic Net*. JRSS B, 67(2), 301–320.
+- James, G., Witten, D., Hastie, T., Tibshirani, R. & Taylor, J. (2023). *An Introduction to Statistical Learning with Applications in Python*, cap. 6. [Livro aberto](https://www.statlearning.com/)
+- Hoerl, A. E. & Kennard, R. W. (1970). *Ridge Regression: Biased Estimation for Nonorthogonal Problems*. Technometrics, 12(1), 55–67. [DOI](https://doi.org/10.1080/00401706.1970.10488634)
+- Tibshirani, R. (1996). *Regression Shrinkage and Selection via the Lasso*. Journal of the Royal Statistical Society B, 58(1), 267–288. [DOI](https://doi.org/10.1111/j.2517-6161.1996.tb02080.x)
+- Zou, H. & Hastie, T. (2005). *Regularization and Variable Selection via the Elastic Net*. JRSS B, 67(2), 301–320. [DOI](https://doi.org/10.1111/j.1467-9868.2005.00503.x)

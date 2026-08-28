@@ -110,6 +110,6 @@ flexível, menos regularização).
 
 ## Referências
 
-- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 2.
-- Hastie, T. et al. (2009). *The Elements of Statistical Learning*, cap. 7.
-- Géron, A. (2019). *Hands-On Machine Learning*, cap. 4.
+- James, G. et al. (2021). *An Introduction to Statistical Learning*, cap. 2. [Livro aberto](https://www.statlearning.com/)
+- Hastie, T. et al. (2009). *The Elements of Statistical Learning*, cap. 7. [DOI](https://doi.org/10.1007/978-0-387-84858-7)
+- Géron, A. (2019). *Hands-On Machine Learning*, cap. 4. [O'Reilly](https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/)

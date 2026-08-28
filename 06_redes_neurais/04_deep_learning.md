@@ -97,7 +97,7 @@ ninguém defina à mão o que é uma borda ou um olho.
 
 ## Referências
 
-- LeCun, Y., Bengio, Y. & Hinton, G. (2015). *Deep Learning*. Nature, 521, 436–444.
-- Krizhevsky, A., Sutskever, I. & Hinton, G. (2012). *ImageNet Classification with Deep Convolutional Neural Networks* (AlexNet). NeurIPS.
-- Vaswani, A. et al. (2017). *Attention Is All You Need* (Transformer). NeurIPS.
-- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*. MIT Press. Livro aberto: https://www.deeplearningbook.org/
+- LeCun, Y., Bengio, Y. & Hinton, G. (2015). *Deep Learning*. Nature, 521, 436–444. [DOI](https://doi.org/10.1038/nature14539)
+- Krizhevsky, A., Sutskever, I. & Hinton, G. (2012). *ImageNet Classification with Deep Convolutional Neural Networks* (AlexNet). NeurIPS. [DOI](https://doi.org/10.1145/3065386)
+- Vaswani, A. et al. (2017). *Attention Is All You Need* (Transformer). NeurIPS. [arXiv](https://arxiv.org/abs/1706.03762)
+- Goodfellow, I., Bengio, Y. & Courville, A. (2016). *Deep Learning*. MIT Press. [Livro aberto](https://www.deeplearningbook.org/)

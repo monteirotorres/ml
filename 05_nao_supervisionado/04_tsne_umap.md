@@ -78,6 +78,6 @@ t-SNE/UMAP cuida do arranjo local final.
 
 ## Referências
 
-- van der Maaten, L. & Hinton, G. (2008). *Visualizing Data using t-SNE*. Journal of Machine Learning Research, 9, 2579–2605.
-- McInnes, L., Healy, J. & Melville, J. (2018). *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction*. arXiv:1802.03426.
-- Wattenberg, M., Viégas, F. & Johnson, I. (2016). *How to Use t-SNE Effectively*. Distill — sobre as armadilhas de interpretação.
+- van der Maaten, L. & Hinton, G. (2008). *Visualizing Data using t-SNE*. Journal of Machine Learning Research, 9, 2579–2605. [JMLR](https://www.jmlr.org/papers/v9/vandermaaten08a.html)
+- McInnes, L., Healy, J. & Melville, J. (2018). *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction*. arXiv:1802.03426. [arXiv](https://arxiv.org/abs/1802.03426)
+- Wattenberg, M., Viégas, F. & Johnson, I. (2016). *How to Use t-SNE Effectively*. Distill — sobre as armadilhas de interpretação. [Distill](https://doi.org/10.23915/distill.00002)
