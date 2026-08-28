@@ -522,11 +522,10 @@ def sidebar(sections, current_file):
     out = ['<nav class="sidebar" id="sidebar">']
     out.append(f'<a class="sidebar-brand" href="index.html">{COURSE_NAME}<span>{COURSE_INST}</span></a>')
     out.append('<button class="toggle-all" id="toggleAll" aria-label="Mostrar ou esconder todas as seções">− Esconder tudo</button>')
-    # na página inicial, as guias começam colapsadas por padrão
-    inicio_colapsado = current_file == "index.html"
+    # as guias começam colapsadas por padrão; só a seção da página atual abre
     for si, (sec, items) in enumerate(sections, 1):
         page = SECTION_FILES.get(sec, "index.html")
-        cls = "nav-group collapsed" if inicio_colapsado else "nav-group"
+        cls = "nav-group" if page == current_file else "nav-group collapsed"
         out.append(f'<div class="{cls}">')
         out.append(f'<div class="nav-group-title">{si}. {sec}</div>')
         out.append('<ul>')
