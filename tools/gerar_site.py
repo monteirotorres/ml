@@ -526,7 +526,7 @@ def sidebar(sections, current_file):
     for si, (sec, items) in enumerate(sections, 1):
         page = SECTION_FILES.get(sec, "index.html")
         cls = "nav-group" if page == current_file else "nav-group collapsed"
-        out.append(f'<div class="{cls}">')
+        out.append(f'<div class="{cls}" data-sec="{si}">')
         out.append(f'<div class="nav-group-title">{si}. {sec}</div>')
         out.append('<ul>')
         for ti, (title, path) in enumerate(items, 1):

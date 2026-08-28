@@ -1159,9 +1159,37 @@ window.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.sidebar')?.classList.toggle('open');
   });
 
+  // estado das guias (expandida/colapsada) preservado entre páginas
+  const GUIAS_KEY = 'guias-estado';
+  function lerGuias() {
+    try { return JSON.parse(localStorage.getItem(GUIAS_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function salvarGuias(estado) {
+    try { localStorage.setItem(GUIAS_KEY, JSON.stringify(estado)); } catch (e) {}
+  }
+  function registrar(g) {
+    const estado = lerGuias();
+    if (g.dataset.sec) estado[g.dataset.sec] = g.classList.contains('collapsed') ? 'c' : 'o';
+    salvarGuias(estado);
+  }
+  // aplica a preferência salva; guias sem preferência mantêm o padrão da página
+  (function aplicarGuias() {
+    const estado = lerGuias();
+    document.querySelectorAll('.nav-group').forEach(g => {
+      const s = estado[g.dataset.sec];
+      if (s === 'o') g.classList.remove('collapsed');
+      else if (s === 'c') g.classList.add('collapsed');
+    });
+  })();
+
   // colapsar/expandir grupos da sidebar (individual)
   document.querySelectorAll('.nav-group-title').forEach(t => {
-    t.addEventListener('click', () => { t.parentElement.classList.toggle('collapsed'); syncToggleAll(); });
+    t.addEventListener('click', () => {
+      const g = t.parentElement;
+      g.classList.toggle('collapsed');
+      registrar(g);
+      syncToggleAll();
+    });
   });
 
   // botão "mostrar/esconder tudo"
@@ -1175,7 +1203,10 @@ window.addEventListener('DOMContentLoaded', () => {
   if (toggleAll) {
     toggleAll.addEventListener('click', () => {
       const collapse = anyOpen();   // se algum aberto -> fecha todos; senão abre todos
-      document.querySelectorAll('.nav-group').forEach(g => g.classList.toggle('collapsed', collapse));
+      document.querySelectorAll('.nav-group').forEach(g => {
+        g.classList.toggle('collapsed', collapse);
+        registrar(g);
+      });
       syncToggleAll();
     });
     syncToggleAll();
