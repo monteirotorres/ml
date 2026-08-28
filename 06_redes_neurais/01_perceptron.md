@@ -27,6 +27,13 @@ Onde:
 Repare que, com $f$ sendo a sigmoide, um neurônio é **exatamente** uma regressão
 logística. A novidade não é o neurônio isolado — é conectá-los.
 
+O widget a seguir é **um único neurônio ao vivo**: mexa nas entradas $x_1, x_2$, nos
+pesos $w_1, w_2$ e no viés $b$ e acompanhe a soma ponderada $z$ correr pelas
+conexões até a ativação $f$ produzir a saída $a$. Troque a função de ativação e veja
+o mesmo $z$ virar saídas diferentes.
+
+[[widget:wNeuron]]
+
 ## De um neurônio a uma rede
 
 Uma **rede neural** (multilayer perceptron, MLP) organiza neurônios em **camadas**:

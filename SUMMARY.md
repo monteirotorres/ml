@@ -49,6 +49,7 @@
 * [Backpropagation e gradiente descendente](06_redes_neurais/02_backprop.md)
 * [Funções de ativação](06_redes_neurais/03_ativacoes.md)
 * [Introdução ao deep learning](06_redes_neurais/04_deep_learning.md)
+* [Redes convolucionais (CNNs)](06_redes_neurais/05_convolucionais.md)
 
 ## Exercícios
 

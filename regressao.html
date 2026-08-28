@@ -72,6 +72,7 @@
 <li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -154,6 +155,22 @@ são os resíduos; o cartão mostra o MSE da sua reta e o MSE da reta ótima (a 
 mínimos quadrados). Tente bater a reta ótima na mão e sinta por que o problema
 tem uma única solução: o MSE é uma "tigela" (função convexa), sem mínimos locais
 para enganar.</p>
+<div class="widget" data-widget="wLinReg" data-id="linreg_2_1">
+  <div class="widget-title">Ajuste a reta na mão — mínimos quadrados</div>
+  <canvas id="linreg_2_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Intercepto θ₀</span><input type="range" min="-3" max="3" step="0.1" value="0" id="linreg_2_1-b0"><span class="ctrl-val" id="linreg_2_1-b0-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="linreg_2_1-b1"><span class="ctrl-val" id="linreg_2_1-b1-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="linreg_2_1-otimo">Mostrar reta ótima</button>
+    <button class="btn" id="linreg_2_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">MSE da sua reta</div><div class="sval" id="linreg_2_1-mse" style="color:#3266ad;">—</div><div class="sdesc">erro quadrático médio</div></div>
+    <div class="stat-card"><div class="slabel">MSE da reta ótima</div><div class="sval" id="linreg_2_1-mseo" style="color:#1a7a4a;">—</div><div class="sdesc">o menor possível</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>01_regressao_linear.ipynb</code> faz o ajuste de duas maneiras e mostra que
 dão o mesmo resultado:</p>
@@ -197,22 +214,6 @@ mínimos desvios absolutos* —, mais robusta a outliers, porém sem fórmula fe
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 3.</li>
 <li>Galton, F. (1886). <em>Regression Towards Mediocrity in Hereditary Stature</em>. Journal of the Anthropological Institute — o trabalho que deu nome à "regressão".</li>
 </ul>
-<div class="widget" data-widget="wLinReg" data-id="linreg_2_1">
-  <div class="widget-title">Ajuste a reta na mão — mínimos quadrados</div>
-  <canvas id="linreg_2_1-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Intercepto θ₀</span><input type="range" min="-3" max="3" step="0.1" value="0" id="linreg_2_1-b0"><span class="ctrl-val" id="linreg_2_1-b0-v">0</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="linreg_2_1-b1"><span class="ctrl-val" id="linreg_2_1-b1-v">1</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="linreg_2_1-otimo">Mostrar reta ótima</button>
-    <button class="btn" id="linreg_2_1-nova">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">MSE da sua reta</div><div class="sval" id="linreg_2_1-mse" style="color:#3266ad;">—</div><div class="sdesc">erro quadrático médio</div></div>
-    <div class="stat-card"><div class="slabel">MSE da reta ótima</div><div class="sval" id="linreg_2_1-mseo" style="color:#1a7a4a;">—</div><div class="sdesc">o menor possível</div></div>
-  </div>
-</div>
 </article>
 <article id="02-regressao-02-regressao-multipla-md" class="topic">
 <div class="topic-num">2.2</div>
@@ -276,6 +277,17 @@ variância dos coeficientes estimados cresce junto.</p>
 indicadoras</strong> (dummies): uma coluna 0/1 por categoria, deixando uma de fora como
 referência. O coeficiente de cada dummy lê-se como a diferença média em relação a
 essa categoria de referência.</p>
+<div class="widget" data-widget="wColinear" data-id="colin_2_2">
+  <div class="widget-title">Colinearidade — quando dois preditores se confundem</div>
+  <canvas id="colin_2_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Correlação entre x₁ e x₂</span><input type="range" min="0" max="0.99" step="0.01" value="0.0" id="colin_2_2-rho"><span class="ctrl-val" id="colin_2_2-rho-v">0.0</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">VIF</div><div class="sval" id="colin_2_2-vif" style="color:#c0392b;">—</div><div class="sdesc">fator de inflação da variância</div></div>
+    <div class="stat-card"><div class="slabel">Instabilidade dos coeficientes</div><div class="sval" id="colin_2_2-desvio" style="color:#3266ad;">—</div><div class="sdesc">desvio entre 60 reajustes</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>02_regressao_multipla.ipynb</code> usa o conjunto <strong>diabetes</strong> do
 scikit-learn (dez fatores clínicos prevendo a progressão da doença). Montamos a
@@ -314,17 +326,6 @@ regularização (próximo tópico), que lida bem com colinearidade.
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 3.</li>
 <li>Belsley, D. A., Kuh, E. &amp; Welsch, R. E. (1980). <em>Regression Diagnostics: Identifying Influential Data and Sources of Collinearity</em>. Wiley.</li>
 </ul>
-<div class="widget" data-widget="wColinear" data-id="colin_2_2">
-  <div class="widget-title">Colinearidade — quando dois preditores se confundem</div>
-  <canvas id="colin_2_2-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Correlação entre x₁ e x₂</span><input type="range" min="0" max="0.99" step="0.01" value="0.0" id="colin_2_2-rho"><span class="ctrl-val" id="colin_2_2-rho-v">0.0</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">VIF</div><div class="sval" id="colin_2_2-vif" style="color:#c0392b;">—</div><div class="sdesc">fator de inflação da variância</div></div>
-    <div class="stat-card"><div class="slabel">Instabilidade dos coeficientes</div><div class="sval" id="colin_2_2-desvio" style="color:#3266ad;">—</div><div class="sdesc">desvio entre 60 reajustes</div></div>
-  </div>
-</div>
 </article>
 <article id="02-regressao-03-regressao-polinomial-md" class="topic">
 <div class="topic-num">2.3</div>
@@ -370,6 +371,21 @@ validação cruzada, no capítulo de Fundamentos).</p>
 <p>O widget abaixo mostra isso: mova o slider do grau e veja a curva sair de rígida
 (subajustada) a excessivamente sinuosa (sobreajustada), enquanto os cartões de
 erro de treino e de teste seguem caminhos opostos.</p>
+<div class="widget" data-widget="wOverfit" data-id="polyreg_2_3">
+  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
+  <canvas id="polyreg_2_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="polyreg_2_3-deg"><span class="ctrl-val" id="polyreg_2_3-deg-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="polyreg_2_3-redraw">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="polyreg_2_3-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
+    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="polyreg_2_3-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
+    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="polyreg_2_3-diag">—</div><div class="sdesc">regime do modelo</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>03_regressao_polinomial.ipynb</code> usa o <code>PolynomialFeatures</code> do
 scikit-learn dentro de um <code>Pipeline</code>, ajusta polinômios de vários graus a dados
@@ -406,21 +422,6 @@ péssimo. É o retrato do overfitting: memorizou, não aprendeu.
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 7. Livro aberto: https://www.statlearning.com/</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 2 e 7 (viés–variância).</li>
 </ul>
-<div class="widget" data-widget="wOverfit" data-id="polyreg_2_3">
-  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
-  <canvas id="polyreg_2_3-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="polyreg_2_3-deg"><span class="ctrl-val" id="polyreg_2_3-deg-v">3</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="polyreg_2_3-redraw">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="polyreg_2_3-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
-    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="polyreg_2_3-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
-    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="polyreg_2_3-diag">—</div><div class="sdesc">regime do modelo</div></div>
-  </div>
-</div>
 </article>
 <article id="02-regressao-04-regularizacao-md" class="topic">
 <div class="topic-num">2.4</div>
@@ -481,6 +482,19 @@ conforme $\alpha$ cresce. Mova o slider de $\alpha$ (em escala logarítmica) e
 compare Ridge e Lasso — na Ridge os coeficientes encolhem juntos e suavemente; na
 Lasso, um a um eles chegam a <strong>zero</strong> e ali ficam. O cartão conta quantos
 coeficientes continuam diferentes de zero.</p>
+<div class="widget" data-widget="wRidgeLasso" data-id="regul_2_4">
+  <div class="widget-title">Caminho de regularização — Ridge × Lasso</div>
+  <canvas id="regul_2_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">log₁₀(α) — força da penalidade</span><input type="range" min="-3" max="3" step="0.1" value="0" id="regul_2_4-loga"><span class="ctrl-val" id="regul_2_4-loga-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Penalidade</span>
+      <select class="ctrl-select" id="regul_2_4-tipo"><option value="ridge">Ridge (ℓ₂)</option><option value="lasso">Lasso (ℓ₁)</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">α atual</div><div class="sval" id="regul_2_4-alpha" style="color:#c0392b;">—</div><div class="sdesc">força da penalidade</div></div>
+    <div class="stat-card"><div class="slabel">Coeficientes ≠ 0</div><div class="sval" id="regul_2_4-nz" style="color:#1a7a4a;">—</div><div class="sdesc">de 8 preditores</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>04_regularizacao.ipynb</code> ajusta Ridge, Lasso e ElasticNet ao conjunto
 <strong>diabetes</strong>, sempre dentro de um <code>Pipeline</code> com padronização, traça os caminhos
@@ -519,19 +533,6 @@ O bom $\alpha$ fica no meio, e se escolhe por validação cruzada.
 <li>Tibshirani, R. (1996). <em>Regression Shrinkage and Selection via the Lasso</em>. Journal of the Royal Statistical Society B, 58(1), 267–288.</li>
 <li>Zou, H. &amp; Hastie, T. (2005). <em>Regularization and Variable Selection via the Elastic Net</em>. JRSS B, 67(2), 301–320.</li>
 </ul>
-<div class="widget" data-widget="wRidgeLasso" data-id="regul_2_4">
-  <div class="widget-title">Caminho de regularização — Ridge × Lasso</div>
-  <canvas id="regul_2_4-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">log₁₀(α) — força da penalidade</span><input type="range" min="-3" max="3" step="0.1" value="0" id="regul_2_4-loga"><span class="ctrl-val" id="regul_2_4-loga-v">0</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Penalidade</span>
-      <select class="ctrl-select" id="regul_2_4-tipo"><option value="ridge">Ridge (ℓ₂)</option><option value="lasso">Lasso (ℓ₁)</option></select></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">α atual</div><div class="sval" id="regul_2_4-alpha" style="color:#c0392b;">—</div><div class="sdesc">força da penalidade</div></div>
-    <div class="stat-card"><div class="slabel">Coeficientes ≠ 0</div><div class="sval" id="regul_2_4-nz" style="color:#1a7a4a;">—</div><div class="sdesc">de 8 preditores</div></div>
-  </div>
-</div>
 </article>
 <article id="02-regressao-05-regressao-logistica-md" class="topic">
 <div class="topic-num">2.5</div>
@@ -592,6 +593,21 @@ risco</strong>; $\theta_j < 0$, um fator de proteção. É por isso que a regres
 <p>O widget abaixo mostra a sigmoide de um preditor: mova a <strong>inclinação</strong> (o peso
 $\theta_1$) e o <strong>limiar</strong> de decisão e veja a fronteira separar os dois grupos de
 pontos, com a acurácia atualizando ao vivo.</p>
+<div class="widget" data-widget="wLogistic" data-id="logi_2_5">
+  <div class="widget-title">Regressão logística — sigmoide e fronteira de decisão</div>
+  <canvas id="logi_2_5-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁ (peso)</span><input type="range" min="0.2" max="8" step="0.1" value="2" id="logi_2_5-b1"><span class="ctrl-val" id="logi_2_5-b1-v">2</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Deslocamento θ₀</span><input type="range" min="-6" max="6" step="0.1" value="0" id="logi_2_5-b0"><span class="ctrl-val" id="logi_2_5-b0-v">0</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="logi_2_5-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="logi_2_5-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar p = 0,5</div></div>
+    <div class="stat-card"><div class="slabel">Log-loss</div><div class="sval" id="logi_2_5-loss" style="color:#c0392b;">—</div><div class="sdesc">menor = melhor</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>05_regressao_logistica.ipynb</code> treina um classificador no conjunto
 <strong>breast cancer</strong> do scikit-learn (diagnóstico benigno × maligno), interpreta os
@@ -630,21 +646,6 @@ bem-calibrado.
 <li>Hosmer, D. W., Lemeshow, S. &amp; Sturdivant, R. X. (2013). <em>Applied Logistic Regression</em>, 3ª ed. Wiley.</li>
 <li>Cox, D. R. (1958). <em>The Regression Analysis of Binary Sequences</em>. Journal of the Royal Statistical Society B, 20(2), 215–242.</li>
 </ul>
-<div class="widget" data-widget="wLogistic" data-id="logi_2_5">
-  <div class="widget-title">Regressão logística — sigmoide e fronteira de decisão</div>
-  <canvas id="logi_2_5-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Inclinação θ₁ (peso)</span><input type="range" min="0.2" max="8" step="0.1" value="2" id="logi_2_5-b1"><span class="ctrl-val" id="logi_2_5-b1-v">2</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Deslocamento θ₀</span><input type="range" min="-6" max="6" step="0.1" value="0" id="logi_2_5-b0"><span class="ctrl-val" id="logi_2_5-b0-v">0</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="logi_2_5-nova">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="logi_2_5-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar p = 0,5</div></div>
-    <div class="stat-card"><div class="slabel">Log-loss</div><div class="sval" id="logi_2_5-loss" style="color:#c0392b;">—</div><div class="sdesc">menor = melhor</div></div>
-  </div>
-</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

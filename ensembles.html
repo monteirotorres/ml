@@ -72,6 +72,7 @@
 <li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -143,6 +144,20 @@ o número de árvores e veja a média se firmar.</p>
 </ul>
 <p>Por tudo isso — robustez, pouco ajuste, resistência a overfitting — a random
 forest é um dos primeiros modelos a se tentar em dados tabulares.</p>
+<div class="widget" data-widget="wBagging" data-id="bag_4_1">
+  <div class="widget-title">Bagging — a média de muitas árvores reduz a variância</div>
+  <canvas id="bag_4_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de árvores (B)</span><input type="range" min="1" max="60" step="1" value="1" id="bag_4_1-b"><span class="ctrl-val" id="bag_4_1-b-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="bag_4_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Variabilidade da média</div><div class="sval" id="bag_4_1-var" style="color:#3266ad;">—</div><div class="sdesc">dispersão do modelo combinado</div></div>
+    <div class="stat-card"><div class="slabel">Efeito</div><div class="sval" id="bag_4_1-reg">—</div><div class="sdesc">o que B faz</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>01_random_forest.ipynb</code> treina uma <code>RandomForestClassifier</code> no conjunto
 <strong>breast cancer</strong>, mostra a acurácia crescer e estabilizar com o número de árvores,
@@ -178,20 +193,6 @@ próprio treino, sem separar dados nem retreinar.
 <li>Breiman, L. (2001). <em>Random Forests</em>. Machine Learning, 45, 5–32 — o artigo seminal.</li>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 8. Livro aberto: https://www.statlearning.com/</li>
 </ul>
-<div class="widget" data-widget="wBagging" data-id="bag_4_1">
-  <div class="widget-title">Bagging — a média de muitas árvores reduz a variância</div>
-  <canvas id="bag_4_1-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de árvores (B)</span><input type="range" min="1" max="60" step="1" value="1" id="bag_4_1-b"><span class="ctrl-val" id="bag_4_1-b-v">1</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="bag_4_1-nova">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Variabilidade da média</div><div class="sval" id="bag_4_1-var" style="color:#3266ad;">—</div><div class="sdesc">dispersão do modelo combinado</div></div>
-    <div class="stat-card"><div class="slabel">Efeito</div><div class="sval" id="bag_4_1-reg">—</div><div class="sdesc">o que B faz</div></div>
-  </div>
-</div>
 </article>
 <article id="04-ensembles-02-gradient-boosting-md" class="topic">
 <div class="topic-num">4.2</div>
@@ -236,6 +237,18 @@ cada árvore persegue os resíduos, um número excessivo acaba ajustando o <stro
 do treino. O número de estágios é, ele próprio, um regulador de overfitting — e se
 escolhe por validação (muitas vezes com <em>early stopping</em>, parando quando o erro de
 validação para de cair).</p>
+<div class="widget" data-widget="wBoosting" data-id="boost_4_2">
+  <div class="widget-title">Gradient boosting — árvores que corrigem resíduos</div>
+  <canvas id="boost_4_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de estágios (M)</span><input type="range" min="0" max="40" step="1" value="0" id="boost_4_2-m"><span class="ctrl-val" id="boost_4_2-m-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado ν</span><input type="range" min="0.05" max="1" step="0.05" value="0.3" id="boost_4_2-nu"><span class="ctrl-val" id="boost_4_2-nu-v">0.3</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="boost_4_2-err" style="color:#c0392b;">—</div><div class="sdesc">resíduo quadrático médio</div></div>
+    <div class="stat-card"><div class="slabel">Estágio</div><div class="sval" id="boost_4_2-reg">—</div><div class="sdesc">o modelo se aproxima</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>02_gradient_boosting.ipynb</code> constrói o boosting <strong>à mão</strong> num problema
 de regressão 1D — ajustando árvores rasas aos resíduos num laço explícito, para ver
@@ -275,18 +288,6 @@ clássico compromisso entre desempenho e tempo de treino.
 <li>Friedman, J. H. (2001). <em>Greedy Function Approximation: A Gradient Boosting Machine</em>. Annals of Statistics, 29(5), 1189–1232 — o artigo seminal.</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 10.</li>
 </ul>
-<div class="widget" data-widget="wBoosting" data-id="boost_4_2">
-  <div class="widget-title">Gradient boosting — árvores que corrigem resíduos</div>
-  <canvas id="boost_4_2-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de estágios (M)</span><input type="range" min="0" max="40" step="1" value="0" id="boost_4_2-m"><span class="ctrl-val" id="boost_4_2-m-v">0</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado ν</span><input type="range" min="0.05" max="1" step="0.05" value="0.3" id="boost_4_2-nu"><span class="ctrl-val" id="boost_4_2-nu-v">0.3</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="boost_4_2-err" style="color:#c0392b;">—</div><div class="sdesc">resíduo quadrático médio</div></div>
-    <div class="stat-card"><div class="slabel">Estágio</div><div class="sval" id="boost_4_2-reg">—</div><div class="sdesc">o modelo se aproxima</div></div>
-  </div>
-</div>
 </article>
 <article id="04-ensembles-03-xgboost-md" class="topic">
 <div class="topic-num">4.3</div>
@@ -403,7 +404,6 @@ que generalizam melhor.
 <li>Ke, G. et al. (2017). <em>LightGBM: A Highly Efficient Gradient Boosting Decision Tree</em>. NeurIPS, 30.</li>
 <li>Friedman, J. H. (2001). <em>Greedy Function Approximation: A Gradient Boosting Machine</em>. Annals of Statistics, 29(5), 1189–1232.</li>
 </ul>
-
 </article>
 <article id="04-ensembles-04-stacking-md" class="topic">
 <div class="topic-num">4.4</div>
@@ -460,6 +460,18 @@ complexidade (treinar vários modelos e mais um por cima). Vale a pena quando ca
 ponto percentual importa (competições, produção madura) e os modelos de base são
 genuinamente diversos. Para a maioria dos casos, uma boa random forest ou um
 gradient boosting bem ajustado já entrega quase tudo, com muito menos trabalho.</p>
+<div class="widget" data-widget="wVoting" data-id="vote_4_4">
+  <div class="widget-title">Soft voting — misturar dois modelos diferentes</div>
+  <canvas id="vote_4_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Peso do modelo A na mistura</span><input type="range" min="0" max="1" step="0.05" value="0.5" id="vote_4_4-w"><span class="ctrl-val" id="vote_4_4-w-v">0.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia — só A</div><div class="sval" id="vote_4_4-accA" style="color:#3266ad;">—</div><div class="sdesc">modelo de base A</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia — só B</div><div class="sval" id="vote_4_4-accB" style="color:#c0392b;">—</div><div class="sdesc">modelo de base B</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia da mistura</div><div class="sval" id="vote_4_4-accM" style="color:#1a7a4a;">—</div><div class="sdesc">combinação ponderada</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>04_stacking.ipynb</code> combina três modelos de base diferentes (regressão
 logística, SVM e floresta) por soft voting e por stacking (com o
@@ -497,18 +509,6 @@ falharem em casos distintos; sem isso, votar apenas reproduz os mesmos erros.
 <li>Breiman, L. (1996). <em>Stacked Regressions</em>. Machine Learning, 24, 49–64.</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 8.8.</li>
 </ul>
-<div class="widget" data-widget="wVoting" data-id="vote_4_4">
-  <div class="widget-title">Soft voting — misturar dois modelos diferentes</div>
-  <canvas id="vote_4_4-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Peso do modelo A na mistura</span><input type="range" min="0" max="1" step="0.05" value="0.5" id="vote_4_4-w"><span class="ctrl-val" id="vote_4_4-w-v">0.5</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Acurácia — só A</div><div class="sval" id="vote_4_4-accA" style="color:#3266ad;">—</div><div class="sdesc">modelo de base A</div></div>
-    <div class="stat-card"><div class="slabel">Acurácia — só B</div><div class="sval" id="vote_4_4-accB" style="color:#c0392b;">—</div><div class="sdesc">modelo de base B</div></div>
-    <div class="stat-card"><div class="slabel">Acurácia da mistura</div><div class="sval" id="vote_4_4-accM" style="color:#1a7a4a;">—</div><div class="sdesc">combinação ponderada</div></div>
-  </div>
-</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

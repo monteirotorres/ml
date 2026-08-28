@@ -72,6 +72,7 @@
 <li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -154,6 +155,22 @@ mostra a inércia.</p>
 euclidiana — então é <strong>sensível à escala</strong> (padronize antes!) e falha quando os
 grupos reais têm formas alongadas ou densidades muito diferentes. Saber onde ele
 quebra é tão importante quanto saber usá-lo.</p>
+<div class="widget" data-widget="wKmeans" data-id="kmeans_5_1">
+  <div class="widget-title">k-means — agrupando ao vivo</div>
+  <canvas id="kmeans_5_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de grupos (k)</span><input type="range" min="1" max="6" step="1" value="3" id="kmeans_5_1-k"><span class="ctrl-val" id="kmeans_5_1-k-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="kmeans_5_1-passo">Um passo (Lloyd)</button>
+    <button class="btn" id="kmeans_5_1-conv">Convergir</button>
+    <button class="btn" id="kmeans_5_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Inércia (WCSS)</div><div class="sval" id="kmeans_5_1-inercia" style="color:#3266ad;">—</div><div class="sdesc">soma das distâncias² aos centros</div></div>
+    <div class="stat-card"><div class="slabel">Iterações</div><div class="sval" id="kmeans_5_1-iter">—</div><div class="sdesc">passos até estabilizar</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>01_kmeans.ipynb</code> aplica o <code>KMeans</code> ao Iris (sem usar os rótulos),
 traça a curva do <strong>cotovelo</strong> e a <strong>silhueta</strong> para escolher $k$, compara o
@@ -190,22 +207,6 @@ essencial para que todas as variáveis pesem de forma comparável.
 <li>Arthur, D. &amp; Vassilvitskii, S. (2007). <em>k-means++: The Advantages of Careful Seeding</em>. SODA, 1027–1035.</li>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 12. Livro aberto: https://www.statlearning.com/</li>
 </ul>
-<div class="widget" data-widget="wKmeans" data-id="kmeans_5_1">
-  <div class="widget-title">k-means — agrupando ao vivo</div>
-  <canvas id="kmeans_5_1-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de grupos (k)</span><input type="range" min="1" max="6" step="1" value="3" id="kmeans_5_1-k"><span class="ctrl-val" id="kmeans_5_1-k-v">3</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="kmeans_5_1-passo">Um passo (Lloyd)</button>
-    <button class="btn" id="kmeans_5_1-conv">Convergir</button>
-    <button class="btn" id="kmeans_5_1-nova">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Inércia (WCSS)</div><div class="sval" id="kmeans_5_1-inercia" style="color:#3266ad;">—</div><div class="sdesc">soma das distâncias² aos centros</div></div>
-    <div class="stat-card"><div class="slabel">Iterações</div><div class="sval" id="kmeans_5_1-iter">—</div><div class="sdesc">passos até estabilizar</div></div>
-  </div>
-</div>
 </article>
 <article id="05-nao-supervisionado-02-hierarquico-md" class="topic">
 <div class="topic-num">5.2</div>
@@ -254,6 +255,16 @@ grande separa a estrutura natural.</p>
 <p>O dendrograma é a estrutura por trás dos <strong>heatmaps de expressão gênica</strong>: genes e
 amostras são reordenados por proximidade e as árvores nas bordas mostram quais
 agrupam com quais. É a ferramenta visual padrão para explorar dados ômicos.</p>
+<div class="widget" data-widget="wDendro" data-id="dendro_5_2">
+  <div class="widget-title">Dendrograma — corte a árvore e conte os grupos</div>
+  <canvas id="dendro_5_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Altura do corte</span><input type="range" min="0.05" max="1" step="0.01" value="0.55" id="dendro_5_2-corte"><span class="ctrl-val" id="dendro_5_2-corte-v">0.55</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Grupos formados</div><div class="sval" id="dendro_5_2-ngrupos" style="color:#1a7a4a;">—</div><div class="sdesc">abaixo da linha de corte</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>02_hierarquico.ipynb</code> aplica clustering aglomerativo ao Iris,
 <strong>desenha o dendrograma</strong> com Plotly (usando a ligação de Ward), compara os critérios
@@ -290,16 +301,6 @@ olham o grupo como um todo, são mais robustas a isso.
 <li>Sokal, R. &amp; Michener, C. (1958). <em>A Statistical Method for Evaluating Systematic Relationships</em>. University of Kansas Science Bulletin.</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 14.3.</li>
 </ul>
-<div class="widget" data-widget="wDendro" data-id="dendro_5_2">
-  <div class="widget-title">Dendrograma — corte a árvore e conte os grupos</div>
-  <canvas id="dendro_5_2-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Altura do corte</span><input type="range" min="0.05" max="1" step="0.01" value="0.55" id="dendro_5_2-corte"><span class="ctrl-val" id="dendro_5_2-corte-v">0.55</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Grupos formados</div><div class="sval" id="dendro_5_2-ngrupos" style="color:#1a7a4a;">—</div><div class="sdesc">abaixo da linha de corte</div></div>
-  </div>
-</div>
 </article>
 <article id="05-nao-supervisionado-03-pca-md" class="topic">
 <div class="topic-num">5.3</div>
@@ -350,6 +351,20 @@ milhares (renda) teria variância muito maior que uma proporção (0 a 1), e a P
 escolheria como primeira componente só pela escala. Por isso, salvo quando todas as
 variáveis já estão na mesma unidade, <strong>padroniza-se</strong> antes (média 0, desvio 1) —
 aí a PCA opera sobre a matriz de <strong>correlação</strong>, não de covariância.</p>
+<div class="widget" data-widget="wPca" data-id="pca_5_3">
+  <div class="widget-title">PCA — a direção de máxima variância</div>
+  <canvas id="pca_5_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Ângulo da direção de projeção (°)</span><input type="range" min="0" max="180" step="1" value="20" id="pca_5_3-ang"><span class="ctrl-val" id="pca_5_3-ang-v">20</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="pca_5_3-otimo">Ir para a 1ª componente</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Variância capturada</div><div class="sval" id="pca_5_3-vexp" style="color:#3266ad;">—</div><div class="sdesc">nesta direção</div></div>
+    <div class="stat-card"><div class="slabel">Máximo possível (PC1)</div><div class="sval" id="pca_5_3-max" style="color:#1a7a4a;">—</div><div class="sdesc">variância da 1ª componente</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>03_pca.ipynb</code> aplica a PCA (com padronização) ao Iris e ao conjunto
 <strong>breast cancer</strong>, traça o <strong>scree plot</strong> e a variância explicada acumulada, projeta
@@ -385,20 +400,6 @@ escala. Padronizar coloca todas na mesma régua e evita esse artefato.
 <li>Hotelling, H. (1933). <em>Analysis of a Complex of Statistical Variables into Principal Components</em>. Journal of Educational Psychology, 24, 417–441.</li>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 12. Livro aberto: https://www.statlearning.com/</li>
 </ul>
-<div class="widget" data-widget="wPca" data-id="pca_5_3">
-  <div class="widget-title">PCA — a direção de máxima variância</div>
-  <canvas id="pca_5_3-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Ângulo da direção de projeção (°)</span><input type="range" min="0" max="180" step="1" value="20" id="pca_5_3-ang"><span class="ctrl-val" id="pca_5_3-ang-v">20</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="pca_5_3-otimo">Ir para a 1ª componente</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Variância capturada</div><div class="sval" id="pca_5_3-vexp" style="color:#3266ad;">—</div><div class="sdesc">nesta direção</div></div>
-    <div class="stat-card"><div class="slabel">Máximo possível (PC1)</div><div class="sval" id="pca_5_3-max" style="color:#1a7a4a;">—</div><div class="sdesc">variância da 1ª componente</div></div>
-  </div>
-</div>
 </article>
 <article id="05-nao-supervisionado-04-tsne-umap-md" class="topic">
 <div class="topic-num">5.4</div>
@@ -477,7 +478,6 @@ t-SNE/UMAP cuida do arranjo local final.
 <li>McInnes, L., Healy, J. &amp; Melville, J. (2018). <em>UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</em>. arXiv:1802.03426.</li>
 <li>Wattenberg, M., Viégas, F. &amp; Johnson, I. (2016). <em>How to Use t-SNE Effectively</em>. Distill — sobre as armadilhas de interpretação.</li>
 </ul>
-
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

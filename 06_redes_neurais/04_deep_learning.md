@@ -2,9 +2,10 @@
 
 *Deep learning* é, em uma frase, o uso de redes neurais com **muitas camadas**. Mas
 a profundidade não é só "mais do mesmo": ela muda qualitativamente o que a rede
-aprende. Este tópico fecha o capítulo com um panorama — o que a profundidade traz,
-as arquiteturas principais e, honestamente, **quando** o deep learning compensa e
-quando não.
+aprende. Este tópico traz um panorama — o que a profundidade traz, as arquiteturas
+principais e, honestamente, **quando** o deep learning compensa e quando não. O
+próximo tópico mergulha na mais emblemática dessas arquiteturas para imagens, as
+redes convolucionais.
 
 ## O que a profundidade traz: representações hierárquicas
 

@@ -1121,6 +1121,181 @@ function wActivation(id) {
 }
 
 // ============================================================
+// Widget: um neurônio ao vivo (soma ponderada + ativação)
+// ------------------------------------------------------------
+// Diagrama de UM perceptron: entradas x1,x2 e o viés (entrada
+// fixa 1) chegam por conexões cujos pesos o aluno ajusta; a soma
+// z corre até a ativação f, que produz a saída a. Sem sorteio:
+// mover um slider só recalcula a conta.
+// ============================================================
+function wNeuron(id) {
+  const cv = $(id + '-cv');
+  function f(z, k) {
+    if (k === 'sigmoid') return 1 / (1 + Math.exp(-z));
+    if (k === 'tanh') return Math.tanh(z);
+    if (k === 'relu') return Math.max(0, z);
+    return z >= 0 ? 1 : 0;               // degrau
+  }
+  function fmt(v) { return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2); }
+  function draw() {
+    const p = pal();
+    const x1 = +$(id + '-x1').value, x2 = +$(id + '-x2').value;
+    const w1 = +$(id + '-w1').value, w2 = +$(id + '-w2').value, b = +$(id + '-b').value;
+    const k = $(id + '-fn').value;
+    ['x1', 'x2', 'w1', 'w2', 'b'].forEach(key =>
+      $(id + '-' + key + '-v').textContent = (+$(id + '-' + key).value).toFixed(2));
+    const z = w1 * x1 + w2 * x2 + b, a = f(z, k);
+
+    const W = 640, H = 300, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    ctx.lineJoin = 'round';
+    const xin = 96, xsum = 340, xact = 452, xout = 566;
+    const yin = [72, 150, 236];                 // x1, x2, viés(1)
+    const ysum = 150;
+    const entradas = [
+      { y: yin[0], val: x1, w: w1, lab: 'x₁ = ' + x1.toFixed(2), wl: 'w₁ ' + fmt(w1) },
+      { y: yin[1], val: x2, w: w2, lab: 'x₂ = ' + x2.toFixed(2), wl: 'w₂ ' + fmt(w2) },
+      { y: yin[2], val: 1, w: b, lab: '1  (viés)', wl: 'b ' + fmt(b) },
+    ];
+    // conexões (largura e cor pelo peso)
+    entradas.forEach(e => {
+      ctx.strokeStyle = e.w >= 0 ? p.blue : p.red;
+      ctx.lineWidth = 1 + Math.min(6, Math.abs(e.w) * 1.8);
+      ctx.globalAlpha = 0.85; ctx.beginPath();
+      ctx.moveTo(xin + 30, e.y); ctx.lineTo(xsum - 34, ysum); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = e.w >= 0 ? p.blue : p.red;
+      ctx.font = '12px Georgia, serif'; ctx.textAlign = 'center';
+      const fr = 0.32;                       // perto da entrada, onde as linhas se abrem
+      const mx = (xin + 30) + fr * ((xsum - 34) - (xin + 30));
+      const my = e.y + fr * (ysum - e.y) - 10;
+      ctx.fillText(e.wl, mx, my);
+    });
+    // nós de entrada
+    entradas.forEach(e => {
+      ctx.fillStyle = p.paper; ctx.strokeStyle = p.ink; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(xin, e.y, 22, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = p.ink; ctx.font = '13px Georgia, serif'; ctx.textAlign = 'center';
+      ctx.fillText(e.val.toFixed(2), xin, e.y + 4);
+      ctx.textAlign = 'right'; ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif';
+      ctx.fillText(e.lab, xin - 28, e.y + 4);
+    });
+    // nó de soma
+    ctx.fillStyle = p.blueF; ctx.strokeStyle = p.blue; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(xsum, ysum, 34, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = p.ink; ctx.font = '22px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('Σ', xsum, ysum + 7);
+    ctx.font = '13px Georgia, serif'; ctx.fillStyle = p.blue;
+    ctx.fillText('z = ' + z.toFixed(2), xsum, ysum + 56);
+    // soma -> ativação
+    ctx.strokeStyle = p.ink; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(xsum + 34, ysum); ctx.lineTo(xact - 26, ysum); ctx.stroke();
+    // caixa de ativação
+    ctx.fillStyle = p.greenF; ctx.strokeStyle = p.green; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.rect(xact - 26, ysum - 26, 52, 52); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = p.ink; ctx.font = '16px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('f', xact, ysum + 5);
+    ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif';
+    ctx.fillText($(id + '-fn').selectedOptions[0].text, xact, ysum + 46);
+    // ativação -> saída
+    ctx.strokeStyle = p.ink; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(xact + 26, ysum); ctx.lineTo(xout - 26, ysum); ctx.stroke();
+    // nó de saída
+    ctx.fillStyle = p.greenF; ctx.strokeStyle = p.green; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(xout, ysum, 26, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = p.ink; ctx.font = '14px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText(a.toFixed(2), xout, ysum + 5);
+    ctx.fillStyle = p.muted; ctx.font = '12px Georgia, serif';
+    ctx.fillText('a', xout, ysum - 34);
+
+    $(id + '-z').textContent = z.toFixed(2);
+    $(id + '-a').textContent = a.toFixed(3);
+  }
+  ['x1', 'x2', 'w1', 'w2', 'b'].forEach(key => $(id + '-' + key).addEventListener('input', draw));
+  $(id + '-fn').addEventListener('change', draw);
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
+// Widget: convolução ao vivo (filtro 3x3 deslizando pela imagem)
+// ------------------------------------------------------------
+// Imagem em tons de cinza; um kernel escolhido pelo aluno desliza
+// e produz o mapa de ativação. O slider move a janela e mostra a
+// conta daquela posição. Mesmo filtro em toda a imagem.
+// ============================================================
+function wConv(id) {
+  const cv = $(id + '-cv'); const N = 9, M = N - 2;
+  function imagem(tipo) {
+    const g = Array.from({ length: N }, () => Array(N).fill(0));
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      if (tipo === 'diag') g[i][j] = (Math.abs(i - j) <= 1) ? 1 : 0.05;
+      else if (tipo === 'cruz') g[i][j] = (i === 4 || j === 4) ? 1 : 0.05;
+      else { const borda = (i >= 2 && i <= 6 && j >= 2 && j <= 6) && (i === 2 || i === 6 || j === 2 || j === 6); g[i][j] = borda ? 1 : 0.05; }
+    }
+    return g;
+  }
+  const KERNELS = {
+    vert: [[1, 0, -1], [2, 0, -2], [1, 0, -1]],
+    horiz: [[1, 2, 1], [0, 0, 0], [-1, -2, -1]],
+    realce: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
+    borrar: [[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]],
+    ident: [[0, 0, 0], [0, 1, 0], [0, 0, 0]],
+  };
+  const PAPEL = {
+    vert: 'mudanças na horizontal (bordas verticais)',
+    horiz: 'mudanças na vertical (bordas horizontais)',
+    realce: 'aumenta o contraste local (nitidez)',
+    borrar: 'suaviza, borra os detalhes',
+    ident: 'copia a imagem (nada muda)',
+  };
+  function conv(img, K, oi, oj) { let s = 0; for (let u = 0; u < 3; u++) for (let v = 0; v < 3; v++) s += K[u][v] * img[oi + u][oj + v]; return s; }
+  function tom(ctx, v, x, y, c, col) { ctx.fillStyle = col; ctx.globalAlpha = Math.max(0, Math.min(1, v)); ctx.fillRect(x, y, c, c); ctx.globalAlpha = 1; }
+  function draw() {
+    const p = pal();
+    const img = imagem($(id + '-img').value), K = KERNELS[$(id + '-ker').value];
+    $(id + '-pos-v').textContent = $(id + '-pos').value;
+    // mapa de ativação + faixa para normalizar a exibição
+    const mapa = Array.from({ length: M }, () => Array(M).fill(0));
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) { const s = conv(img, K, i, j); mapa[i][j] = s; lo = Math.min(lo, s); hi = Math.max(hi, s); }
+    const rng = (hi - lo) < 1e-6 ? 1 : hi - lo;
+    const total = M * M, sel = Math.min(total - 1, Math.round(+$(id + '-pos').value / 100 * (total - 1)));
+    const si = Math.floor(sel / M), sj = sel % M;
+
+    const W = 640, H = 320, ctx = setupCanvas(cv, W, H); ctx.clearRect(0, 0, W, H);
+    const c = 26, x0 = 24, y0 = 54, x1 = 400, y1 = 54 + c;   // imagem 9x9, mapa 7x7 alinhado
+    ctx.fillStyle = p.muted; ctx.font = '13px Georgia, serif'; ctx.textAlign = 'left';
+    ctx.fillText('Imagem (9×9)', x0, 40); ctx.fillText('Mapa de ativação (7×7)', x1, 40);
+    // imagem
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      tom(ctx, img[i][j], x0 + j * c, y0 + i * c, c, p.ink);
+      ctx.strokeStyle = p.line; ctx.lineWidth = 1; ctx.strokeRect(x0 + j * c, y0 + i * c, c, c);
+    }
+    // janela 3x3 atual
+    ctx.strokeStyle = p.red; ctx.lineWidth = 3;
+    ctx.strokeRect(x0 + sj * c, y0 + si * c, 3 * c, 3 * c);
+    // mapa de ativação
+    for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) {
+      tom(ctx, (mapa[i][j] - lo) / rng, x1 + j * c, y1 + i * c, c, p.blue);
+      ctx.strokeStyle = p.line; ctx.lineWidth = 1; ctx.strokeRect(x1 + j * c, y1 + i * c, c, c);
+    }
+    // célula de saída correspondente
+    ctx.strokeStyle = p.red; ctx.lineWidth = 3;
+    ctx.strokeRect(x1 + sj * c, y1 + si * c, c, c);
+    // seta
+    ctx.strokeStyle = p.muted; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(x0 + N * c + 12, H / 2); ctx.lineTo(x1 - 14, H / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1 - 14, H / 2); ctx.lineTo(x1 - 24, H / 2 - 6); ctx.lineTo(x1 - 24, H / 2 + 6); ctx.closePath();
+    ctx.fillStyle = p.muted; ctx.fill();
+
+    $(id + '-val').textContent = conv(img, K, si, sj).toFixed(2);
+    $(id + '-papel').textContent = PAPEL[$(id + '-ker').value];
+  }
+  ['img', 'ker', 'pos'].forEach(key => $(id + '-' + key).addEventListener('input', draw));
+  ['img', 'ker'].forEach(key => $(id + '-' + key).addEventListener('change', draw));
+  window.addEventListener('resize', draw); draw();
+}
+
+// ============================================================
 // Tabs + sidebar runtime  (infra do site — NÃO alterar)
 // ============================================================
 function showTopic(target) {

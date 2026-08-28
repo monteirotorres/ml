@@ -72,6 +72,7 @@
 <li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -143,6 +144,20 @@ aproximadamente à mesma distância uns dos outros</strong>. O conceito de "vizi
 próximo" perde sentido, e o k-NN degrada. É a <strong>maldição da dimensionalidade</strong>, e
 é uma das razões para reduzir dimensões (PCA, capítulo 5) antes de aplicar métodos
 baseados em distância.</p>
+<div class="widget" data-widget="wKnn" data-id="knn_3_1">
+  <div class="widget-title">k-NN — como o k molda a fronteira</div>
+  <canvas id="knn_3_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de vizinhos (k)</span><input type="range" min="1" max="25" step="2" value="1" id="knn_3_1-k"><span class="ctrl-val" id="knn_3_1-k-v">1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="knn_3_1-nova">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acurácia no treino</div><div class="sval" id="knn_3_1-acc" style="color:#3266ad;">—</div><div class="sdesc">fração classificada certa</div></div>
+    <div class="stat-card"><div class="slabel">Regime</div><div class="sval" id="knn_3_1-reg">—</div><div class="sdesc">efeito do k</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>01_knn.ipynb</code> classifica o conjunto <strong>Iris</strong> com <code>KNeighborsClassifier</code>
 dentro de um <code>Pipeline</code> com padronização, varre vários valores de $k$ medindo a
@@ -176,20 +191,6 @@ outra. Padronizar (ou normalizar) antes teria dado peso comparável às duas.
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 2 e 4. Livro aberto: https://www.statlearning.com/</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 13.</li>
 </ul>
-<div class="widget" data-widget="wKnn" data-id="knn_3_1">
-  <div class="widget-title">k-NN — como o k molda a fronteira</div>
-  <canvas id="knn_3_1-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de vizinhos (k)</span><input type="range" min="1" max="25" step="2" value="1" id="knn_3_1-k"><span class="ctrl-val" id="knn_3_1-k-v">1</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="knn_3_1-nova">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Acurácia no treino</div><div class="sval" id="knn_3_1-acc" style="color:#3266ad;">—</div><div class="sdesc">fração classificada certa</div></div>
-    <div class="stat-card"><div class="slabel">Regime</div><div class="sval" id="knn_3_1-reg">—</div><div class="sdesc">efeito do k</div></div>
-  </div>
-</div>
 </article>
 <article id="03-classificacao-02-arvores-decisao-md" class="topic">
 <div class="topic-num">3.2</div>
@@ -234,6 +235,18 @@ acurácia — tente encontrar os cortes que melhor separam as classes.</p>
 <code>min_samples_leaf</code> (mínimo de exemplos por folha), ou <strong>podando</strong> a árvore depois
 de crescida. Justamente porque uma árvore isolada tende a overfittar, elas brilham
 mesmo é <strong>em conjunto</strong> — a motivação direta dos ensembles do próximo capítulo.</p>
+<div class="widget" data-widget="wTree" data-id="tree_3_2">
+  <div class="widget-title">Árvore rasa — dois cortes que particionam o plano</div>
+  <canvas id="tree_3_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Corte vertical (x₁)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-tx"><span class="ctrl-val" id="tree_3_2-tx-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Corte horizontal (x₂)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-ty"><span class="ctrl-val" id="tree_3_2-ty-v">0</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Impureza de Gini média</div><div class="sval" id="tree_3_2-gini" style="color:#c0392b;">—</div><div class="sdesc">0 = regiões puras</div></div>
+    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="tree_3_2-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar dos cortes</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>02_arvores_decisao.ipynb</code> treina uma <code>DecisionTreeClassifier</code> no Iris,
 <strong>desenha a árvore</strong> aprendida (as perguntas em cada nó), mostra a curva de
@@ -269,18 +282,6 @@ não generalizou.
 <li>Quinlan, J. R. (1986). <em>Induction of Decision Trees</em>. Machine Learning, 1, 81–106 (algoritmo ID3).</li>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 8. Livro aberto: https://www.statlearning.com/</li>
 </ul>
-<div class="widget" data-widget="wTree" data-id="tree_3_2">
-  <div class="widget-title">Árvore rasa — dois cortes que particionam o plano</div>
-  <canvas id="tree_3_2-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Corte vertical (x₁)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-tx"><span class="ctrl-val" id="tree_3_2-tx-v">0</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Corte horizontal (x₂)</span><input type="range" min="-3" max="3" step="0.1" value="0" id="tree_3_2-ty"><span class="ctrl-val" id="tree_3_2-ty-v">0</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Impureza de Gini média</div><div class="sval" id="tree_3_2-gini" style="color:#c0392b;">—</div><div class="sdesc">0 = regiões puras</div></div>
-    <div class="stat-card"><div class="slabel">Acurácia</div><div class="sval" id="tree_3_2-acc" style="color:#3266ad;">—</div><div class="sdesc">no limiar dos cortes</div></div>
-  </div>
-</div>
 </article>
 <article id="03-classificacao-03-naive-bayes-md" class="topic">
 <div class="topic-num">3.3</div>
@@ -339,6 +340,18 @@ para evitar que o produto vá a zero por limite numérico.</p>
 uma com sua curva normal. Mova as médias e veja a <strong>probabilidade a posteriori</strong> e
 a fronteira de decisão (onde as duas curvas, ponderadas pela priori, se cruzam)
 se deslocarem.</p>
+<div class="widget" data-widget="wBayes" data-id="bayes_3_3">
+  <div class="widget-title">Naive Bayes gaussiano — verossimilhança e posteriori</div>
+  <canvas id="bayes_3_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Média da classe A</span><input type="range" min="-4" max="0" step="0.1" value="-1.5" id="bayes_3_3-m0"><span class="ctrl-val" id="bayes_3_3-m0-v">-1.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Média da classe B</span><input type="range" min="0" max="4" step="0.1" value="1.5" id="bayes_3_3-m1"><span class="ctrl-val" id="bayes_3_3-m1-v">1.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Priori da classe A</span><input type="range" min="0.1" max="0.9" step="0.05" value="0.5" id="bayes_3_3-pa"><span class="ctrl-val" id="bayes_3_3-pa-v">0.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Fronteira de decisão</div><div class="sval" id="bayes_3_3-fron" style="color:#1a7a4a;">—</div><div class="sdesc">onde as posterioris se cruzam</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>03_naive_bayes.ipynb</code> usa o <code>GaussianNB</code> no Iris — mostrando as curvas
 normais estimadas por classe — e depois um <code>MultinomialNB</code> em um problema de texto
@@ -375,18 +388,6 @@ mesmo sendo um estimador de probabilidade medíocre.
 <li>Domingos, P. &amp; Pazzani, M. (1997). <em>On the Optimality of the Simple Bayesian Classifier under Zero-One Loss</em>. Machine Learning, 29, 103–130.</li>
 <li>Hastie, T., Tibshirani, R. &amp; Friedman, J. (2009). <em>The Elements of Statistical Learning</em>, cap. 6.6.</li>
 </ul>
-<div class="widget" data-widget="wBayes" data-id="bayes_3_3">
-  <div class="widget-title">Naive Bayes gaussiano — verossimilhança e posteriori</div>
-  <canvas id="bayes_3_3-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Média da classe A</span><input type="range" min="-4" max="0" step="0.1" value="-1.5" id="bayes_3_3-m0"><span class="ctrl-val" id="bayes_3_3-m0-v">-1.5</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Média da classe B</span><input type="range" min="0" max="4" step="0.1" value="1.5" id="bayes_3_3-m1"><span class="ctrl-val" id="bayes_3_3-m1-v">1.5</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Priori da classe A</span><input type="range" min="0.1" max="0.9" step="0.05" value="0.5" id="bayes_3_3-pa"><span class="ctrl-val" id="bayes_3_3-pa-v">0.5</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Fronteira de decisão</div><div class="sval" id="bayes_3_3-fron" style="color:#1a7a4a;">—</div><div class="sdesc">onde as posterioris se cruzam</div></div>
-  </div>
-</div>
 </article>
 <article id="03-classificacao-04-svm-md" class="topic">
 <div class="topic-num">3.4</div>
@@ -442,6 +443,21 @@ $$</div>
 muito onduladas e locais (risco de overfitting); $\gamma$ pequeno, fronteiras
 suaves. Junto com $C$, é o par de hiperparâmetros que se ajusta por validação
 cruzada.</p>
+<div class="widget" data-widget="wSvm" data-id="svm_3_4">
+  <div class="widget-title">Margem máxima — encontre o melhor separador</div>
+  <canvas id="svm_3_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Ângulo do separador (°)</span><input type="range" min="-90" max="90" step="1" value="60" id="svm_3_4-ang"><span class="ctrl-val" id="svm_3_4-ang-v">60</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Deslocamento</span><input type="range" min="-3" max="3" step="0.1" value="0" id="svm_3_4-desl"><span class="ctrl-val" id="svm_3_4-desl-v">0</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="svm_3_4-otimo">Aproximar da margem máxima</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Margem</div><div class="sval" id="svm_3_4-margem" style="color:#1a7a4a;">—</div><div class="sdesc">faixa até o ponto mais próximo</div></div>
+    <div class="stat-card"><div class="slabel">Separa as classes?</div><div class="sval" id="svm_3_4-sep">—</div><div class="sdesc">sem pontos do lado errado</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>04_svm.ipynb</code> treina uma SVM linear e uma com kernel RBF, visualiza
 as fronteiras e destaca os vetores de suporte com Plotly, e mostra o efeito de $C$
@@ -478,21 +494,6 @@ cruzada).
 <li>Boser, B., Guyon, I. &amp; Vapnik, V. (1992). <em>A Training Algorithm for Optimal Margin Classifiers</em>. COLT.</li>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>, cap. 9. Livro aberto: https://www.statlearning.com/</li>
 </ul>
-<div class="widget" data-widget="wSvm" data-id="svm_3_4">
-  <div class="widget-title">Margem máxima — encontre o melhor separador</div>
-  <canvas id="svm_3_4-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Ângulo do separador (°)</span><input type="range" min="-90" max="90" step="1" value="60" id="svm_3_4-ang"><span class="ctrl-val" id="svm_3_4-ang-v">60</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Deslocamento</span><input type="range" min="-3" max="3" step="0.1" value="0" id="svm_3_4-desl"><span class="ctrl-val" id="svm_3_4-desl-v">0</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="svm_3_4-otimo">Aproximar da margem máxima</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Margem</div><div class="sval" id="svm_3_4-margem" style="color:#1a7a4a;">—</div><div class="sdesc">faixa até o ponto mais próximo</div></div>
-    <div class="stat-card"><div class="slabel">Separa as classes?</div><div class="sval" id="svm_3_4-sep">—</div><div class="sdesc">sem pontos do lado errado</div></div>
-  </div>
-</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

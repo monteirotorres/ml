@@ -49,6 +49,7 @@ WIDGETS = {
     "06_redes_neurais/01_perceptron.md": ("perc", "wPerceptron"),
     "06_redes_neurais/02_backprop.md": ("grad", "wGradDescent"),
     "06_redes_neurais/03_ativacoes.md": ("ativ", "wActivation"),
+    "06_redes_neurais/05_convolucionais.md": ("conv", "wConv"),
 }
 
 # Mapa: arquivo .md → links de documentação (scikit-learn / PyTorch) do tópico.
@@ -87,6 +88,7 @@ DOCS = {
     "06_redes_neurais/02_backprop.md": [("PyTorch · autograd", _PT + "autograd.html"), ("PyTorch · optim", _PT + "optim.html")],
     "06_redes_neurais/03_ativacoes.md": [("PyTorch · ativações", _PT + "nn.html#non-linear-activations-weighted-sum-nonlinearity")],
     "06_redes_neurais/04_deep_learning.md": [("PyTorch · tutoriais", _PTT + "beginner/basics/intro.html")],
+    "06_redes_neurais/05_convolucionais.md": [("PyTorch · Conv2d", _PT + "generated/torch.nn.Conv2d.html"), ("PyTorch · tutorial de CNN", _PTT + "beginner/blitz/cifar10_tutorial.html")],
     "07_exercicios/01_regressao.md": [("scikit-learn · modelos lineares", _SK + "modules/linear_model.html")],
     "07_exercicios/02_classificacao.md": [("scikit-learn · métricas", _SK + "modules/model_evaluation.html")],
     "07_exercicios/03_validacao.md": [("scikit-learn · validação cruzada", _SK + "modules/cross_validation.html"), ("scikit-learn · GridSearchCV", _SK + "modules/generated/sklearn.model_selection.GridSearchCV.html")],
@@ -126,6 +128,60 @@ def widget_html(wid, fn):
     raw = _widget_body(wid, fn)
     return raw.replace('<div class="widget">',
                        f'<div class="widget" data-widget="{fn}" data-id="{wid}">', 1)
+
+
+# Cabeçalhos "de apêndice": tudo isso vem DEPOIS do corpo conceitual do tópico.
+# O widget é inserido logo ANTES do primeiro deles (nunca lá no rodapé).
+APPENDICE_RE = re.compile(
+    r'(?m)^##\s+(No notebook|No caderno|Exerc[íi]cios?|Refer[êe]ncias?|Leitura)\b')
+
+
+def preparar_widgets(md_text, path, idx, ti):
+    """Insere sentinelas @@WIDGET{k}@@ no markdown e devolve (md, [html, ...]).
+
+    Regras de posição (por widget):
+      1. marcador explícito no texto: [[widget]] (o primário do arquivo) ou
+         [[widget:FN]] (widget extra, pela função JS FN) — fica exatamente ali;
+      2. widget primário sem marcador: logo antes da 1ª seção de apêndice
+         (No notebook / Exercícios / Referências);
+      3. sem apêndice: ao final do corpo.
+    Assim toda demonstração fica JUNTO do texto a que se refere, não no rodapé.
+    """
+    widgets = []
+
+    def registrar(fn, base):
+        wid = f"{base}_{idx + 1}_{ti}"
+        widgets.append(widget_html(wid, fn))
+        return f"@@WIDGET{len(widgets) - 1}@@"
+
+    # 1a. marcadores extras [[widget:FN]]
+    def sub_extra(m):
+        fn = m.group(1)
+        base = re.sub(r'^w', '', fn).lower()
+        return registrar(fn, base)
+    md_text = re.sub(r'\[\[widget:([A-Za-z0-9_]+)\]\]', sub_extra, md_text)
+
+    primario = WIDGETS.get(path)  # (base_id, fn) ou None
+    colocado = False
+
+    # 1b. marcador primário [[widget]]
+    if primario and '[[widget]]' in md_text:
+        base_id, fn = primario
+        md_text = md_text.replace('[[widget]]', registrar(fn, base_id), 1)
+        md_text = md_text.replace('[[widget]]', '')  # limpa repetições
+        colocado = True
+
+    # 2/3. primário sem marcador: antes do apêndice, senão no fim
+    if primario and not colocado:
+        base_id, fn = primario
+        sent = registrar(fn, base_id)
+        m = APPENDICE_RE.search(md_text)
+        if m:
+            md_text = md_text[:m.start()] + sent + "\n\n" + md_text[m.start():]
+        else:
+            md_text = md_text.rstrip() + "\n\n" + sent + "\n"
+
+    return md_text, widgets
 
 
 def _slider(wid, key, label, mn, mx, step, val):
@@ -435,6 +491,40 @@ def _widget_body(wid, fn):
     {_card(wid, "note", "Observação", "o porquê da recomendação")}
   </div>
 </div>"""
+    if fn == "wNeuron":
+        return f"""<div class="widget">
+  <div class="widget-title">Um neurônio ao vivo — soma ponderada e ativação</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    {_slider(wid, "x1", "Entrada x₁", 0, 1, 0.05, 1)}
+    {_slider(wid, "x2", "Entrada x₂", 0, 1, 0.05, 0)}
+    {_slider(wid, "w1", "Peso w₁", -3, 3, 0.1, 1.5)}
+    {_slider(wid, "w2", "Peso w₂", -3, 3, 0.1, -1)}
+    {_slider(wid, "b", "Viés b", -3, 3, 0.1, -0.5)}
+    <div class="ctrl-row"><span class="ctrl-label">Ativação f</span>
+      <select class="ctrl-select" id="{wid}-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="step">Degrau</option></select></div>
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "z", "Pré-ativação z", "= w₁x₁ + w₂x₂ + b", PAL_BLUE)}
+    {_card(wid, "a", "Saída a = f(z)", "depois da não linearidade", PAL_GREEN)}
+  </div>
+</div>"""
+    if fn == "wConv":
+        return f"""<div class="widget">
+  <div class="widget-title">Convolução ao vivo — um filtro desliza pela imagem</div>
+  <canvas id="{wid}-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Imagem</span>
+      <select class="ctrl-select" id="{wid}-img"><option value="diag">Diagonal</option><option value="cruz">Cruz</option><option value="quad">Quadrado</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Filtro (kernel 3×3)</span>
+      <select class="ctrl-select" id="{wid}-ker"><option value="vert">Borda vertical</option><option value="horiz">Borda horizontal</option><option value="realce">Realce (nitidez)</option><option value="borrar">Borrar (média)</option><option value="ident">Identidade</option></select></div>
+    {_slider(wid, "pos", "Posição do filtro", 0, 100, 1, 40)}
+  </div>
+  <div class="stat-grid">
+    {_card(wid, "val", "Valor calculado", "soma do filtro × janela (posição atual)", PAL_BLUE)}
+    {_card(wid, "papel", "O que este filtro faz", "padrão que ele realça")}
+  </div>
+</div>"""
     return ""
 
 
@@ -564,14 +654,14 @@ def write_section_page(idx, sections):
         slug = slugify(path)
         md_text = (BASE / path).read_text(encoding="utf-8")
         md_text = re.sub(r"^#\s+.+\n+", "", md_text, count=1)
+        md_text, widgets = preparar_widgets(md_text, path, idx, ti)
         body = md_to_html(md_text)
+        for k, wh in enumerate(widgets):
+            body = re.sub(rf'<p>\s*@@WIDGET{k}@@\s*</p>', lambda m, wh=wh: wh, body)
+            body = body.replace(f'@@WIDGET{k}@@', wh)
         ipynb = path.replace(".md", ".ipynb")
         has_nb = (BASE / ipynb).exists()
         nb = colab_link(ipynb) if has_nb else ""
-        widget = ""
-        if path in WIDGETS:
-            base_id, fn = WIDGETS[path]
-            widget = widget_html(f"{base_id}_{idx+1}_{ti}", fn)
         out.append(f'<article id="{slug}" class="topic">')
         out.append(f'<div class="topic-num">{idx+1}.{ti}</div>')
         out.append(f'<h1 class="topic-title">{title}</h1>')
@@ -581,7 +671,6 @@ def write_section_page(idx, sections):
         if nb:
             out.append(f'<div class="nb-row">{nb}</div>')
         out.append(body)
-        out.append(widget)
         out.append('</article>')
     out.append('</div>')
     out.append(footer())
@@ -598,7 +687,7 @@ SECTION_DESCS = {
     "Classificação": "k-NN, árvores de decisão, SVM e Naive Bayes.",
     "Ensembles e Boosting": "Random Forests, Gradient Boosting, XGBoost e stacking.",
     "Aprendizagem Não Supervisionada": "k-means, clustering hierárquico, PCA, t-SNE e UMAP.",
-    "Redes Neurais": "Perceptron, backpropagation, funções de ativação e deep learning.",
+    "Redes Neurais": "Perceptron, backpropagation, funções de ativação, deep learning e redes convolucionais.",
     "Exercícios": "Exercícios resolvidos por tema, com soluções em Python.",
     "Aula prática — Bioinformática": "Aula prática: classificar inibidores de um alvo (ChEMBL) como forte, fraco ou incerto.",
 }

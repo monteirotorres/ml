@@ -1946,6 +1946,107 @@ def nb_deep_learning():
     escrever(nb, "06_redes_neurais/04_deep_learning.ipynb")
 
 
+def nb_convolucionais():
+    nb = nbf.v4.new_notebook()
+    nb.cells = [
+        md("# Redes convolucionais (CNNs)\n\n"
+           "**Objetivo:** ver a **convolução** funcionando — primeiro na mão, com "
+           "`numpy`, para um filtro de borda acender sobre um dígito; depois montar uma "
+           "pequena **CNN** em PyTorch e comparar com a rede densa do tópico anterior, "
+           "nos **mesmos** dígitos."),
+        code(PREAMBULO + '\nimport torch'),
+        md("## 1. Uma imagem para brincar\n\n"
+           "Pegamos um dígito do `load_digits` (imagens 8×8 em tons de cinza) e o "
+           "mostramos como matriz de pixels."),
+        code('from sklearn.datasets import load_digits\n\n'
+             'digitos = load_digits()\n'
+             'imagem = digitos.images[0]                 # um "7"? um "0"? (8x8)\n'
+             'print("rotulo:", digitos.target[0], "| shape:", imagem.shape)\n'
+             'px.imshow(imagem, color_continuous_scale="gray_r",\n'
+             '          title="Um digito 8x8").show()'),
+        md("## 2. Convolução na mão\n\n"
+           "Um **filtro** (kernel) 3×3 desliza pela imagem. Em cada posição, multiplica "
+           "os 9 pesos pela janelinha de pixels e soma. Este kernel responde a **bordas "
+           "verticais** — a imagem mudando na horizontal. Note o laço explícito: é "
+           "**o mesmo filtro** em toda posição."),
+        code('# kernel de borda vertical (Sobel-x)\n'
+             'kernel = np.array([[1, 0, -1],\n'
+             '                   [2, 0, -2],\n'
+             '                   [1, 0, -1]], dtype=float)\n\n'
+             'alt, larg = imagem.shape\n'
+             'mapa = np.zeros((alt - 2, larg - 2))        # mapa de ativacao 6x6\n'
+             'for i in range(alt - 2):\n'
+             '    for j in range(larg - 2):\n'
+             '        janela = imagem[i:i+3, j:j+3]\n'
+             '        mapa[i, j] = np.sum(kernel * janela)\n\n'
+             'print("mapa de ativacao:", mapa.shape)\n'
+             'px.imshow(np.abs(mapa), color_continuous_scale="gray_r",\n'
+             '          title="Resposta ao filtro de borda vertical (|valor|)").show()'),
+        md("As colunas onde o dígito muda de claro para escuro **acendem** no mapa. "
+           "Trocar o kernel muda o padrão detectado — uma CNN **aprende** esses filtros "
+           "sozinha, em vez de recebê-los prontos."),
+        md("## 3. Uma CNN de verdade em PyTorch\n\n"
+           "`Conv2d(1→8, 3×3)` aprende **8** filtros; `ReLU` corta os negativos; "
+           "`MaxPool2d(2)` resume e encolhe; achatamos e uma camada densa classifica os "
+           "10 dígitos. Poucos pesos, graças ao compartilhamento."),
+        code('from sklearn.model_selection import train_test_split\n'
+             'from sklearn.metrics import accuracy_score\n\n'
+             'X = digitos.images / 16.0                   # normaliza 0..1\n'
+             'y = digitos.target\n'
+             'X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3,\n'
+             '                                          random_state=SEMENTE, stratify=y)\n'
+             '# PyTorch espera (amostras, canais, altura, largura)\n'
+             'ent_tr = torch.tensor(X_tr, dtype=torch.float32).unsqueeze(1)\n'
+             'ent_te = torch.tensor(X_te, dtype=torch.float32).unsqueeze(1)\n'
+             'alvo_tr = torch.tensor(y_tr, dtype=torch.long)\n'
+             'print("entrada de treino:", tuple(ent_tr.shape), "  (N, canais, 8, 8)")'),
+        code('torch.manual_seed(SEMENTE)\n'
+             'rede = torch.nn.Sequential(\n'
+             '    torch.nn.Conv2d(1, 8, kernel_size=3),   # 8x8 -> 6x6, 8 filtros\n'
+             '    torch.nn.ReLU(),\n'
+             '    torch.nn.MaxPool2d(2),                  # 6x6 -> 3x3\n'
+             '    torch.nn.Flatten(),                     # 8*3*3 = 72\n'
+             '    torch.nn.Linear(8 * 3 * 3, 10))\n'
+             'custo_fn = torch.nn.CrossEntropyLoss()\n'
+             'oti = torch.optim.Adam(rede.parameters(), lr=0.01)\n\n'
+             'perdas = []\n'
+             'for epoca in range(60):\n'
+             '    ordem = torch.randperm(len(ent_tr))\n'
+             '    for i in range(0, len(ent_tr), 64):\n'
+             '        idx = ordem[i:i+64]\n'
+             '        perda = custo_fn(rede(ent_tr[idx]), alvo_tr[idx])\n'
+             '        oti.zero_grad(); perda.backward(); oti.step()\n'
+             '    perdas.append(perda.item())\n\n'
+             'with torch.no_grad():\n'
+             '    previsto = rede(ent_te).argmax(dim=1).numpy()\n'
+             'print("acuracia da CNN:", round(accuracy_score(y_te, previsto), 3))\n'
+             'print("numero de pesos:", sum(p.numel() for p in rede.parameters()))'),
+        code('figura = go.Figure(go.Scatter(y=perdas, mode="lines", line=dict(color=VERDE)))\n'
+             'figura.update_layout(title="Perda do treino da CNN (digitos)",\n'
+             '                     xaxis_title="epoca", yaxis_title="CrossEntropy", height=320,\n'
+             '                     margin=dict(l=10, r=10, t=50, b=10))\n'
+             'figura.show()'),
+        md("## 4. O que mudou em relação à rede densa?\n\n"
+           "Nos dígitos 8×8 — minúsculos e quase separáveis — a CNN empata ou supera a "
+           "rede densa por pouco. O ponto **não** é o placar: é que a CNN chega lá "
+           "**respeitando a estrutura da imagem** e com filtros reaproveitados por toda "
+           "ela. Em imagens **grandes e cruas** (não 8×8, mas centenas de milhares de "
+           "pixels) essa vantagem deixa de ser sutil e vira a diferença entre funcionar "
+           "e não funcionar."),
+        md("## Exercício\n\n"
+           "A `Conv2d(1, 8, 3)` tem quantos pesos (sem os vieses)? Compare com uma "
+           "camada densa que ligasse a imagem 8×8 (64 pixels) a 8 neurônios."),
+        md("<details><summary>Ver resposta</summary>\n\n"
+           "A convolucional tem $8 \\times (3\\times3) = 72$ pesos: 8 filtros de 9 pesos, "
+           "cada filtro reusado em toda a imagem. A densa teria $64 \\times 8 = 512$ "
+           "pesos — e **cresceria com o tamanho da imagem**, enquanto o filtro "
+           "convolucional continua com 9 pesos independentemente da resolução. É o "
+           "**compartilhamento de pesos** que torna a CNN viável em imagens grandes."
+           "\n\n</details>"),
+    ]
+    escrever(nb, "06_redes_neurais/05_convolucionais.ipynb")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 def nb_kmeans():
     nb = nbf.v4.new_notebook()
@@ -2636,6 +2737,7 @@ CONSTRUTORES = [
     nb_backprop,
     nb_ativacoes,
     nb_deep_learning,
+    nb_convolucionais,
     nb_ex_regressao,
     nb_ex_classificacao,
     nb_ex_validacao,

@@ -72,6 +72,7 @@
 <li><a href="redes_neurais.html#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a href="redes_neurais.html#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a href="redes_neurais.html#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -238,7 +239,6 @@ overfitting (tópico 4).
 <li>Géron, A. (2019). <em>Hands-On Machine Learning with Scikit-Learn, Keras &amp; TensorFlow</em>, cap. 1.</li>
 <li>James, G. et al. (2021). <em>An Introduction to Statistical Learning</em>, cap. 1–2.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-02-tipos-aprendizagem-md" class="topic">
 <div class="topic-num">1.2</div>
@@ -390,7 +390,6 @@ ajustando um classificador com os 200 exemplos rotulados.
 <li>Géron, A. (2019). <em>Hands-On Machine Learning</em>, cap. 1.</li>
 <li>Sutton, R. &amp; Barto, A. (2018). <em>Reinforcement Learning: An Introduction</em>.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-03-representacao-dados-md" class="topic">
 <div class="topic-num">1.3</div>
@@ -540,7 +539,6 @@ dimensionalidade** (PCA) antes de treinar.
 <li>Kuhn, M. &amp; Johnson, K. (2013). <em>Applied Predictive Modeling</em>, cap. 3.</li>
 <li>Documentação do scikit-learn: <em>Dataset transformations</em>.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-04-generalizacao-md" class="topic">
 <div class="topic-num">1.4</div>
@@ -611,6 +609,21 @@ sinal de <strong>variância</strong> elevada.</p>
 </ol>
 <p>Diante do underfitting, o remédio é o oposto: aumentar a capacidade do modelo,
 adicionar características ou reduzir a regularização.</p>
+<div class="widget" data-widget="wOverfit" data-id="overfit_1_4">
+  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
+  <canvas id="overfit_1_4-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="overfit_1_4-deg"><span class="ctrl-val" id="overfit_1_4-deg-v">3</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="overfit_1_4-redraw">Nova amostra</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="overfit_1_4-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
+    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="overfit_1_4-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
+    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="overfit_1_4-diag">—</div><div class="sdesc">regime do modelo</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>04_generalizacao.ipynb</code> reproduz a experiência do widget em Python:
 gera dados, ajusta polinômios de vários graus e plota as curvas de erro de treino
@@ -643,21 +656,6 @@ flexível, menos regularização).
 <li>Hastie, T. et al. (2009). <em>The Elements of Statistical Learning</em>, cap. 7.</li>
 <li>Géron, A. (2019). <em>Hands-On Machine Learning</em>, cap. 4.</li>
 </ul>
-<div class="widget" data-widget="wOverfit" data-id="overfit_1_4">
-  <div class="widget-title">Demonstração — grau do polinômio × generalização</div>
-  <canvas id="overfit_1_4-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Grau do polinômio</span><input type="range" min="1" max="12" step="1" value="3" id="overfit_1_4-deg"><span class="ctrl-val" id="overfit_1_4-deg-v">3</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="overfit_1_4-redraw">Nova amostra</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Erro de treino</div><div class="sval" id="overfit_1_4-etr" style="color:#3266ad;">—</div><div class="sdesc">MSE nos 12 pontos vistos</div></div>
-    <div class="stat-card"><div class="slabel">Erro de teste</div><div class="sval" id="overfit_1_4-ete" style="color:#c0392b;">—</div><div class="sdesc">MSE em dados novos</div></div>
-    <div class="stat-card"><div class="slabel">Diagnóstico</div><div class="sval" id="overfit_1_4-diag">—</div><div class="sdesc">regime do modelo</div></div>
-  </div>
-</div>
 </article>
 <article id="01-fundamentos-05-validacao-cruzada-md" class="topic">
 <div class="topic-num">1.5</div>
@@ -753,6 +751,17 @@ print(f&quot;Acurácia: {scores.mean():.3f} ± {scores.std():.3f}&quot;)
 </code></pre>
 <p>Como o <code>StandardScaler</code> está <strong>dentro</strong> do pipeline, ele é reajustado dentro de
 cada fold — sem vazamento.</p>
+<div class="widget" data-widget="wKfold" data-id="kfold_1_5">
+  <div class="widget-title">Demonstração — validação cruzada k-fold</div>
+  <canvas id="kfold_1_5-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de folds (k)</span><input type="range" min="2" max="10" step="1" value="5" id="kfold_1_5-k"><span class="ctrl-val" id="kfold_1_5-k-v">5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Modelos treinados</div><div class="sval" id="kfold_1_5-nmod" style="color:#3266ad;">—</div><div class="sdesc">um por rodada</div></div>
+    <div class="stat-card"><div class="slabel">Fração de teste</div><div class="sval" id="kfold_1_5-frac" style="color:#c0392b;">—</div><div class="sdesc">por rodada</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>05_validacao_cruzada.ipynb</code> compara uma única divisão treino/teste
 com a validação cruzada em $k$ dobras no conjunto Iris, mostrando como a
@@ -786,17 +795,6 @@ colocando o `StandardScaler` dentro de um `Pipeline`.
 <li>Hastie, T. et al. (2009). <em>The Elements of Statistical Learning</em>, cap. 7.</li>
 <li>Documentação do scikit-learn: <em>Cross-validation</em>.</li>
 </ul>
-<div class="widget" data-widget="wKfold" data-id="kfold_1_5">
-  <div class="widget-title">Demonstração — validação cruzada k-fold</div>
-  <canvas id="kfold_1_5-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de folds (k)</span><input type="range" min="2" max="10" step="1" value="5" id="kfold_1_5-k"><span class="ctrl-val" id="kfold_1_5-k-v">5</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Modelos treinados</div><div class="sval" id="kfold_1_5-nmod" style="color:#3266ad;">—</div><div class="sdesc">um por rodada</div></div>
-    <div class="stat-card"><div class="slabel">Fração de teste</div><div class="sval" id="kfold_1_5-frac" style="color:#c0392b;">—</div><div class="sdesc">por rodada</div></div>
-  </div>
-</div>
 </article>
 <article id="01-fundamentos-06-metricas-regressao-md" class="topic">
 <div class="topic-num">1.6</div>
@@ -938,7 +936,6 @@ avaliado em dados muito diferentes dos de treino.
 <li>Documentação do scikit-learn: <em>Metrics and scoring</em>.</li>
 <li>Willmott, C. &amp; Matsuura, K. (2005). <em>Advantages of the MAE over the RMSE</em>.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-07-metricas-classificacao-md" class="topic">
 <div class="topic-num">1.7</div>
@@ -1075,7 +1072,6 @@ exato depende dos custos reais de cada erro.
 <li>Fawcett, T. (2006). <em>An introduction to ROC analysis</em>.</li>
 <li>Documentação do scikit-learn: <em>Metrics and scoring</em>.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-08-preprocessamento-md" class="topic">
 <div class="topic-num">1.8</div>
@@ -1222,7 +1218,6 @@ validação cruzada.
 <li>Kuhn, M. &amp; Johnson, K. (2013). <em>Applied Predictive Modeling</em>, cap. 3.</li>
 <li>Documentação do scikit-learn: <em>Preprocessing data</em> e <em>Pipelines</em>.</li>
 </ul>
-
 </article>
 <article id="01-fundamentos-09-ferramentas-sklearn-pytorch-md" class="topic">
 <div class="topic-num">1.9</div>
@@ -1324,6 +1319,22 @@ $$</div>
 (McKinney, 2010), que dá as tabelas (<code>DataFrame</code>) para carregar e limpar dados. O
 scikit-learn aceita tanto arranjos NumPy quanto <code>DataFrame</code>s do pandas — é comum
 carregar e tratar os dados no pandas e passar direto para o <code>.fit</code>.</p>
+<div class="widget" data-widget="wSklearnMap" data-id="skmap_1_9">
+  <div class="widget-title">Mapa de estimadores — por onde começar</div>
+  <canvas id="skmap_1_9-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Número de amostras</span><input type="range" min="1" max="6" step="1" value="3" id="skmap_1_9-n"><span class="ctrl-val" id="skmap_1_9-n-v">3</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Tenho rótulos (y conhecido)?</span>
+      <select class="ctrl-select" id="skmap_1_9-lab"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Quero…</span>
+      <select class="ctrl-select" id="skmap_1_9-goal"><option value="cat">prever uma categoria</option><option value="num">prever uma quantidade</option><option value="exp">só explorar / reduzir dimensão</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Família recomendada</div><div class="sval" id="skmap_1_9-fam" style="color:#3266ad;">—</div><div class="sdesc">para onde o mapa aponta</div></div>
+    <div class="stat-card"><div class="slabel">Estimadores sugeridos</div><div class="sval" id="skmap_1_9-est" style="color:#1a7a4a;">—</div><div class="sdesc">por onde começar no scikit-learn</div></div>
+    <div class="stat-card"><div class="slabel">Observação</div><div class="sval" id="skmap_1_9-note">—</div><div class="sdesc">o porquê da recomendação</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>09_ferramentas_sklearn_pytorch.ipynb</code> percorre, lado a lado, os dois
 caminhos sobre o mesmo problema (classificar flores do conjunto Iris):</p>
@@ -1374,22 +1385,6 @@ grande demais? E pequena demais?</p>
 <li>James, G., Witten, D., Hastie, T., Tibshirani, R. &amp; Taylor, J. (2023). <em>An Introduction to Statistical Learning with Applications in Python</em>. Springer. Livro aberto: https://www.statlearning.com/</li>
 <li>Documentação do scikit-learn: <em>Choosing the right estimator</em> — https://scikit-learn.org/1.3/tutorial/machine_learning_map/</li>
 </ul>
-<div class="widget" data-widget="wSklearnMap" data-id="skmap_1_9">
-  <div class="widget-title">Mapa de estimadores — por onde começar</div>
-  <canvas id="skmap_1_9-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Número de amostras</span><input type="range" min="1" max="6" step="1" value="3" id="skmap_1_9-n"><span class="ctrl-val" id="skmap_1_9-n-v">3</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Tenho rótulos (y conhecido)?</span>
-      <select class="ctrl-select" id="skmap_1_9-lab"><option value="sim">Sim</option><option value="nao">Não</option></select></div>
-    <div class="ctrl-row"><span class="ctrl-label">Quero…</span>
-      <select class="ctrl-select" id="skmap_1_9-goal"><option value="cat">prever uma categoria</option><option value="num">prever uma quantidade</option><option value="exp">só explorar / reduzir dimensão</option></select></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Família recomendada</div><div class="sval" id="skmap_1_9-fam" style="color:#3266ad;">—</div><div class="sdesc">para onde o mapa aponta</div></div>
-    <div class="stat-card"><div class="slabel">Estimadores sugeridos</div><div class="sval" id="skmap_1_9-est" style="color:#1a7a4a;">—</div><div class="sdesc">por onde começar no scikit-learn</div></div>
-    <div class="stat-card"><div class="slabel">Observação</div><div class="sval" id="skmap_1_9-note">—</div><div class="sdesc">o porquê da recomendação</div></div>
-  </div>
-</div>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>

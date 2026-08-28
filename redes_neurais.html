@@ -72,6 +72,7 @@
 <li><a class="nav-link" data-target="06-redes-neurais-02-backprop-md" href="#06-redes-neurais-02-backprop-md"><span class="n">6.2</span>Backpropagation e gradiente descendente</a></li>
 <li><a class="nav-link" data-target="06-redes-neurais-03-ativacoes-md" href="#06-redes-neurais-03-ativacoes-md"><span class="n">6.3</span>Funções de ativação</a></li>
 <li><a class="nav-link" data-target="06-redes-neurais-04-deep-learning-md" href="#06-redes-neurais-04-deep-learning-md"><span class="n">6.4</span>Introdução ao deep learning</a></li>
+<li><a class="nav-link" data-target="06-redes-neurais-05-convolucionais-md" href="#06-redes-neurais-05-convolucionais-md"><span class="n">6.5</span>Redes convolucionais (CNNs)</a></li>
 </ul></div>
 <div class="nav-group collapsed" data-sec="7">
 <div class="nav-group-title">7. Exercícios</div>
@@ -117,6 +118,27 @@ $$</div>
 </ul>
 <p>Repare que, com $f$ sendo a sigmoide, um neurônio é <strong>exatamente</strong> uma regressão
 logística. A novidade não é o neurônio isolado — é conectá-los.</p>
+<p>O widget a seguir é <strong>um único neurônio ao vivo</strong>: mexa nas entradas $x_1, x_2$, nos
+pesos $w_1, w_2$ e no viés $b$ e acompanhe a soma ponderada $z$ correr pelas
+conexões até a ativação $f$ produzir a saída $a$. Troque a função de ativação e veja
+o mesmo $z$ virar saídas diferentes.</p>
+<div class="widget" data-widget="wNeuron" data-id="neuron_6_1">
+  <div class="widget-title">Um neurônio ao vivo — soma ponderada e ativação</div>
+  <canvas id="neuron_6_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Entrada x₁</span><input type="range" min="0" max="1" step="0.05" value="1" id="neuron_6_1-x1"><span class="ctrl-val" id="neuron_6_1-x1-v">1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Entrada x₂</span><input type="range" min="0" max="1" step="0.05" value="0" id="neuron_6_1-x2"><span class="ctrl-val" id="neuron_6_1-x2-v">0</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₁</span><input type="range" min="-3" max="3" step="0.1" value="1.5" id="neuron_6_1-w1"><span class="ctrl-val" id="neuron_6_1-w1-v">1.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₂</span><input type="range" min="-3" max="3" step="0.1" value="-1" id="neuron_6_1-w2"><span class="ctrl-val" id="neuron_6_1-w2-v">-1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Viés b</span><input type="range" min="-3" max="3" step="0.1" value="-0.5" id="neuron_6_1-b"><span class="ctrl-val" id="neuron_6_1-b-v">-0.5</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Ativação f</span>
+      <select class="ctrl-select" id="neuron_6_1-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="step">Degrau</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Pré-ativação z</div><div class="sval" id="neuron_6_1-z" style="color:#3266ad;">—</div><div class="sdesc">= w₁x₁ + w₂x₂ + b</div></div>
+    <div class="stat-card"><div class="slabel">Saída a = f(z)</div><div class="sval" id="neuron_6_1-a" style="color:#1a7a4a;">—</div><div class="sdesc">depois da não linearidade</div></div>
+  </div>
+</div>
 <h2>De um neurônio a uma rede</h2>
 <p>Uma <strong>rede neural</strong> (multilayer perceptron, MLP) organiza neurônios em <strong>camadas</strong>:
 a saída de uma camada é a entrada da próxima. Uma rede rasa tem três partes:</p>
@@ -141,6 +163,21 @@ fronteiras.</p>
 <p>O widget abaixo deixa isso na mão: ajuste os pesos e o viés de um neurônio e escolha
 o problema (E, OU, XOR). Para o E e o OU você encontra uma reta que separa tudo;
 para o XOR, verá que <strong>nenhuma</strong> reta acerta os quatro casos.</p>
+<div class="widget" data-widget="wPerceptron" data-id="perc_6_1">
+  <div class="widget-title">Um neurônio traça uma reta — e o XOR não cabe nela</div>
+  <canvas id="perc_6_1-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Problema</span>
+      <select class="ctrl-select" id="perc_6_1-prob"><option value="and">E (AND)</option><option value="or">OU (OR)</option><option value="xor">XOR (ou-exclusivo)</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w1"><span class="ctrl-val" id="perc_6_1-w1-v">1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Peso w₂</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w2"><span class="ctrl-val" id="perc_6_1-w2-v">1</span></div>
+    <div class="ctrl-row"><span class="ctrl-label">Viés b</span><input type="range" min="-4" max="4" step="0.1" value="-1.5" id="perc_6_1-b"><span class="ctrl-val" id="perc_6_1-b-v">-1.5</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Acertos</div><div class="sval" id="perc_6_1-acc" style="color:#3266ad;">—</div><div class="sdesc">dos 4 casos</div></div>
+    <div class="stat-card"><div class="slabel">Separável por uma reta?</div><div class="sval" id="perc_6_1-sep">—</div><div class="sdesc">capacidade do neurônio</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>01_perceptron.ipynb</code> implementa um neurônio à mão em PyTorch, treina-o
 num problema linearmente separável, mostra que ele <strong>falha</strong> no XOR — e que uma rede
@@ -175,21 +212,6 @@ linearidade** da ativação que quebra esse colapso e dá poder à profundidade.
 <li>Minsky, M. &amp; Papert, S. (1969). <em>Perceptrons</em>. MIT Press — o livro que expôs a limitação do XOR.</li>
 <li>Cybenko, G. (1989). <em>Approximation by Superpositions of a Sigmoidal Function</em>. Mathematics of Control, Signals and Systems, 2, 303–314 (aproximação universal).</li>
 </ul>
-<div class="widget" data-widget="wPerceptron" data-id="perc_6_1">
-  <div class="widget-title">Um neurônio traça uma reta — e o XOR não cabe nela</div>
-  <canvas id="perc_6_1-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Problema</span>
-      <select class="ctrl-select" id="perc_6_1-prob"><option value="and">E (AND)</option><option value="or">OU (OR)</option><option value="xor">XOR (ou-exclusivo)</option></select></div>
-    <div class="ctrl-row"><span class="ctrl-label">Peso w₁</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w1"><span class="ctrl-val" id="perc_6_1-w1-v">1</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Peso w₂</span><input type="range" min="-3" max="3" step="0.1" value="1" id="perc_6_1-w2"><span class="ctrl-val" id="perc_6_1-w2-v">1</span></div>
-    <div class="ctrl-row"><span class="ctrl-label">Viés b</span><input type="range" min="-4" max="4" step="0.1" value="-1.5" id="perc_6_1-b"><span class="ctrl-val" id="perc_6_1-b-v">-1.5</span></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Acertos</div><div class="sval" id="perc_6_1-acc" style="color:#3266ad;">—</div><div class="sdesc">dos 4 casos</div></div>
-    <div class="stat-card"><div class="slabel">Separável por uma reta?</div><div class="sval" id="perc_6_1-sep">—</div><div class="sdesc">capacidade do neurônio</div></div>
-  </div>
-</div>
 </article>
 <article id="06-redes-neurais-02-backprop-md" class="topic">
 <div class="topic-num">6.2</div>
@@ -242,6 +264,22 @@ backpropagation automaticamente. Entender o mecanismo importa; implementá-lo, n
 </ul>
 <p>Uma passagem completa por todos os dados é chamada de <strong>época</strong> (epoch); o treino
 costuma levar muitas épocas.</p>
+<div class="widget" data-widget="wGradDescent" data-id="grad_6_2">
+  <div class="widget-title">Gradiente descendente — a bolinha desce a perda</div>
+  <canvas id="grad_6_2-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado η</span><input type="range" min="0.01" max="1.2" step="0.01" value="0.1" id="grad_6_2-lr"><span class="ctrl-val" id="grad_6_2-lr-v">0.1</span></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn" id="grad_6_2-passo">Um passo</button>
+    <button class="btn" id="grad_6_2-run">Rodar</button>
+    <button class="btn" id="grad_6_2-reset">Reiniciar</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Perda atual</div><div class="sval" id="grad_6_2-perda" style="color:#c0392b;">—</div><div class="sdesc">altura na superfície</div></div>
+    <div class="stat-card"><div class="slabel">Comportamento</div><div class="sval" id="grad_6_2-reg">—</div><div class="sdesc">efeito da taxa</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>02_backprop.ipynb</code> mostra o <em>autograd</em> calculando gradientes de um
 exemplo simples, treina uma rede com o laço explícito (forward → perda → backward →
@@ -277,22 +315,6 @@ o padrão.
 <li>Robbins, H. &amp; Monro, S. (1951). <em>A Stochastic Approximation Method</em>. Annals of Mathematical Statistics, 22(3), 400–407 (origem do SGD).</li>
 <li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>, cap. 6 e 8. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
 </ul>
-<div class="widget" data-widget="wGradDescent" data-id="grad_6_2">
-  <div class="widget-title">Gradiente descendente — a bolinha desce a perda</div>
-  <canvas id="grad_6_2-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Taxa de aprendizado η</span><input type="range" min="0.01" max="1.2" step="0.01" value="0.1" id="grad_6_2-lr"><span class="ctrl-val" id="grad_6_2-lr-v">0.1</span></div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="grad_6_2-passo">Um passo</button>
-    <button class="btn" id="grad_6_2-run">Rodar</button>
-    <button class="btn" id="grad_6_2-reset">Reiniciar</button>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Perda atual</div><div class="sval" id="grad_6_2-perda" style="color:#c0392b;">—</div><div class="sdesc">altura na superfície</div></div>
-    <div class="stat-card"><div class="slabel">Comportamento</div><div class="sval" id="grad_6_2-reg">—</div><div class="sdesc">efeito da taxa</div></div>
-  </div>
-</div>
 </article>
 <article id="06-redes-neurais-03-ativacoes-md" class="topic">
 <div class="topic-num">6.3</div>
@@ -345,6 +367,18 @@ $\text{LeakyReLU}(z) = \max(\alpha z, z)$, com $\alpha$ pequeno (ex.: 0,01).</p>
 <p>Uma nota: na <strong>saída</strong>, a ativação segue a tarefa — sigmoide para probabilidade
 binária, <em>softmax</em> para várias classes, e nenhuma (linear) para regressão. O
 problema do gradiente que desaparece é sobre as camadas <strong>ocultas</strong>.</p>
+<div class="widget" data-widget="wActivation" data-id="ativ_6_3">
+  <div class="widget-title">Ativações e suas derivadas — de onde vem o gradiente que desaparece</div>
+  <canvas id="ativ_6_3-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Função de ativação</span>
+      <select class="ctrl-select" id="ativ_6_3-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="leaky">Leaky ReLU</option></select></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Derivada máxima</div><div class="sval" id="ativ_6_3-dmax" style="color:#3266ad;">—</div><div class="sdesc">maior valor de f'(z)</div></div>
+    <div class="stat-card"><div class="slabel">Satura?</div><div class="sval" id="ativ_6_3-satura">—</div><div class="sdesc">derivada some longe do zero</div></div>
+  </div>
+</div>
 <h2>No notebook</h2>
 <p>O notebook <code>03_ativacoes.ipynb</code> desenha as ativações e suas derivadas com Plotly,
 treina a mesma rede com sigmoide e com ReLU num problema não linear (comparando a
@@ -383,18 +417,6 @@ ReLU evita isso dando uma pequena inclinação (derivada $\alpha > 0$) aos negat
 <li>Glorot, X. &amp; Bengio, Y. (2010). <em>Understanding the Difficulty of Training Deep Feedforward Neural Networks</em>. AISTATS (sobre o gradiente que desaparece).</li>
 <li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>, cap. 6. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
 </ul>
-<div class="widget" data-widget="wActivation" data-id="ativ_6_3">
-  <div class="widget-title">Ativações e suas derivadas — de onde vem o gradiente que desaparece</div>
-  <canvas id="ativ_6_3-cv"></canvas>
-  <div class="controls">
-    <div class="ctrl-row"><span class="ctrl-label">Função de ativação</span>
-      <select class="ctrl-select" id="ativ_6_3-fn"><option value="sigmoid">Sigmoide</option><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="leaky">Leaky ReLU</option></select></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="slabel">Derivada máxima</div><div class="sval" id="ativ_6_3-dmax" style="color:#3266ad;">—</div><div class="sdesc">maior valor de f'(z)</div></div>
-    <div class="stat-card"><div class="slabel">Satura?</div><div class="sval" id="ativ_6_3-satura">—</div><div class="sdesc">derivada some longe do zero</div></div>
-  </div>
-</div>
 </article>
 <article id="06-redes-neurais-04-deep-learning-md" class="topic">
 <div class="topic-num">6.4</div>
@@ -403,9 +425,10 @@ ReLU evita isso dando uma pequena inclinação (derivada $\alpha > 0$) aos negat
 <div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/04_deep_learning.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
 <p><em>Deep learning</em> é, em uma frase, o uso de redes neurais com <strong>muitas camadas</strong>. Mas
 a profundidade não é só "mais do mesmo": ela muda qualitativamente o que a rede
-aprende. Este tópico fecha o capítulo com um panorama — o que a profundidade traz,
-as arquiteturas principais e, honestamente, <strong>quando</strong> o deep learning compensa e
-quando não.</p>
+aprende. Este tópico traz um panorama — o que a profundidade traz, as arquiteturas
+principais e, honestamente, <strong>quando</strong> o deep learning compensa e quando não. O
+próximo tópico mergulha na mais emblemática dessas arquiteturas para imagens, as
+redes convolucionais.</p>
 <h2>O que a profundidade traz: representações hierárquicas</h2>
 <p>Em métodos clássicos, nós escolhíamos as características à mão (os descritores, os
 fingerprints). A grande virada do deep learning é aprender as características
@@ -490,7 +513,126 @@ ninguém defina à mão o que é uma borda ou um olho.
 <li>Vaswani, A. et al. (2017). <em>Attention Is All You Need</em> (Transformer). NeurIPS.</li>
 <li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>. MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
 </ul>
+</article>
+<article id="06-redes-neurais-05-convolucionais-md" class="topic">
+<div class="topic-num">6.5</div>
+<h1 class="topic-title">Redes convolucionais (CNNs)</h1>
+<div class="doc-links"><span class="doc-label">Documentação:</span><a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html" target="_blank" rel="noopener">PyTorch · Conv2d<span class="ext">↗</span></a><a href="https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html" target="_blank" rel="noopener">PyTorch · tutorial de CNN<span class="ext">↗</span></a></div>
+<div class="nb-row"><a class="colab-link" href="https://colab.research.google.com/github/monteirotorres/ml/blob/main/06_redes_neurais/05_convolucionais.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Abrir no Colab"></a></div>
+<p>Uma rede densa trata a imagem como uma <strong>lista de pixels soltos</strong>: desmancha as
+linhas e colunas num vetor e liga cada pixel a cada neurônio. Isso joga fora a
+informação mais óbvia de uma imagem — que <strong>pixels vizinhos formam padrões</strong> e que um
+padrão (uma borda, uma textura) é o mesmo esteja ele no canto ou no centro. As
+<strong>redes convolucionais</strong> (CNNs) foram feitas para respeitar essa estrutura, e são a
+base da visão computacional e da análise de imagens médicas — de radiografias a
+lâminas de histopatologia.</p>
+<h2>A convolução: um filtro que desliza</h2>
+<p>O ingrediente central é a <strong>convolução</strong>. Em vez de um peso por pixel, a rede aprende
+um <strong>filtro</strong> pequeno — um quadradinho de pesos, tipicamente $3\times3$. Esse filtro
+<strong>desliza</strong> por toda a imagem e, em cada posição, calcula uma soma ponderada da
+janelinha de pixels que cobre:</p>
+<div class="math-display">$$
+s_{ij} = \sum_{u}\sum_{v} K_{uv}\, \cdot\, I_{\,i+u,\;j+v}
+$$</div>
+<p>onde $I$ é a imagem, $K$ é o filtro (kernel) e $s_{ij}$ é a resposta na posição
+$(i,j)$. O resultado, varrendo a imagem inteira, é um novo mapa chamado <strong>mapa de
+ativação</strong> (ou mapa de características): ele acende onde o padrão do filtro aparece.</p>
+<p>Um filtro que responde a <strong>bordas verticais</strong>, por exemplo, produz valores altos
+exatamente nas colunas onde a imagem muda de claro para escuro. O ponto-chave: <strong>é o
+mesmo filtro em toda a imagem</strong>. A CNN não reaprende "o que é uma borda" para cada
+canto — ela aprende <strong>uma vez</strong> e aplica em todo lugar.</p>
+<p>O widget abaixo deixa isso concreto: escolha uma imagem e um filtro, e arraste a
+posição para ver a janela $3\times3$ percorrer a imagem e o valor que ela produz no
+mapa de ativação à direita.</p>
+<div class="widget" data-widget="wConv" data-id="conv_6_5">
+  <div class="widget-title">Convolução ao vivo — um filtro desliza pela imagem</div>
+  <canvas id="conv_6_5-cv"></canvas>
+  <div class="controls">
+    <div class="ctrl-row"><span class="ctrl-label">Imagem</span>
+      <select class="ctrl-select" id="conv_6_5-img"><option value="diag">Diagonal</option><option value="cruz">Cruz</option><option value="quad">Quadrado</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Filtro (kernel 3×3)</span>
+      <select class="ctrl-select" id="conv_6_5-ker"><option value="vert">Borda vertical</option><option value="horiz">Borda horizontal</option><option value="realce">Realce (nitidez)</option><option value="borrar">Borrar (média)</option><option value="ident">Identidade</option></select></div>
+    <div class="ctrl-row"><span class="ctrl-label">Posição do filtro</span><input type="range" min="0" max="100" step="1" value="40" id="conv_6_5-pos"><span class="ctrl-val" id="conv_6_5-pos-v">40</span></div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="slabel">Valor calculado</div><div class="sval" id="conv_6_5-val" style="color:#3266ad;">—</div><div class="sdesc">soma do filtro × janela (posição atual)</div></div>
+    <div class="stat-card"><div class="slabel">O que este filtro faz</div><div class="sval" id="conv_6_5-papel">—</div><div class="sdesc">padrão que ele realça</div></div>
+  </div>
+</div>
+<h2>Duas ideias que economizam parâmetros</h2>
+<p>A convolução carrega duas propriedades que explicam por que as CNNs funcionam tão
+bem em imagens:</p>
+<ul>
+<li><strong>Compartilhamento de pesos</strong> — o mesmo filtro (poucos pesos) é reusado em todas as
+  posições. Uma camada densa ligando uma imagem de $200\times200$ a mil neurônios
+  teria dezenas de milhões de pesos; um filtro $3\times3$ tem <strong>nove</strong>. Menos
+  parâmetros significam menos dados necessários e menos sobreajuste.</li>
+<li><strong>Invariância à translação</strong> — como o filtro é o mesmo em todo lugar, um padrão é
+  reconhecido <strong>independentemente de onde</strong> ele esteja na imagem. Um tumor não precisa
+  aparecer sempre no mesmo canto para ser detectado.</li>
+</ul>
+<p>Cada camada convolucional aprende <strong>vários</strong> filtros ao mesmo tempo (dezenas ou
+centenas), cada um sensível a um padrão diferente — bordas em várias orientações,
+manchas, texturas.</p>
+<h2>Pooling: resumir e encolher</h2>
+<p>Entre as convoluções, as CNNs costumam intercalar uma operação de <strong>pooling</strong>
+(agrupamento), que <strong>reduz a resolução</strong> do mapa de ativação. O mais comum é o
+<em>max pooling</em>: divide o mapa em blocos (por exemplo $2\times2$) e mantém só o <strong>maior</strong>
+valor de cada bloco. Isso encolhe a imagem pela metade, barateia o resto da rede e dá
+uma tolerância extra a pequenos deslocamentos — não importa a posição exata do padrão
+dentro do bloco, só que ele esteja lá.</p>
+<h2>A arquitetura típica: da borda ao objeto</h2>
+<p>Empilhando esses blocos, a CNN monta a <strong>hierarquia de representações</strong> do tópico
+anterior, agora de forma concreta:</p>
+<ul>
+<li>as <strong>primeiras</strong> camadas convolucionais detectam padrões simples — bordas e cantos;</li>
+<li>as <strong>intermediárias</strong> combinam bordas em <strong>partes</strong> (um contorno, uma textura de
+  tecido);</li>
+<li>as <strong>profundas</strong> combinam partes em <strong>estruturas</strong> de alto nível (uma célula, uma
+  lesão, um objeto inteiro).</li>
+</ul>
+<p>No fim, os mapas resultantes são achatados e entregues a uma pequena <strong>rede densa</strong>,
+que faz a classificação final. O padrão clássico é:
+<code>convolução → ativação (ReLU) → pooling</code>, repetido algumas vezes, e então
+<code>achatamento → camada densa → saída</code>. Tudo treina pelo mesmo motor dos tópicos
+anteriores: <strong>gradiente descendente</strong> e <strong>backpropagation</strong>.</p>
+<h2>No notebook</h2>
+<p>O notebook <code>05_convolucionais.ipynb</code> faz a convolução <strong>na mão</strong> com <code>numpy</code> sobre um
+dígito real (para você ver o filtro de borda acender), e depois monta uma pequena CNN
+em PyTorch (<code>Conv2d</code> + <code>MaxPool2d</code>) para classificar dígitos manuscritos — comparando
+a acurácia com a da rede densa do tópico anterior sobre os <strong>mesmos</strong> dados.</p>
+<h2>Exercícios</h2>
+<p><strong>1.</strong> Uma imagem em tons de cinza tem $32\times32$ pixels. Uma camada densa a liga a
+100 neurônios; uma camada convolucional usa 8 filtros $3\times3$. Quantos pesos
+(sem contar vieses) cada uma tem? O que isso revela?</p>
+<details><summary>Ver solução</summary>
 
+A densa tem $32\times32\times100 = 102\,400$ pesos. A convolucional tem
+$8\times3\times3 = 72$ pesos (cada filtro reusado em toda a imagem). A convolução usa
+**muito menos** parâmetros porque **compartilha** os pesos por todas as posições — daí
+precisar de menos dados e sobreajustar menos, aproveitando a estrutura espacial da
+imagem.
+
+</details>
+
+<p><strong>2.</strong> Por que aplicar o <strong>mesmo</strong> filtro em toda a imagem (em vez de um peso por
+pixel) ajuda a reconhecer um padrão em qualquer posição?</p>
+<details><summary>Ver solução</summary>
+
+Porque o filtro responde ao **padrão local** (por exemplo, uma borda vertical),
+não à sua localização. Como ele desliza e é calculado igual em cada posição, o mesmo
+padrão produz uma resposta alta **onde quer que apareça** — é a **invariância à
+translação**. Um peso por pixel, ao contrário, amarraria o reconhecimento a uma
+posição específica, e a rede teria de reaprender o padrão para cada canto da imagem.
+
+</details>
+
+<h2>Referências</h2>
+<ul>
+<li>LeCun, Y., Bottou, L., Bengio, Y. &amp; Haffner, P. (1998). <em>Gradient-Based Learning Applied to Document Recognition</em> (LeNet). Proceedings of the IEEE, 86(11), 2278–2324.</li>
+<li>Krizhevsky, A., Sutskever, I. &amp; Hinton, G. (2012). <em>ImageNet Classification with Deep Convolutional Neural Networks</em> (AlexNet). NeurIPS.</li>
+<li>Goodfellow, I., Bengio, Y. &amp; Courville, A. (2016). <em>Deep Learning</em>, cap. 9 (Convolutional Networks). MIT Press. Livro aberto: https://www.deeplearningbook.org/</li>
+</ul>
 </article>
 </div>
 <div class="footer"><div class="footer-text">IBCCF · UFRJ — Material didático de Aprendizagem de Máquina<br>Pedro Torres</div></div>
